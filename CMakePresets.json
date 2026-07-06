@@ -1,0 +1,85 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 22,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "17"
+      }
+    },
+    {
+      "name": "windows-debug-standalone",
+      "inherits": "base",
+      "displayName": "Windows Debug (Standalone)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "OCTA_BUILD_VST3": "OFF"
+      }
+    },
+    {
+      "name": "windows-debug-vst3",
+      "inherits": "base",
+      "displayName": "Windows Debug (Standalone + VST3)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "OCTA_BUILD_VST3": "ON"
+      }
+    },
+    {
+      "name": "macos-debug-standalone",
+      "inherits": "base",
+      "displayName": "macOS Debug (Standalone)",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "OCTA_BUILD_VST3": "OFF"
+      }
+    },
+    {
+      "name": "macos-debug-vst3",
+      "inherits": "base",
+      "displayName": "macOS Debug (Standalone + VST3)",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "OCTA_BUILD_VST3": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "build-windows-debug-standalone",
+      "configurePreset": "windows-debug-standalone",
+      "configuration": "Debug"
+    },
+    {
+      "name": "build-windows-debug-vst3",
+      "configurePreset": "windows-debug-vst3",
+      "configuration": "Debug"
+    },
+    {
+      "name": "build-macos-debug-standalone",
+      "configurePreset": "macos-debug-standalone"
+    },
+    {
+      "name": "build-macos-debug-vst3",
+      "configurePreset": "macos-debug-vst3"
+    }
+  ]
+}
+

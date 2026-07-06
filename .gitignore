@@ -1,0 +1,31 @@
+# Build outputs
+build/
+cmake-build-*/
+
+# IDE
+.idea/
+.vs/
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# JUCE generated artifacts
+*.vst3
+*.component
+*.exe
+*.pdb
+*.obj
+
+# CMake/Ninja local files
+CMakeUserPresets.json
+.ninja_log
+.ninja_deps
+
+# MSVC database files
+*.VC.db
+*.VC.opendb
+
