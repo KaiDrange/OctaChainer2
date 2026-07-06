@@ -34,3 +34,9 @@ To enable VST3 as well as standalone:
 cmake -S . -B build -DOCTA_BUILD_VST3=ON
 cmake --build build --config Debug
 ```
+
+## License
+
+This project is licensed under the GNU General Public License v3.0.
+See `LICENSE` for the full text.
+
