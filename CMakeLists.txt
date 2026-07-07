@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(OctaChainer2 VERSION 0.1.0 LANGUAGES CXX)
+project(OctaChainer2 VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -28,7 +28,7 @@ elseif (OCTA_FETCH_JUCE)
     FetchContent_Declare(
             juce
             GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-            GIT_TAG 8.0.0
+            GIT_TAG 8.0.14
     )
     FetchContent_MakeAvailable(juce)
 else ()
@@ -62,6 +62,8 @@ set(OCTA_COMMON_PUBLIC_LIBS
         juce::juce_recommended_warning_flags
 )
 
+set(OCTA_PLUGIN_FORMATS VST3)
+
 juce_add_gui_app(OctaChainer2_App
         PRODUCT_NAME "OctaChainer 2"
         COMPANY_NAME "Tic Tech"
@@ -89,7 +91,7 @@ target_link_libraries(OctaChainer2_App
         ${OCTA_COMMON_PUBLIC_LIBS}
 )
 
-if (OCTA_BUILD_VST3)
+if (OCTA_PLUGIN_FORMATS)
     juce_add_plugin(OctaChainer2
             COMPANY_NAME "Tic Tech"
             BUNDLE_ID "com.octa.octachainer2"
@@ -101,7 +103,7 @@ if (OCTA_BUILD_VST3)
             COPY_PLUGIN_AFTER_BUILD FALSE
             PLUGIN_MANUFACTURER_CODE Octa
             PLUGIN_CODE Oc2a
-            FORMATS VST3
+            FORMATS ${OCTA_PLUGIN_FORMATS}
             PRODUCT_NAME "OctaChainer2"
     )
 
