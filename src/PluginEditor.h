@@ -2,15 +2,15 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "UI/MainComponent.h"
 
 class OctaChainer2AudioProcessorEditor : public juce::AudioProcessorEditor
 {
 public:
     explicit OctaChainer2AudioProcessorEditor(OctaChainer2AudioProcessor&);
-    ~OctaChainer2AudioProcessorEditor() override;
 
-    void paint(juce::Graphics&) override;
     void resized() override;
+    std::unique_ptr<MainComponent> mainComponent;
 
 private:
     OctaChainer2AudioProcessor& audioProcessor;

@@ -3,12 +3,8 @@
 
 OctaChainer2AudioProcessor::OctaChainer2AudioProcessor()
     : AudioProcessor(BusesProperties()
-#if !JucePlugin_IsMidiEffect
-#if !JucePlugin_IsSynth
-                     .withInput("Input", juce::AudioChannelSet::stereo(), true)
-#endif
-                     .withOutput("Output", juce::AudioChannelSet::stereo(), true)
-#endif
+        .withInput("Input", juce::AudioChannelSet::stereo(), true)
+        .withOutput("Output", juce::AudioChannelSet::stereo(), true)
       )
 {
 }

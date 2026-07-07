@@ -2,41 +2,35 @@
 
 JUCE audio project configured with CMake for CLion.
 
-## Prerequisites
+## Build setup
 
-- CMake 3.22+
-- A C++17 compiler
-  - Windows: Visual Studio 2022 Build Tools (MSVC)
-  - macOS: Xcode + Command Line Tools
-- Git (for JUCE FetchContent)
+Use the `Debug` or `Release` CMake profile.
 
-## Configure and build
+Then choose one of the build presets:
 
-This repo includes `CMakePresets.json`, so CLion can import ready-made build profiles.
+- `Build app`
+- `Build plugin`
 
-### Windows (PowerShell)
+`Build app` builds `OctaChainer2_App`.
+`Build plugin` builds `AudioPluginHost`, which depends on `OctaChainer2_VST3`, so the plugin is built first if needed.
 
-```powershell
-cmake -S . -B build -DOCTA_BUILD_VST3=OFF
-cmake --build build --config Debug
-```
+To launch the host in CLion, create a `CMake Application` run/debug configuration for `AudioPluginHost` and use `Build plugin` as the before-launch build step.
 
-### macOS (zsh/bash)
+If JUCE fetch fails in your environment, set `OCTA_JUCE_SOURCE_DIR` to a local JUCE checkout and reconfigure. The checkout must contain `extras/AudioPluginHost`.
 
-```bash
-cmake -S . -B build -DOCTA_BUILD_VST3=OFF
-cmake --build build --config Debug
-```
-
-To enable VST3 as well as standalone:
+## Direct CMake commands
 
 ```powershell
-cmake -S . -B build -DOCTA_BUILD_VST3=ON
-cmake --build build --config Debug
+cmake --preset debug
+cmake --build --preset debug-standalone-app
+```
+
+```powershell
+cmake --preset debug
+cmake --build --preset debug-vst-plugin
 ```
 
 ## License
 
 This project is licensed under the GNU General Public License v3.0.
 See `LICENSE` for the full text.
-

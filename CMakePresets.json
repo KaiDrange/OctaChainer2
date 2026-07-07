@@ -15,71 +15,68 @@
       }
     },
     {
-      "name": "windows-debug-standalone",
+      "name": "debug",
       "inherits": "base",
-      "displayName": "Windows Debug (Standalone)",
+      "displayName": "Debug",
       "generator": "Visual Studio 17 2022",
       "architecture": {
         "value": "x64",
         "strategy": "set"
       },
       "cacheVariables": {
-        "OCTA_BUILD_VST3": "OFF"
+        "OCTA_BUILD_AUDIO_PLUGIN_HOST": "ON"
       }
     },
     {
-      "name": "windows-debug-vst3",
+      "name": "release",
       "inherits": "base",
-      "displayName": "Windows Debug (Standalone + VST3)",
+      "displayName": "Release",
       "generator": "Visual Studio 17 2022",
       "architecture": {
         "value": "x64",
         "strategy": "set"
       },
       "cacheVariables": {
-        "OCTA_BUILD_VST3": "ON"
-      }
-    },
-    {
-      "name": "macos-debug-standalone",
-      "inherits": "base",
-      "displayName": "macOS Debug (Standalone)",
-      "generator": "Ninja",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "OCTA_BUILD_VST3": "OFF"
-      }
-    },
-    {
-      "name": "macos-debug-vst3",
-      "inherits": "base",
-      "displayName": "macOS Debug (Standalone + VST3)",
-      "generator": "Ninja",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "OCTA_BUILD_VST3": "ON"
+        "OCTA_BUILD_AUDIO_PLUGIN_HOST": "ON"
       }
     }
   ],
   "buildPresets": [
     {
-      "name": "build-windows-debug-standalone",
-      "configurePreset": "windows-debug-standalone",
-      "configuration": "Debug"
+      "name": "debug-standalone-app",
+      "displayName": "Build app",
+      "configurePreset": "debug",
+      "configuration": "Debug",
+      "targets": [
+        "OctaChainer2_App"
+      ]
     },
     {
-      "name": "build-windows-debug-vst3",
-      "configurePreset": "windows-debug-vst3",
-      "configuration": "Debug"
+      "name": "debug-vst-plugin",
+      "displayName": "Build plugin",
+      "configurePreset": "debug",
+      "configuration": "Debug",
+      "targets": [
+        "AudioPluginHost"
+      ]
     },
     {
-      "name": "build-macos-debug-standalone",
-      "configurePreset": "macos-debug-standalone"
+      "name": "release-standalone-app",
+      "displayName": "Build app",
+      "configurePreset": "release",
+      "configuration": "Release",
+      "targets": [
+        "OctaChainer2_App"
+      ]
     },
     {
-      "name": "build-macos-debug-vst3",
-      "configurePreset": "macos-debug-vst3"
+      "name": "release-vst-plugin",
+      "displayName": "Build plugin",
+      "configurePreset": "release",
+      "configuration": "Release",
+      "targets": [
+        "AudioPluginHost"
+      ]
     }
   ]
 }
-
