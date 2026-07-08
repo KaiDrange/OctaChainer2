@@ -21,13 +21,13 @@ If JUCE fetch fails in your environment, set `OCTA_JUCE_SOURCE_DIR` to a local J
 ## Direct CMake commands
 
 ```powershell
-cmake --preset debug
-cmake --build --preset debug-standalone-app
+cmake --preset windows-debug
+cmake --build --preset windows-debug-standalone-app
 ```
 
 ```powershell
-cmake --preset debug
-cmake --build --preset debug-vst-plugin
+cmake --preset macos-debug
+cmake --build --preset macos-debug-vst-plugin
 ```
 
 ## License

@@ -7,76 +7,202 @@
   },
   "configurePresets": [
     {
-      "name": "base",
+      "name": "windows-base",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build/${presetName}",
+      "binaryDir": "${sourceDir}/build/windows/${presetName}",
       "cacheVariables": {
         "CMAKE_CXX_STANDARD": "17"
       }
     },
     {
-      "name": "debug",
-      "inherits": "base",
-      "displayName": "Debug",
+      "name": "windows-debug",
+      "inherits": "windows-base",
+      "displayName": "Windows Debug",
       "generator": "Visual Studio 17 2022",
       "architecture": {
         "value": "x64",
         "strategy": "set"
       },
       "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
         "OCTA_BUILD_AUDIO_PLUGIN_HOST": "ON"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
       }
     },
     {
-      "name": "release",
-      "inherits": "base",
-      "displayName": "Release",
+      "name": "windows-release",
+      "inherits": "windows-base",
+      "displayName": "Windows Release",
       "generator": "Visual Studio 17 2022",
       "architecture": {
         "value": "x64",
         "strategy": "set"
       },
       "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
         "OCTA_BUILD_AUDIO_PLUGIN_HOST": "ON"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "macos-base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/macos/${presetName}",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "17"
+      }
+    },
+    {
+      "name": "macos-debug",
+      "inherits": "macos-base",
+      "displayName": "macOS Debug",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "OCTA_BUILD_AUDIO_PLUGIN_HOST": "ON"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+    {
+      "name": "macos-release",
+      "inherits": "macos-base",
+      "displayName": "macOS Release",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "OCTA_BUILD_AUDIO_PLUGIN_HOST": "ON"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
       }
     }
   ],
   "buildPresets": [
     {
-      "name": "debug-standalone-app",
+      "name": "windows-debug-standalone-app",
       "displayName": "Build app",
-      "configurePreset": "debug",
+      "configurePreset": "windows-debug",
       "configuration": "Debug",
       "targets": [
         "OctaChainer2_App"
-      ]
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
     },
     {
-      "name": "debug-vst-plugin",
+      "name": "windows-debug-vst-plugin",
       "displayName": "Build plugin",
-      "configurePreset": "debug",
+      "configurePreset": "windows-debug",
       "configuration": "Debug",
       "targets": [
         "AudioPluginHost"
-      ]
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
     },
     {
-      "name": "release-standalone-app",
+      "name": "windows-release-standalone-app",
       "displayName": "Build app",
-      "configurePreset": "release",
+      "configurePreset": "windows-release",
       "configuration": "Release",
       "targets": [
         "OctaChainer2_App"
-      ]
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
     },
     {
-      "name": "release-vst-plugin",
+      "name": "windows-release-vst-plugin",
       "displayName": "Build plugin",
-      "configurePreset": "release",
+      "configurePreset": "windows-release",
       "configuration": "Release",
       "targets": [
         "AudioPluginHost"
-      ]
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "macos-debug-standalone-app",
+      "displayName": "Build app",
+      "configurePreset": "macos-debug",
+      "configuration": "Debug",
+      "targets": [
+        "OctaChainer2_App"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+    {
+      "name": "macos-debug-vst-plugin",
+      "displayName": "Build plugin",
+      "configurePreset": "macos-debug",
+      "configuration": "Debug",
+      "targets": [
+        "AudioPluginHost"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+    {
+      "name": "macos-release-standalone-app",
+      "displayName": "Build app",
+      "configurePreset": "macos-release",
+      "configuration": "Release",
+      "targets": [
+        "OctaChainer2_App"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+    {
+      "name": "macos-release-vst-plugin",
+      "displayName": "Build plugin",
+      "configurePreset": "macos-release",
+      "configuration": "Release",
+      "targets": [
+        "AudioPluginHost"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
     }
   ]
 }
