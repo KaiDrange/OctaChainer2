@@ -1,6 +1,12 @@
-# OctaChainer2
+# OctaChainer 2
 
-JUCE audio project configured with CMake for CLion.
+JUCE audio project configured with CMake for CLion. This project is a reimplementation of the old OctaChainer app. The original used the QT framework and was made in a hurry. This version
+is a rewrite with JUCE and CMake where the intent is to do things "properly". Partly for educational purposes, but also to have a more robust and maintainable codebase for future development.
+
+The goal for the initial release is Windows and macOS standalone applications with close to feature parity with the original.
+
+OctaChainer 2 will be a standalone application, but can (at least initially) also be built as a VST3 plugin to keep the door open for future DAW integrations. Perhaps some drag and drop
+functionality from DAWs can be added to the plugin version, that won't be possible in the standalone app? If not, then the plugin version may be dropped in the future.
 
 ## Build setup
 

@@ -45,11 +45,8 @@ if (OCTA_BUILD_AUDIO_PLUGIN_HOST)
             "${CMAKE_CURRENT_BINARY_DIR}/AudioPluginHost")
 endif ()
 
-set(OCTA_SHARED_UI_SOURCES
-        src/UI/MainComponent.cpp
-        src/UI/MainComponent.h
-        src/UI/Style.h
-)
+file(GLOB_RECURSE SOURCE_FILES src/UI/*.cpp src/UI/*.h)
+set(OCTA_SHARED_SOURCES ${SOURCE_FILES})
 
 set(OCTA_COMMON_COMPILE_DEFINITIONS
         JUCE_WEB_BROWSER=0
@@ -76,7 +73,7 @@ target_sources(OctaChainer2_App
         PRIVATE
         src/StandaloneApp.cpp
         src/StandaloneApp.h
-        ${OCTA_SHARED_UI_SOURCES}
+        ${OCTA_SHARED_SOURCES}
 )
 
 target_compile_definitions(OctaChainer2_App
@@ -115,7 +112,7 @@ if (OCTA_PLUGIN_FORMATS)
             src/PluginEditor.h
             src/PluginProcessor.cpp
             src/PluginProcessor.h
-            ${OCTA_SHARED_UI_SOURCES}
+            ${OCTA_SHARED_SOURCES}
     )
 
     target_compile_definitions(OctaChainer2

@@ -1,26 +1,42 @@
 #pragma once
+
 #include <JuceHeader.h>
-#include "Style.h"
+#include "SampleListComponent.h"
+#include "SettingsPanelComponent.h"
+#include "StyleSheet.h"
+#include "WaveformComponent.h"
 
 class MainComponent : public juce::Component
 {
-    public:
-        static constexpr int defaultWidth = 1536;
-        static constexpr int defaultHeight = 864;
-        static constexpr int maxWidth = 2560;
-        static constexpr int maxHeight = 1440;
-        static constexpr int minWidth = 800;
-        static constexpr int minHeight = 600;
+public:
+    static constexpr int defaultWidth = 1536;
+    static constexpr int defaultHeight = 864;
+    static constexpr int maxWidth = 2560;
+    static constexpr int maxHeight = 1440;
+    static constexpr int minWidth = 800;
+    static constexpr int minHeight = 600;
 
-        MainComponent();
-        ~MainComponent() override;
+    static constexpr int sampleListWidthPercentage = 60;
+    static constexpr int sampleListHeightPercentage = 75;
 
-        void paint (juce::Graphics&) override;
-        void resized() override;
+    static constexpr int settingsPanelHeightPercentage = sampleListHeightPercentage;
+    static constexpr int settingsPanelWidthPercentage = 100 - sampleListWidthPercentage;
 
-    private:
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
+    static constexpr int sliceWaveformHeightPercentage = (100 - sampleListHeightPercentage) / 2;
+    static constexpr int chainWaveformWidthPercentage = sliceWaveformHeightPercentage;
 
-        juce::Label testLabel;
-        Style style;
+    MainComponent();
+    ~MainComponent() override;
+
+    void paint(juce::Graphics& g) override;
+    void resized() override;
+
+private:
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
+
+    StyleSheet style;
+    SampleListComponent sampleListComponent;
+    SettingsPanelComponent settingsPanelComponent;
+    WaveformComponent sliceWaveformComponent;
+    WaveformComponent chainWaveformComponent;
 };
