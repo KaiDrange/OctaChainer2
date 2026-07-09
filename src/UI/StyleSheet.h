@@ -33,6 +33,9 @@ public:
     static constexpr uint32 controlHighlightColour = 0x407D9284;
     static constexpr int controlTextInsetX = 6;
     static constexpr int controlTextInsetY = 2;
+    static constexpr uint32 comboBackgroundColour = 0xFFE8E2D8;
+    static constexpr uint32 comboButtonColour = textDefaultColour;
+    static constexpr uint32 comboArrowColour = textDefaultColour;
 
     static constexpr float defaultButtonHeight = 40.0f;
     static constexpr float buttonMargins = 3.0f;
@@ -61,6 +64,11 @@ public:
                      bool ticked, bool isEnabled,
                      bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     void changeToggleButtonWidthToFitText(juce::ToggleButton& button) override;
+    juce::Font getComboBoxFont(juce::ComboBox&) override;
+    void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown,
+                      int buttonX, int buttonY, int buttonW, int buttonH,
+                      juce::ComboBox& box) override;
+    void positionComboBoxText(juce::ComboBox& box, juce::Label& labelToPosition) override;
     void fillTextEditorBackground(juce::Graphics& g, int width, int height, juce::TextEditor& editor) override;
     void drawTextEditorOutline(juce::Graphics& g, int width, int height, juce::TextEditor& editor) override;
 };

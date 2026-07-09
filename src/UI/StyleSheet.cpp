@@ -19,6 +19,12 @@ StyleSheet::StyleSheet()
     setColour(juce::TextButton::buttonOnColourId, juce::Colour(buttonBackgroundDownColour));
     setColour(juce::TextButton::textColourOffId, juce::Colour(buttonTextColour));
     setColour(juce::TextButton::textColourOnId, juce::Colour(buttonTextColour));
+    setColour(juce::ComboBox::backgroundColourId, juce::Colour(comboBackgroundColour));
+    setColour(juce::ComboBox::textColourId, juce::Colour(controlTextColour));
+    setColour(juce::ComboBox::outlineColourId, juce::Colour(controlBorderColour));
+    setColour(juce::ComboBox::buttonColourId, juce::Colour(comboButtonColour));
+    setColour(juce::ComboBox::arrowColourId, juce::Colour(comboArrowColour));
+    setColour(juce::ComboBox::focusedOutlineColourId, juce::Colour(controlBorderFocusedColour));
     setColour(juce::ToggleButton::textColourId, juce::Colour(controlTextColour));
     setColour(juce::ToggleButton::tickColourId, juce::Colour(toggleTickColour));
     setColour(juce::ToggleButton::tickDisabledColourId, juce::Colour(controlBorderColour));
@@ -33,10 +39,24 @@ void StyleSheet::drawLabel(juce::Graphics& g, juce::Label& label)
 {
     const auto alpha = label.isEnabled() ? 1.0f : 0.5f;
     const auto font = getLabelFont(label);
+    const auto textArea = label.getBorderSize().subtractedFrom(label.getLocalBounds()).reduced(controlTextInsetX, controlTextInsetY);
+
+    if (dynamic_cast<juce::ComboBox*> (label.getParentComponent()) != nullptr)
+    {
+        g.setColour(label.findColour(juce::Label::textColourId).withMultipliedAlpha(alpha));
+        g.setFont(font);
+        g.drawFittedText(label.getText(),
+                         textArea,
+                         label.getJustificationType(),
+                         juce::jmax(1, static_cast<int>(static_cast<float>(label.getHeight()) / font.getHeight())),
+                         label.getMinimumHorizontalScale());
+        return;
+    }
+
     g.setColour(label.findColour(juce::Label::textColourId).withMultipliedAlpha(alpha));
     g.setFont(font);
     g.drawFittedText(label.getText(),
-                     label.getBorderSize().subtractedFrom(label.getLocalBounds()).reduced(controlTextInsetX, controlTextInsetY),
+                     textArea,
                      label.getJustificationType(),
                      juce::jmax(1, static_cast<int>(static_cast<float>(label.getHeight()) / font.getHeight())),
                      label.getMinimumHorizontalScale());
@@ -137,6 +157,52 @@ void StyleSheet::changeToggleButtonWidthToFitText(juce::ToggleButton& button)
     button.setSize(juce::GlyphArrangement::getStringWidthInt(font, button.getButtonText())
                    + juce::roundToInt(tickWidth) + 14,
                    button.getHeight());
+}
+
+juce::Font StyleSheet::getComboBoxFont(juce::ComboBox&)
+{
+    return juce::FontOptions(13.0f);
+}
+
+void StyleSheet::drawComboBox(juce::Graphics& g, const int width, const int height, const bool isButtonDown,
+                              const int buttonX, const int buttonY, const int buttonW, const int buttonH,
+                              juce::ComboBox& box)
+{
+    auto bounds = juce::Rectangle<float>(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)).reduced(0.5f, 0.5f);
+    auto fill = box.findColour(juce::ComboBox::backgroundColourId);
+
+    if (! box.isEnabled())
+        fill = fill.withMultipliedAlpha(0.55f);
+    else if (isButtonDown)
+        fill = fill.brighter(0.03f);
+
+    g.setColour(fill);
+    g.fillRoundedRectangle(bounds, 5.0f);
+
+    auto border = box.hasKeyboardFocus(true) ? box.findColour(juce::ComboBox::focusedOutlineColourId)
+                                             : box.findColour(juce::ComboBox::outlineColourId);
+
+    if (isButtonDown)
+        border = border.brighter(0.08f);
+
+    g.setColour(border.withMultipliedAlpha(box.isEnabled() ? 1.0f : 0.55f));
+    g.drawRoundedRectangle(bounds, 5.0f, 1.0f);
+
+    auto arrowColour = box.findColour(juce::ComboBox::arrowColourId).withMultipliedAlpha(box.isEnabled() ? 1.0f : 0.45f);
+    auto arrowBounds = juce::Rectangle<float>(static_cast<float>(buttonX), static_cast<float>(buttonY),
+                                              static_cast<float>(buttonW), static_cast<float>(buttonH));
+    juce::Path arrow;
+    arrow.addTriangle(arrowBounds.getCentreX() - 4.0f, arrowBounds.getCentreY() - 2.0f,
+                      arrowBounds.getCentreX() + 4.0f, arrowBounds.getCentreY() - 2.0f,
+                      arrowBounds.getCentreX(), arrowBounds.getCentreY() + 4.0f);
+    g.setColour(arrowColour);
+    g.fillPath(arrow);
+}
+
+void StyleSheet::positionComboBoxText(juce::ComboBox& box, juce::Label& labelToPosition)
+{
+    labelToPosition.setBounds(juce::Rectangle<int>(4, 0, juce::jmax(0, box.getWidth() - 22), box.getHeight()));
+    labelToPosition.setFont(getComboBoxFont(box));
 }
 
 void StyleSheet::fillTextEditorBackground(juce::Graphics& g, const int width, const int height, juce::TextEditor& editor)

@@ -16,7 +16,7 @@ public:
     static constexpr int minWidth = 800;
     static constexpr int minHeight = 600;
 
-    static constexpr int sampleListWidthPercentage = 60;
+    static constexpr int sampleListWidthPercentage = 70;
     static constexpr int sampleListHeightPercentage = 75;
 
     static constexpr int settingsPanelHeightPercentage = sampleListHeightPercentage;

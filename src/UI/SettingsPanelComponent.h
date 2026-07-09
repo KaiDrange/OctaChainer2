@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 
+#include "NumberInputComponent.h"
 #include "PanelComponent.h"
 #include "SectionComponent.h"
 
@@ -27,12 +28,21 @@ private:
 
     juce::ToggleButton sampleRate48k{"48k"};
     juce::ToggleButton sampleRate44k1{"44.1k"};
-    juce::ToggleButton sampleRate32k{"32k"};
-    juce::ToggleButton sampleRate22k05{"22.05k"};
 
     SectionComponent bitrateSection{"Bitrate"};
     SectionComponent channelSection{"Channels"};
     SectionComponent sampleRateSection{"Sample rate"};
+    SectionComponent otAttributesSection{"OT attributes"};
+
+    juce::ComboBox timestretchBox;
+    juce::ComboBox loopBox;
+    juce::ComboBox trigQuantBox;
+    juce::ComboBox normalizationBox;
+    juce::ComboBox fadeinBox;
+    juce::ComboBox fadeoutBox;
+
+    NumberInputComponent gainInput{"Gain:", 2, -24, 24, false};
+    NumberInputComponent bpmInput{"BPM:", 3, 30, 300, false};
 
     static void configureRadioButton(juce::ToggleButton& button, int groupId, bool selected);
 };
