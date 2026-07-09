@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 
+#include "NumberInputComponent.h"
 #include "PanelComponent.h"
 
 class SampleListComponent : public PanelComponent, public juce::TableListBoxModel
@@ -17,4 +18,9 @@ public:
 
 private:
     juce::TableListBox table{"Sample List", this};
+    juce::TextButton btnAdd{"Add"};
+    juce::TextButton btnAddSilence{"Add silence"};
+    juce::TextButton btnRemove{"Remove"};
+    juce::TextButton btnRemoveAll{"Clear"};
+    NumberInputComponent chainMaxLength{"Max count", 3, 0, 120, false};
 };

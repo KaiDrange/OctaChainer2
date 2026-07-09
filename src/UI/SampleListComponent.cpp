@@ -3,14 +3,26 @@
 SampleListComponent::SampleListComponent(const int heightPercentage, const int widthPercentage, const juce::String& title) : PanelComponent(heightPercentage, widthPercentage, title)
 {
     addAndMakeVisible(table);
+    addAndMakeVisible(btnAdd);
+    addAndMakeVisible(btnAddSilence);
+    addAndMakeVisible(btnRemove);
+    addAndMakeVisible(btnRemoveAll);
+    addAndMakeVisible(chainMaxLength);
 }
 
 void SampleListComponent::resized()
 {
     PanelComponent::resized();
-    table.setOpaque(false);
-    table.getViewport()->setOpaque(false);
-    table.setBounds(innerBounds);
+
+    auto contentArea = innerBounds;
+    auto buttonArea = contentArea.removeFromBottom(StyleSheet::defaultButtonHeight);
+    table.setBounds(contentArea);
+
+    btnAdd.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 5).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
+    btnAddSilence.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 4).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
+    btnRemove.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 3).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
+    btnRemoveAll.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 2).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
+    chainMaxLength.setBounds(buttonArea.reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
 }
 
 int SampleListComponent::getNumRows()

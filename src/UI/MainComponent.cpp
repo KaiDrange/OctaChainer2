@@ -23,7 +23,7 @@ void MainComponent::paint(juce::Graphics& g)
 {
     const auto bounds = getLocalBounds().toFloat();
     const juce::ColourGradient backgroundGradient{
-        juce::Colour(StyleSheet::backgroundColour), 0, 0, juce::Colour(StyleSheet::backgroundGradientColour),
+        juce::Colour(StyleSheet::defaultBackgroundColour), 0, 0, juce::Colour(StyleSheet::backgroundGradientColour),
         bounds.getWidth(), bounds.getHeight(), false
     };
     g.setGradientFill(backgroundGradient);
