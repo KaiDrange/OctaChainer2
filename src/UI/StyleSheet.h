@@ -23,6 +23,7 @@ public:
     static constexpr uint32 buttonBackgroundDownColour = 0xFF55695D;
     static constexpr uint32 buttonBorderColour = 0x80545F58;
     static constexpr uint32 buttonTextColour = 0xFFF7F5EF;
+    static constexpr uint32 toggleTickColour = 0xFF0A84FF;
 
     static constexpr uint32 controlBackgroundColour = 0xFFF7F2E9;
     static constexpr uint32 controlBackgroundFocusedColour = 0xFFFFFFFF;
@@ -53,6 +54,13 @@ public:
     juce::Font getTextButtonFont(juce::TextButton&, int buttonHeight) override;
     void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
                               bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+    void drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
+                          bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+    void drawTickBox(juce::Graphics& g, juce::Component& component,
+                     float x, float y, float w, float h,
+                     bool ticked, bool isEnabled,
+                     bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+    void changeToggleButtonWidthToFitText(juce::ToggleButton& button) override;
     void fillTextEditorBackground(juce::Graphics& g, int width, int height, juce::TextEditor& editor) override;
     void drawTextEditorOutline(juce::Graphics& g, int width, int height, juce::TextEditor& editor) override;
 };

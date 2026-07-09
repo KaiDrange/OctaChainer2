@@ -22,5 +22,5 @@ private:
     juce::TextButton btnAddSilence{"Add blank"};
     juce::TextButton btnRemove{"Remove"};
     juce::TextButton btnRemoveAll{"Clear"};
-    NumberInputComponent chainMaxLength{"Max count:", 3, 0, 120, false};
+    NumberInputComponent chainMaxLength{"Max slices:", 3, 0, 120, false};
 };

@@ -36,4 +36,6 @@ void PanelComponent::resized()
     const auto reducedBounds = getLocalBounds().toFloat()
         .reduced(StyleSheet::panelMargins + StyleSheet::panelPadding + StyleSheet::panelBorderThickness);
     innerBounds = reducedBounds.toNearestInt();
+    if (!title.isEmpty())
+        innerBounds.reduce(StyleSheet::panelBorderMargin * 2.0f, StyleSheet::panelBorderMargin * 2.0f);
 }

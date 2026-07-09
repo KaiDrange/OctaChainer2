@@ -19,6 +19,9 @@ StyleSheet::StyleSheet()
     setColour(juce::TextButton::buttonOnColourId, juce::Colour(buttonBackgroundDownColour));
     setColour(juce::TextButton::textColourOffId, juce::Colour(buttonTextColour));
     setColour(juce::TextButton::textColourOnId, juce::Colour(buttonTextColour));
+    setColour(juce::ToggleButton::textColourId, juce::Colour(controlTextColour));
+    setColour(juce::ToggleButton::tickColourId, juce::Colour(toggleTickColour));
+    setColour(juce::ToggleButton::tickDisabledColourId, juce::Colour(controlBorderColour));
 }
 
 juce::Font StyleSheet::getLabelFont(juce::Label&)
@@ -71,6 +74,69 @@ void StyleSheet::drawButtonBackground(juce::Graphics& g, juce::Button& button, c
 
     g.setColour(border.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.55f));
     g.drawRoundedRectangle(bounds, 6.0f, 1.0f);
+}
+
+void StyleSheet::drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
+                                  const bool shouldDrawButtonAsHighlighted, const bool shouldDrawButtonAsDown)
+{
+    const auto fontSize = juce::jmin(15.0f, static_cast<float>(button.getHeight()) * 0.72f);
+    const auto tickWidth = juce::jmax(14.0f, fontSize * 1.05f);
+
+    drawTickBox(g, button,
+                4.0f,
+                (static_cast<float>(button.getHeight()) - tickWidth) * 0.5f,
+                tickWidth, tickWidth,
+                button.getToggleState(),
+                button.isEnabled(),
+                shouldDrawButtonAsHighlighted,
+                shouldDrawButtonAsDown);
+
+    g.setColour(button.findColour(juce::ToggleButton::textColourId).withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f));
+    g.setFont(fontSize);
+    g.drawFittedText(button.getButtonText(),
+                     button.getLocalBounds().withTrimmedLeft(juce::roundToInt(tickWidth) + 8)
+                                            .withTrimmedRight(2),
+                     juce::Justification::centredLeft,
+                     1);
+}
+
+void StyleSheet::drawTickBox(juce::Graphics& g, juce::Component& component,
+                             const float x, const float y, const float w, const float h,
+                             const bool ticked, const bool isEnabled,
+                             const bool shouldDrawButtonAsHighlighted, const bool shouldDrawButtonAsDown)
+{
+    auto bounds = juce::Rectangle<float>(x, y, w, h).reduced(0.5f, 0.5f);
+    auto outline = component.findColour(juce::ToggleButton::tickDisabledColourId);
+    auto fill = juce::Colours::transparentBlack;
+
+    if (shouldDrawButtonAsDown)
+        fill = outline.withAlpha(0.12f);
+    else if (shouldDrawButtonAsHighlighted)
+        fill = outline.withAlpha(0.06f);
+
+    g.setColour(fill);
+    g.fillEllipse(bounds);
+
+    g.setColour(outline.withMultipliedAlpha(isEnabled ? 1.0f : 0.45f));
+    g.drawEllipse(bounds, 1.0f);
+
+    if (ticked)
+    {
+        auto inner = bounds.reduced(bounds.getWidth() * 0.28f);
+        g.setColour(component.findColour(juce::ToggleButton::tickColourId).withMultipliedAlpha(isEnabled ? 1.0f : 0.45f));
+        g.fillEllipse(inner);
+    }
+}
+
+void StyleSheet::changeToggleButtonWidthToFitText(juce::ToggleButton& button)
+{
+    const auto fontSize = juce::jmin(15.0f, static_cast<float>(button.getHeight()) * 0.72f);
+    const auto tickWidth = juce::jmax(14.0f, fontSize * 1.05f);
+    const juce::Font font { juce::FontOptions { fontSize } };
+
+    button.setSize(juce::GlyphArrangement::getStringWidthInt(font, button.getButtonText())
+                   + juce::roundToInt(tickWidth) + 14,
+                   button.getHeight());
 }
 
 void StyleSheet::fillTextEditorBackground(juce::Graphics& g, const int width, const int height, juce::TextEditor& editor)
