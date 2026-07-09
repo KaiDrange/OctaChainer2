@@ -24,6 +24,15 @@ public:
     static constexpr uint32 buttonBorderColour = 0x80545F58;
     static constexpr uint32 buttonTextColour = 0xFFF7F5EF;
 
+    static constexpr uint32 controlBackgroundColour = 0xFFF7F2E9;
+    static constexpr uint32 controlBackgroundFocusedColour = 0xFFFFFFFF;
+    static constexpr uint32 controlBorderColour = 0x809DA79D;
+    static constexpr uint32 controlBorderFocusedColour = 0xFF6D8376;
+    static constexpr uint32 controlTextColour = 0xFF2E322F;
+    static constexpr uint32 controlHighlightColour = 0x407D9284;
+    static constexpr int controlTextInsetX = 6;
+    static constexpr int controlTextInsetY = 2;
+
     static constexpr float defaultButtonHeight = 40.0f;
     static constexpr float buttonMargins = 3.0f;
 
@@ -32,9 +41,18 @@ public:
         return juce::FontOptions(16.0f, juce::Font::bold);
     }
 
+    static juce::Font getControlFont()
+    {
+        return juce::FontOptions(13.0f);
+    }
+
     StyleSheet();
 
+    juce::Font getLabelFont(juce::Label&) override;
+    void drawLabel(juce::Graphics& g, juce::Label& label) override;
     juce::Font getTextButtonFont(juce::TextButton&, int buttonHeight) override;
     void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
                               bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+    void fillTextEditorBackground(juce::Graphics& g, int width, int height, juce::TextEditor& editor) override;
+    void drawTextEditorOutline(juce::Graphics& g, int width, int height, juce::TextEditor& editor) override;
 };

@@ -18,9 +18,9 @@ public:
 
 private:
     juce::TableListBox table{"Sample List", this};
-    juce::TextButton btnAdd{"Add"};
-    juce::TextButton btnAddSilence{"Add silence"};
+    juce::TextButton btnAdd{"Add file"};
+    juce::TextButton btnAddSilence{"Add blank"};
     juce::TextButton btnRemove{"Remove"};
     juce::TextButton btnRemoveAll{"Clear"};
-    NumberInputComponent chainMaxLength{"Max count", 3, 0, 120, false};
+    NumberInputComponent chainMaxLength{"Max count:", 3, 0, 120, false};
 };

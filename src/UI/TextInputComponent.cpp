@@ -1,5 +1,6 @@
 #include <JuceHeader.h>
 #include "TextInputComponent.h"
+#include "StyleSheet.h"
 
 TextInputComponent::TextInputComponent(const juce::String& labelText,
                                            const int minLength,
@@ -8,11 +9,14 @@ TextInputComponent::TextInputComponent(const juce::String& labelText,
                                            const bool labelAboveInput) {
     this->labelAboveInput = labelAboveInput;
     label.setText(labelText, juce::dontSendNotification);
+    label.setFont(StyleSheet::getControlFont());
 
     if (legalChars.isEmpty())
         this->legalChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-#";
     
     input.setInputFilter(new juce::TextEditor::LengthAndCharacterRestriction(maxLength, this->legalChars), true);
+    input.setFont(StyleSheet::getControlFont());
+    input.setIndents(StyleSheet::controlTextInsetX, StyleSheet::controlTextInsetY);
     addAndMakeVisible(label);
     addAndMakeVisible(input);
 

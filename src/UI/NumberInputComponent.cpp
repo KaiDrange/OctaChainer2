@@ -1,5 +1,6 @@
 #include <JuceHeader.h>
 #include "NumberInputComponent.h"
+#include "StyleSheet.h"
 
 NumberInputComponent::NumberInputComponent(const juce::String& labelText,
                                            const int maxDigits,
@@ -8,8 +9,11 @@ NumberInputComponent::NumberInputComponent(const juce::String& labelText,
                                            const bool labelAboveInput) {
     this->labelAboveInput = labelAboveInput;
     label.setText(labelText, juce::dontSendNotification);
+    label.setFont(StyleSheet::getControlFont());
     input.setInputFilter(new juce::TextEditor::LengthAndCharacterRestriction(maxDigits, "-0123456789"), true);
     input.setJustification(juce::Justification::right);
+    input.setFont(StyleSheet::getControlFont());
+    input.setIndents(StyleSheet::controlTextInsetX, StyleSheet::controlTextInsetY);
     addAndMakeVisible(label);
     addAndMakeVisible(input);
 
