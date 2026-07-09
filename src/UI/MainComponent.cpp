@@ -4,7 +4,7 @@ MainComponent::MainComponent()
     : sampleListComponent(sampleListHeightPercentage, sampleListWidthPercentage),
       settingsPanelComponent(settingsPanelHeightPercentage, settingsPanelWidthPercentage, "Settings"),
       sliceWaveformComponent(sliceWaveformHeightPercentage, sliceWaveformHeightPercentage, "Slice waveform"),
-      chainWaveformComponent(chainWaveformWidthPercentage, chainWaveformWidthPercentage, "Chain waveform")
+      chainWaveformComponent(chainWaveformWidthPercentage, chainWaveformWidthPercentage, "Chain waveforms")
 {
     setLookAndFeel(&style);
     addAndMakeVisible(sampleListComponent);
@@ -32,12 +32,18 @@ void MainComponent::paint(juce::Graphics& g)
 
 void MainComponent::resized()
 {
-    auto topArea = getLocalBounds().reduced(StyleSheet::panelMargins);
-    sampleListComponent.setBounds(topArea.removeFromLeft(topArea.getWidth() * sampleListComponent.widthPercentage / 100).withHeight(topArea.getHeight() * sampleListComponent.heightPercentage / 100));
-    settingsPanelComponent.setBounds(topArea.removeFromTop(topArea.getHeight() * settingsPanelComponent.heightPercentage / 100).withWidth(topArea.getWidth()));
 
-    auto bottomArea = getLocalBounds().reduced(StyleSheet::panelMargins);
-    chainWaveformComponent.setBounds(bottomArea.removeFromBottom(bottomArea.getHeight() * chainWaveformComponent.heightPercentage / 100).withWidth(bottomArea.getWidth()));
-    sliceWaveformComponent.setBounds(bottomArea.removeFromBottom(bottomArea.getHeight() * sliceWaveformComponent.heightPercentage / 100).withWidth(bottomArea.getWidth()));
+    auto contentArea = getLocalBounds().reduced(juce::roundToInt(StyleSheet::panelMargins));
 
+    const auto topHeight = contentArea.getHeight() * sampleListHeightPercentage / 100;
+    const auto sliceHeight = contentArea.getHeight() * sliceWaveformComponent.heightPercentage / 100;
+    auto topBand = contentArea.removeFromTop(topHeight);
+    auto bottomBand = contentArea;
+
+    const auto sampleListWidth = topBand.getWidth() * sampleListWidthPercentage / 100;
+    sampleListComponent.setBounds(topBand.removeFromLeft(sampleListWidth));
+    settingsPanelComponent.setBounds(topBand);
+
+    sliceWaveformComponent.setBounds(bottomBand.removeFromTop(sliceHeight));
+    chainWaveformComponent.setBounds(bottomBand); // Remaining space. If the layout changes, use bottomBand.removeFromTop(chainHeight) instead.
 }

@@ -1,11 +1,11 @@
 #include "PanelComponent.h"
 
-#include <utility>
 
-PanelComponent::PanelComponent(const int heightPercentage, const int widthPercentage, const juce::String& title)
-    : widthPercentage(widthPercentage), heightPercentage(heightPercentage)
+PanelComponent::PanelComponent(const int heightPercentage, const int widthPercentage, juce::String title)
+    : widthPercentage(widthPercentage),
+      heightPercentage(heightPercentage),
+      title(std::move(title))
 {
-    this->title = title;
 }
 
 void PanelComponent::paint(juce::Graphics& graphics)
@@ -24,15 +24,16 @@ void PanelComponent::paint(juce::Graphics& graphics)
     if (title.isEmpty())
         return;
 
-    titleArea = titleArea.removeFromTop(StyleSheet::panelBorderMargin * 2);
+    titleArea = titleArea.removeFromTop(juce::roundToInt(StyleSheet::panelBorderMargin * 2.0f));
     titleArea.reduce(0, 2);
-    graphics.setFont(StyleSheet::titleFont);
+    graphics.setFont(StyleSheet::getTitleFont());
     graphics.setColour(juce::Colour(StyleSheet::textDefaultColour));
     graphics.drawText(title, titleArea, juce::Justification::centred);
 }
 
 void PanelComponent::resized()
 {
-    innerBounds = getLocalBounds().toFloat()
-        .reduced(StyleSheet::panelMargins + StyleSheet::panelPadding + StyleSheet::panelBorderThickness).toNearestInt();
+    const auto reducedBounds = getLocalBounds().toFloat()
+        .reduced(StyleSheet::panelMargins + StyleSheet::panelPadding + StyleSheet::panelBorderThickness);
+    innerBounds = reducedBounds.toNearestInt();
 }

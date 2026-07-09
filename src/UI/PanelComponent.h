@@ -15,7 +15,7 @@ public:
     juce::Colour borderColour = juce::Colour(StyleSheet::panelBorderColour);
     juce::Colour backgroundColour = juce::Colour(StyleSheet::panelBackgroundColour);
 
-    PanelComponent(int heightPercentage, int widthPercentage, const juce::String& title);
+    PanelComponent(int heightPercentage, int widthPercentage, juce::String title);
     void paint(juce::Graphics&) override;
     void resized() override;
 
