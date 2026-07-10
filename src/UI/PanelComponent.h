@@ -7,15 +7,43 @@
 class PanelComponent : public juce::Component
 {
 public:
-    int widthPercentage;
-    int heightPercentage;
+    struct Dimension
+    {
+        enum class Mode
+        {
+            Fixed,
+            Percentage
+        };
+
+        Mode mode;
+        int value;
+        int minimum;
+
+        static constexpr Dimension fixed(const int pixels, const int minimum = 0)
+        {
+            return { Mode::Fixed, pixels, minimum };
+        }
+
+        static constexpr Dimension percentage(const int percent, const int minimum = 0)
+        {
+            return { Mode::Percentage, percent, minimum };
+        }
+    };
+
+    Dimension width;
+    Dimension height;
     juce::String title;
     Rectangle<int> innerBounds;
 
     juce::Colour borderColour = juce::Colour(StyleSheet::panelBorderColour);
     juce::Colour backgroundColour = juce::Colour(StyleSheet::panelBackgroundColour);
 
-    PanelComponent(int heightPercentage, int widthPercentage, juce::String title);
+    PanelComponent(Dimension height, Dimension width, juce::String title);
+
+    static int resolveDimension(Dimension dimension, int availableSize);
+    int getResolvedWidth(int availableSize) const;
+    int getResolvedHeight(int availableSize) const;
+
     void paint(juce::Graphics&) override;
     void resized() override;
 

@@ -1,11 +1,31 @@
 #include "PanelComponent.h"
 
 
-PanelComponent::PanelComponent(const int heightPercentage, const int widthPercentage, juce::String title)
-    : widthPercentage(widthPercentage),
-      heightPercentage(heightPercentage),
+PanelComponent::PanelComponent(Dimension heightDimension, Dimension widthDimension, juce::String title)
+    : width(widthDimension),
+      height(heightDimension),
       title(std::move(title))
 {
+}
+
+int PanelComponent::resolveDimension(const Dimension dimension, const int availableSize)
+{
+    const auto minimum = juce::jmax(0, dimension.minimum);
+    const auto resolved = dimension.mode == Dimension::Mode::Fixed
+        ? juce::jmin(availableSize, dimension.value)
+        : availableSize * dimension.value / 100;
+
+    return juce::jmax(minimum, resolved);
+}
+
+int PanelComponent::getResolvedWidth(const int availableSize) const
+{
+    return resolveDimension(width, availableSize);
+}
+
+int PanelComponent::getResolvedHeight(const int availableSize) const
+{
+    return resolveDimension(height, availableSize);
 }
 
 void PanelComponent::paint(juce::Graphics& graphics)

@@ -1,6 +1,8 @@
 #include "SampleListComponent.h"
 
-SampleListComponent::SampleListComponent(const int heightPercentage, const int widthPercentage, const juce::String& title) : PanelComponent(heightPercentage, widthPercentage, title)
+SampleListComponent::SampleListComponent(PanelComponent::Dimension height, PanelComponent::Dimension width,
+                                         const juce::String& title)
+    : PanelComponent(height, width, title)
 {
     addAndMakeVisible(table);
     addAndMakeVisible(btnAdd);

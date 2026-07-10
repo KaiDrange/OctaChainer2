@@ -1,10 +1,17 @@
 #include "MainComponent.h"
 
 MainComponent::MainComponent()
-    : sampleListComponent(sampleListHeightPercentage, sampleListWidthPercentage),
-      settingsPanelComponent(settingsPanelHeightPercentage, settingsPanelWidthPercentage, "Settings"),
-      sliceWaveformComponent(sliceWaveformHeightPercentage, sliceWaveformHeightPercentage, "Slice waveform"),
-      chainWaveformComponent(chainWaveformWidthPercentage, chainWaveformWidthPercentage, "Chain waveforms")
+    : sampleListComponent(PanelComponent::Dimension::percentage(sampleListHeightPercentage, sampleListMinHeight),
+                          PanelComponent::Dimension::percentage(sampleListWidthPercentage)),
+      settingsPanelComponent(PanelComponent::Dimension::fixed(settingsPanelFixedHeight),
+                             PanelComponent::Dimension::fixed(settingsPanelFixedWidth),
+                             "Settings"),
+      sliceWaveformComponent(PanelComponent::Dimension::percentage(sliceWaveformHeightPercentage),
+                             PanelComponent::Dimension::percentage(sliceWaveformHeightPercentage),
+                             "Slice waveform"),
+      chainWaveformComponent(PanelComponent::Dimension::percentage(chainWaveformWidthPercentage),
+                             PanelComponent::Dimension::percentage(chainWaveformWidthPercentage),
+                             "Chain waveforms")
 {
     setLookAndFeel(&style);
     addAndMakeVisible(sampleListComponent);
@@ -32,18 +39,24 @@ void MainComponent::paint(juce::Graphics& g)
 
 void MainComponent::resized()
 {
-
     auto contentArea = getLocalBounds().reduced(juce::roundToInt(StyleSheet::panelMargins));
+    const auto availableWidth = contentArea.getWidth();
+    const auto availableHeight = contentArea.getHeight();
 
-    const auto topHeight = contentArea.getHeight() * sampleListHeightPercentage / 100;
-    const auto sliceHeight = contentArea.getHeight() * sliceWaveformComponent.heightPercentage / 100;
-    auto topBand = contentArea.removeFromTop(topHeight);
+    const auto settingsWidth = settingsPanelComponent.getResolvedWidth(availableWidth);
+    const auto sampleListWidth = juce::jmax(0, availableWidth - settingsWidth);
+
+    // const auto sampleListHeight = sampleListComponent.getResolvedHeight(availableHeight);
+    // const auto settingsHeight = settingsPanelComponent.getResolvedHeight(availableHeight);
+    // const auto topHeight = juce::jmin(juce::jmax(sampleListHeight, settingsHeight), availableHeight);
+
+    const auto sliceHeight = juce::jmin(sliceWaveformComponent.getResolvedHeight(availableHeight), availableHeight);
+    auto topBand = contentArea.removeFromTop(sampleListComponent.getResolvedHeight(availableHeight));
     auto bottomBand = contentArea;
 
-    const auto sampleListWidth = topBand.getWidth() * sampleListWidthPercentage / 100;
     sampleListComponent.setBounds(topBand.removeFromLeft(sampleListWidth));
     settingsPanelComponent.setBounds(topBand);
 
     sliceWaveformComponent.setBounds(bottomBand.removeFromTop(sliceHeight));
-    chainWaveformComponent.setBounds(bottomBand); // Remaining space. If the layout changes, use bottomBand.removeFromTop(chainHeight) instead.
+    chainWaveformComponent.setBounds(bottomBand);
 }

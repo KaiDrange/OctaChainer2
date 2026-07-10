@@ -5,6 +5,7 @@
 class WaveformComponent : public PanelComponent
 {
 public:
-    WaveformComponent(int heightPercentage, int widthPercentage, const juce::String& title);
+    WaveformComponent(PanelComponent::Dimension height, PanelComponent::Dimension width,
+                      const juce::String& title);
 };
 

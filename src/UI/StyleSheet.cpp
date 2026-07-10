@@ -126,6 +126,8 @@ void StyleSheet::drawTickBox(juce::Graphics& g, juce::Component& component,
                              const bool shouldDrawButtonAsHighlighted, const bool shouldDrawButtonAsDown)
 {
     auto bounds = juce::Rectangle<float>(x, y, w, h).reduced(0.5f, 0.5f);
+    const auto* toggle = dynamic_cast<juce::ToggleButton*> (&component);
+    const auto isRadio = toggle != nullptr && toggle->getRadioGroupId() != 0;
     auto outline = component.findColour(juce::ToggleButton::tickDisabledColourId);
     auto fill = juce::Colours::transparentBlack;
 
@@ -134,17 +136,40 @@ void StyleSheet::drawTickBox(juce::Graphics& g, juce::Component& component,
     else if (shouldDrawButtonAsHighlighted)
         fill = outline.withAlpha(0.06f);
 
-    g.setColour(fill);
-    g.fillEllipse(bounds);
+    if (isRadio)
+    {
+        g.setColour(fill);
+        g.fillEllipse(bounds);
 
-    g.setColour(outline.withMultipliedAlpha(isEnabled ? 1.0f : 0.45f));
-    g.drawEllipse(bounds, 1.0f);
+        g.setColour(outline.withMultipliedAlpha(isEnabled ? 1.0f : 0.45f));
+        g.drawEllipse(bounds, 1.0f);
+    }
+    else
+    {
+        g.setColour(fill);
+        g.fillRoundedRectangle(bounds, 2.0f);
+
+        g.setColour(outline.withMultipliedAlpha(isEnabled ? 1.0f : 0.45f));
+        g.drawRoundedRectangle(bounds, 2.0f, 1.0f);
+    }
 
     if (ticked)
     {
-        auto inner = bounds.reduced(bounds.getWidth() * 0.28f);
         g.setColour(component.findColour(juce::ToggleButton::tickColourId).withMultipliedAlpha(isEnabled ? 1.0f : 0.45f));
-        g.fillEllipse(inner);
+        if (isRadio)
+        {
+            auto inner = bounds.reduced(bounds.getWidth() * 0.28f);
+            g.fillEllipse(inner);
+        }
+        else
+        {
+            auto inner = bounds.reduced(bounds.getWidth() * 0.25f, bounds.getHeight() * 0.20f);
+            juce::Path tick;
+            tick.startNewSubPath(inner.getX(), inner.getCentreY());
+            tick.lineTo(inner.getCentreX() - inner.getWidth() * 0.15f, inner.getBottom());
+            tick.lineTo(inner.getRight(), inner.getY());
+            g.strokePath(tick, juce::PathStrokeType(2.0f));
+        }
     }
 }
 

@@ -36,9 +36,12 @@ public:
     static constexpr uint32 comboBackgroundColour = 0xFFE8E2D8;
     static constexpr uint32 comboButtonColour = textDefaultColour;
     static constexpr uint32 comboArrowColour = textDefaultColour;
-
     static constexpr float defaultButtonHeight = 40.0f;
     static constexpr float buttonMargins = 3.0f;
+    static constexpr int sectionGap = 10;
+    static constexpr int controlGap = 6;
+    static constexpr int comboboxHeight = 27;
+    static constexpr int inputHeight = 30;
 
     static juce::Font getTitleFont()
     {

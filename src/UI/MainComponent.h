@@ -18,9 +18,12 @@ public:
 
     static constexpr int sampleListWidthPercentage = 70;
     static constexpr int sampleListHeightPercentage = 75;
+    static constexpr int sampleListMinHeight = minHeight;
 
-    static constexpr int settingsPanelHeightPercentage = sampleListHeightPercentage;
-    static constexpr int settingsPanelWidthPercentage = 100 - sampleListWidthPercentage;
+    static constexpr int panelMarginPixels = static_cast<int>(StyleSheet::panelMargins);
+    static constexpr int settingsPanelFixedWidth = 300;
+    static constexpr int settingsPanelFixedHeight =
+        (defaultHeight - panelMarginPixels * 2) * sampleListHeightPercentage / 100;
 
     static constexpr int sliceWaveformHeightPercentage = (100 - sampleListHeightPercentage) / 2;
     static constexpr int chainWaveformWidthPercentage = sliceWaveformHeightPercentage;

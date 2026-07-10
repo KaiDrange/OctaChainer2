@@ -8,7 +8,8 @@
 class SampleListComponent : public PanelComponent, public juce::TableListBoxModel
 {
 public:
-    SampleListComponent(int heightPercentage, int widthPercentage, const juce::String& title = "");
+    SampleListComponent(PanelComponent::Dimension height, PanelComponent::Dimension width,
+                        const juce::String& title = "");
     void resized() override;
 
     int getNumRows() override;

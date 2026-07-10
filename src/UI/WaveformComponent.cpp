@@ -1,6 +1,7 @@
 #include "WaveformComponent.h"
 
-WaveformComponent::WaveformComponent(const int heightPercentage, const int widthPercentage, const juce::String& title)
-    : PanelComponent(heightPercentage, widthPercentage, title)
+WaveformComponent::WaveformComponent(PanelComponent::Dimension height, PanelComponent::Dimension width,
+                                     const juce::String& title)
+    : PanelComponent(height, width, title)
 {
 }

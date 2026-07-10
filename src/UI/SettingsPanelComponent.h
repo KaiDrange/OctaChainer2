@@ -9,8 +9,14 @@
 class SettingsPanelComponent : public PanelComponent
 {
 public:
-    SettingsPanelComponent(int heightPercentage, int widthPercentage, const juce::String& title = "");
+    SettingsPanelComponent(PanelComponent::Dimension height, PanelComponent::Dimension width,
+                           const juce::String& title = "");
     void resized() override;
+
+    static constexpr int topSectionHeight = 80;
+    static constexpr int otSectionHeight = 240;
+    static constexpr int chainExportSectionHeight = 96;
+    static constexpr int megabreakExportSectionHeight = 63;
 
 private:
     enum RadioGroupId
@@ -33,6 +39,8 @@ private:
     SectionComponent channelSection{"Channels"};
     SectionComponent sampleRateSection{"Sample rate"};
     SectionComponent otAttributesSection{"OT attributes"};
+    SectionComponent chainExportSection{"Chain export"};
+    SectionComponent megabreakExportSection{"Megabreak export"};
 
     juce::ComboBox timestretchBox;
     juce::ComboBox loopBox;
@@ -40,9 +48,16 @@ private:
     juce::ComboBox normalizationBox;
     juce::ComboBox fadeinBox;
     juce::ComboBox fadeoutBox;
+    juce::ComboBox megabreakFileCountBox;
 
-    NumberInputComponent gainInput{"Gain:", 2, -24, 24, false};
+    NumberInputComponent gainInput{"Gain:", 3, -24, 24, false};
     NumberInputComponent bpmInput{"BPM:", 3, 30, 300, false};
+
+    juce::ToggleButton exportOtFile{"OT file"};
+    juce::ToggleButton exportEvenGrid{"Even grid"};
+    juce::ToggleButton exportEmbedMarkers{"Embed markers"};
+    juce::TextButton createButton{"Save chain"};
+    juce::TextButton createMegabreakButton{"Save megabreak"};
 
     static void configureRadioButton(juce::ToggleButton& button, int groupId, bool selected);
 };
