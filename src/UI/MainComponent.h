@@ -12,11 +12,11 @@ class MainComponent : public juce::Component
 {
 public:
     static constexpr int defaultWidth = 1536;
-    static constexpr int defaultHeight = 848;
+    static constexpr int defaultHeight = 880;
     static constexpr int maxWidth = 2560;
     static constexpr int maxHeight = 1440;
     static constexpr int minWidth = 900;
-    static constexpr int minHeight = 580;
+    static constexpr int minHeight = 600;
 
     static constexpr int sampleListWidthPercentage = 70;
     static constexpr int sampleListHeightPercentage = 75;

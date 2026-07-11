@@ -44,6 +44,25 @@ OctaChainer2StandaloneApplication::MainWindow::MainWindow(const juce::String& na
                      juce::Colours::black,
                      juce::DocumentWindow::allButtons)
 {
+    setLookAndFeel(&style);
+
+#if JUCE_MAC
+    juce::MenuBarModel::setMacMainMenu (&menuBarModel);
+#endif
+
+#if ! JUCE_MAC
+    setMenuBar (&menuBarModel);
+#endif
+}
+
+OctaChainer2StandaloneApplication::MainWindow::~MainWindow()
+{
+#if JUCE_MAC
+    juce::MenuBarModel::setMacMainMenu(nullptr);
+#endif
+
+    setMenuBar(nullptr);
+    setLookAndFeel(nullptr);
 }
 
 void OctaChainer2StandaloneApplication::MainWindow::initialise()

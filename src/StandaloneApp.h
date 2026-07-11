@@ -2,6 +2,9 @@
 
 #include <JuceHeader.h>
 
+#include "UI/StyleSheet.h"
+#include "UI/MainMenuBarModel.h"
+
 class OctaChainer2StandaloneApplication final : public juce::JUCEApplication
 {
 public:
@@ -20,12 +23,16 @@ private:
     {
     public:
         explicit MainWindow(const juce::String& name);
+        ~MainWindow() override;
 
         void initialise();
         void closeButtonPressed() override;
 
 
     private:
+        StyleSheet style;
+        MainMenuBarModel menuBarModel;
+
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
     };
 

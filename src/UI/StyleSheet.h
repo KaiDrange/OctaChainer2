@@ -86,6 +86,17 @@ public:
                       int buttonX, int buttonY, int buttonW, int buttonH,
                       juce::ComboBox& box) override;
     void positionComboBoxText(juce::ComboBox& box, juce::Label& labelToPosition) override;
+    void drawPopupMenuBackground(juce::Graphics& g, int width, int height) override;
+    void drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>& area,
+                           bool isSeparator, bool isActive, bool isHighlighted, bool isTicked, bool hasSubMenu,
+                           const juce::String& text, const juce::String& shortcutKeyText,
+                           const juce::Drawable* icon, const juce::Colour* textColour) override;
+    void drawMenuBarBackground(juce::Graphics& g, int width, int height, bool isMouseOverBar,
+                               juce::MenuBarComponent& menuBar) override;
+    void drawMenuBarItem(juce::Graphics& g, int width, int height,
+                         int itemIndex, const juce::String& itemText,
+                         bool isMouseOverItem, bool isMenuOpen, bool isMouseOverBar,
+                         juce::MenuBarComponent& menuBar) override;
     void fillTextEditorBackground(juce::Graphics& g, int width, int height, juce::TextEditor& editor) override;
     void drawTextEditorOutline(juce::Graphics& g, int width, int height, juce::TextEditor& editor) override;
 };

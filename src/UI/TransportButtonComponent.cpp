@@ -15,6 +15,7 @@ TransportButtonComponent::TransportButtonComponent(const juce::String& labelText
     button.setClickingTogglesState(true);
     button.setToggleState(false, juce::dontSendNotification);
     button.setButtonStyle(juce::DrawableButton::ImageOnButtonBackground);
+    button.setRepaintsOnMouseActivity(true);
     button.setColour(juce::TextButton::buttonColourId, juce::Colour(StyleSheet::controlBackgroundColour));
     button.setColour(juce::TextButton::buttonOnColourId, juce::Colour(StyleSheet::controlBackgroundColour));
     button.setImages(createPlayIcon(juce::Colour(0xFF2EAF58)).get(),
