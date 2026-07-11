@@ -2,13 +2,6 @@
 
 #include "StyleSheet.h"
 
-namespace
-{
-    constexpr int headerHeight = 16;
-    constexpr int contentPadding = 8;
-    constexpr float cornerSize = 4.0f;
-}
-
 SectionComponent::SectionComponent(juce::String title)
     : title(std::move(title))
 {
@@ -33,23 +26,24 @@ juce::Rectangle<int> SectionComponent::getContentBounds() const noexcept
 void SectionComponent::paint(juce::Graphics& g)
 {
     const auto area = getLocalBounds().toFloat();
+    constexpr auto cornerSize = static_cast<float>(StyleSheet::sectionCornerSize);
 
-    g.setColour(juce::Colour(StyleSheet::panelBackgroundColour).darker(0.03f));
+    g.setColour(backgroundColour);
     g.fillRoundedRectangle(area, cornerSize);
 
     g.setColour(juce::Colour(StyleSheet::panelBorderColour));
-    g.drawRoundedRectangle(area, cornerSize, 1.0f);
+    g.drawRoundedRectangle(area.reduced(StyleSheet::sectionBorderThickness * 0.5f), cornerSize, StyleSheet::sectionBorderThickness);
 
-    g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
+    g.setFont(titleFont);
     g.setColour(juce::Colour(StyleSheet::textDefaultColour));
-    const auto titleBounds = juce::Rectangle<int>(0, 0, getWidth(), headerHeight);
+    const auto titleBounds = juce::Rectangle(0, 0, getWidth(), StyleSheet::sectionHeaderHeight);
     g.drawText(title, titleBounds.reduced(6, 0), juce::Justification::centredLeft);
 }
 
 void SectionComponent::resized()
 {
     contentBounds = getLocalBounds();
-    contentBounds.removeFromTop(headerHeight);
-    contentBounds.reduce(contentPadding, contentPadding);
+    contentBounds.removeFromTop(StyleSheet::sectionHeaderHeight);
+    contentBounds.reduce(StyleSheet::sectionContentPadding, StyleSheet::sectionContentPadding);
     contentBounds.removeFromTop(4);
 }

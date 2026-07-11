@@ -9,7 +9,7 @@
 class SettingsPanelComponent : public PanelComponent
 {
 public:
-    SettingsPanelComponent(PanelComponent::Dimension height, PanelComponent::Dimension width,
+    SettingsPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                            const juce::String& title = "");
     void resized() override;
 

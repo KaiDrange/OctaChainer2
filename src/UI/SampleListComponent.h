@@ -8,7 +8,7 @@
 class SampleListComponent : public PanelComponent, public juce::TableListBoxModel
 {
 public:
-    SampleListComponent(PanelComponent::Dimension height, PanelComponent::Dimension width,
+    SampleListComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                         const juce::String& title = "");
     void resized() override;
 

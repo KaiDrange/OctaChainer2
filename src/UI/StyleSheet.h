@@ -7,16 +7,22 @@ class StyleSheet : public juce::LookAndFeel_V4
 {
 public:
     static constexpr uint32 defaultBackgroundColour = 0xFFF4EBDD;
-    static constexpr uint32 backgroundGradientColour = 0xFFC9c6C0;
+    static constexpr uint32 backgroundGradientColour = 0xFFB9B6B0;
     static constexpr uint32 panelBackgroundColour = 0xFFF4EBDD;
     static constexpr uint32 panelBorderColour = 0x809DA79D;
-    static constexpr float panelMargins = 3.0f;
-    static constexpr float panelPadding = 5.0f;
-    static constexpr float panelBorderThickness = 2.0f;
-    static constexpr float panelBorderCornerSize = 4.0f;
-    static constexpr float panelBorderMargin = 7.0f;
+    static constexpr int panelMargins = 3;
+    static constexpr int panelPadding = 5;
+    static constexpr int panelBorderThickness = 2;
+    static constexpr int panelBorderCornerSize = 4;
+    static constexpr int panelTitleHeight = 20;
+
+    static constexpr int sectionHeaderHeight = 16;
+    static constexpr int sectionContentPadding = 8;
+    static constexpr int sectionCornerSize = 4;
+    static constexpr int sectionBorderThickness = 1;
 
     static constexpr uint32 textDefaultColour = 0xFF2E322F;
+    static constexpr float fontDefaultSize  = 13.0f;
 
     static constexpr uint32 buttonBackgroundColour = 0xFF6D8376;
     static constexpr uint32 buttonBackgroundHoveredColour = 0xFF7D9284;
@@ -33,14 +39,14 @@ public:
     static constexpr uint32 controlHighlightColour = 0x407D9284;
     static constexpr int controlTextInsetX = 6;
     static constexpr int controlTextInsetY = 2;
-    static constexpr uint32 comboBackgroundColour = 0xFFE8E2D8;
+    static constexpr uint32 comboBackgroundColour = controlBackgroundColour;
     static constexpr uint32 comboButtonColour = textDefaultColour;
     static constexpr uint32 comboArrowColour = textDefaultColour;
-    static constexpr float defaultButtonHeight = 40.0f;
-    static constexpr float buttonMargins = 3.0f;
+    static constexpr int comboboxHeight = 27;
+    static constexpr int defaultButtonHeight = 40;
+    static constexpr int buttonMargins = 3;
     static constexpr int sectionGap = 10;
     static constexpr int controlGap = 6;
-    static constexpr int comboboxHeight = 27;
     static constexpr int inputHeight = 30;
 
     static juce::Font getTitleFont()
@@ -53,6 +59,11 @@ public:
         return juce::FontOptions(13.0f);
     }
 
+    static juce::Colour getDefaultSectionBackgroundColour()
+    {
+        return juce::Colour(StyleSheet::panelBackgroundColour).darker(0.03f);
+    }
+
     StyleSheet();
 
     juce::Font getLabelFont(juce::Label&) override;
@@ -62,6 +73,9 @@ public:
                               bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     void drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
                           bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+    void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
+                          float sliderPos, float rotaryStartAngle, float rotaryEndAngle,
+                          juce::Slider& slider) override;
     void drawTickBox(juce::Graphics& g, juce::Component& component,
                      float x, float y, float w, float h,
                      bool ticked, bool isEnabled,

@@ -2,8 +2,8 @@
 
 
 PanelComponent::PanelComponent(Dimension heightDimension, Dimension widthDimension, juce::String title)
-    : width(widthDimension),
-      height(heightDimension),
+    : panelWidth(widthDimension),
+      panelHeight(heightDimension),
       title(std::move(title))
 {
 }
@@ -20,12 +20,12 @@ int PanelComponent::resolveDimension(const Dimension dimension, const int availa
 
 int PanelComponent::getResolvedWidth(const int availableSize) const
 {
-    return resolveDimension(width, availableSize);
+    return resolveDimension(panelWidth, availableSize);
 }
 
 int PanelComponent::getResolvedHeight(const int availableSize) const
 {
-    return resolveDimension(height, availableSize);
+    return resolveDimension(panelHeight, availableSize);
 }
 
 void PanelComponent::paint(juce::Graphics& graphics)
@@ -37,25 +37,34 @@ void PanelComponent::paint(juce::Graphics& graphics)
     graphics.fillRoundedRectangle(area, StyleSheet::panelBorderCornerSize);
     graphics.setColour(borderColour);
     graphics.drawRoundedRectangle(area, StyleSheet::panelBorderCornerSize, StyleSheet::panelBorderThickness);
-    auto titleArea = area.toNearestInt();
-    area.reduce(StyleSheet::panelBorderMargin, StyleSheet::panelBorderMargin);
-    graphics.drawRoundedRectangle(area, StyleSheet::panelBorderCornerSize, StyleSheet::panelBorderThickness);
 
     if (title.isEmpty())
         return;
 
-    titleArea = titleArea.removeFromTop(juce::roundToInt(StyleSheet::panelBorderMargin * 2.0f));
-    titleArea.reduce(0, 2);
     graphics.setFont(StyleSheet::getTitleFont());
     graphics.setColour(juce::Colour(StyleSheet::textDefaultColour));
-    graphics.drawText(title, titleArea, juce::Justification::centred);
+    const auto titleArea = calculateTitleBounds();
+    graphics.drawText(title, titleArea, juce::Justification::centredTop);
 }
 
 void PanelComponent::resized()
 {
-    const auto reducedBounds = getLocalBounds().toFloat()
-        .reduced(StyleSheet::panelMargins + StyleSheet::panelPadding + StyleSheet::panelBorderThickness);
-    innerBounds = reducedBounds.toNearestInt();
+    innerBounds = calculateInnerBounds();
+}
+
+Rectangle<int> PanelComponent::calculateInnerBounds() const
+{
+    auto reducedBounds = getLocalBounds()
+            .reduced(StyleSheet::panelMargins + StyleSheet::panelPadding + StyleSheet::panelBorderThickness);
     if (!title.isEmpty())
-        innerBounds.reduce(StyleSheet::panelBorderMargin * 2.0f, StyleSheet::panelBorderMargin * 2.0f);
+        reducedBounds.removeFromTop(StyleSheet::panelTitleHeight);
+
+    return reducedBounds.toNearestInt();
+}
+
+Rectangle<int> PanelComponent::calculateTitleBounds() const
+{
+    auto reducedBounds = getLocalBounds()
+            .reduced(StyleSheet::panelMargins + StyleSheet::panelPadding + StyleSheet::panelBorderThickness);
+    return  reducedBounds.removeFromTop(StyleSheet::panelTitleHeight);
 }

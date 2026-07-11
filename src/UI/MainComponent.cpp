@@ -4,8 +4,9 @@ MainComponent::MainComponent()
     : sampleListComponent(PanelComponent::Dimension::percentage(sampleListHeightPercentage, sampleListMinHeight),
                           PanelComponent::Dimension::percentage(sampleListWidthPercentage)),
       settingsPanelComponent(PanelComponent::Dimension::fixed(settingsPanelFixedHeight),
-                             PanelComponent::Dimension::fixed(settingsPanelFixedWidth),
-                             "Settings"),
+                             PanelComponent::Dimension::fixed(settingsPanelFixedWidth)),
+      audioPanelComponent(PanelComponent::Dimension::fixed(audioSectionFixedHeight),
+                       PanelComponent::Dimension::fixed(settingsPanelFixedWidth)),
       sliceWaveformComponent(PanelComponent::Dimension::percentage(sliceWaveformHeightPercentage),
                              PanelComponent::Dimension::percentage(sliceWaveformHeightPercentage),
                              "Slice waveform"),
@@ -18,6 +19,7 @@ MainComponent::MainComponent()
     addAndMakeVisible(settingsPanelComponent);
     addAndMakeVisible(sliceWaveformComponent);
     addAndMakeVisible(chainWaveformComponent);
+    addAndMakeVisible(audioPanelComponent);
 }
 
 
@@ -44,18 +46,17 @@ void MainComponent::resized()
     const auto availableHeight = contentArea.getHeight();
 
     const auto settingsWidth = settingsPanelComponent.getResolvedWidth(availableWidth);
+    const auto settingsHeight = settingsPanelComponent.getResolvedHeight(availableHeight);
+    const auto audioPanelHeight = audioPanelComponent.getResolvedHeight(availableHeight);
     const auto sampleListWidth = juce::jmax(0, availableWidth - settingsWidth);
-
-    // const auto sampleListHeight = sampleListComponent.getResolvedHeight(availableHeight);
-    // const auto settingsHeight = settingsPanelComponent.getResolvedHeight(availableHeight);
-    // const auto topHeight = juce::jmin(juce::jmax(sampleListHeight, settingsHeight), availableHeight);
 
     const auto sliceHeight = juce::jmin(sliceWaveformComponent.getResolvedHeight(availableHeight), availableHeight);
     auto topBand = contentArea.removeFromTop(sampleListComponent.getResolvedHeight(availableHeight));
     auto bottomBand = contentArea;
 
     sampleListComponent.setBounds(topBand.removeFromLeft(sampleListWidth));
-    settingsPanelComponent.setBounds(topBand);
+    settingsPanelComponent.setBounds(topBand.removeFromTop(settingsHeight).withWidth(settingsWidth));
+    audioPanelComponent.setBounds(topBand.removeFromTop(audioPanelHeight));
 
     sliceWaveformComponent.setBounds(bottomBand.removeFromTop(sliceHeight));
     chainWaveformComponent.setBounds(bottomBand);

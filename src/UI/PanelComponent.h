@@ -30,8 +30,8 @@ public:
         }
     };
 
-    Dimension width;
-    Dimension height;
+    Dimension panelWidth;
+    Dimension panelHeight;
     juce::String title;
     Rectangle<int> innerBounds;
 
@@ -48,5 +48,8 @@ public:
     void resized() override;
 
 private:
+    Rectangle<int> calculateInnerBounds() const;
+    Rectangle<int> calculateTitleBounds() const;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PanelComponent)
 };

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <JuceHeader.h>
+
+#include "AudioPanelComponent.h"
 #include "SampleListComponent.h"
 #include "SettingsPanelComponent.h"
 #include "StyleSheet.h"
@@ -10,20 +12,21 @@ class MainComponent : public juce::Component
 {
 public:
     static constexpr int defaultWidth = 1536;
-    static constexpr int defaultHeight = 864;
+    static constexpr int defaultHeight = 848;
     static constexpr int maxWidth = 2560;
     static constexpr int maxHeight = 1440;
-    static constexpr int minWidth = 800;
-    static constexpr int minHeight = 600;
+    static constexpr int minWidth = 900;
+    static constexpr int minHeight = 580;
 
     static constexpr int sampleListWidthPercentage = 70;
     static constexpr int sampleListHeightPercentage = 75;
     static constexpr int sampleListMinHeight = minHeight;
 
-    static constexpr int panelMarginPixels = static_cast<int>(StyleSheet::panelMargins);
+    static constexpr int audioSectionFixedHeight = 100;
+
+    static constexpr int panelMarginPixels = StyleSheet::panelMargins;
     static constexpr int settingsPanelFixedWidth = 300;
-    static constexpr int settingsPanelFixedHeight =
-        (defaultHeight - panelMarginPixels * 2) * sampleListHeightPercentage / 100;
+    static constexpr int settingsPanelFixedHeight = 534;
 
     static constexpr int sliceWaveformHeightPercentage = (100 - sampleListHeightPercentage) / 2;
     static constexpr int chainWaveformWidthPercentage = sliceWaveformHeightPercentage;
@@ -42,4 +45,5 @@ private:
     SettingsPanelComponent settingsPanelComponent;
     WaveformComponent sliceWaveformComponent;
     WaveformComponent chainWaveformComponent;
+    AudioPanelComponent audioPanelComponent;
 };

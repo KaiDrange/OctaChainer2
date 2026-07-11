@@ -3,7 +3,7 @@
 #include <initializer_list>
 
 
-SettingsPanelComponent::SettingsPanelComponent(PanelComponent::Dimension height, PanelComponent::Dimension width,
+SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                                                const juce::String& title)
     : PanelComponent(height, width, title)
 {
@@ -13,6 +13,12 @@ SettingsPanelComponent::SettingsPanelComponent(PanelComponent::Dimension height,
     addAndMakeVisible(otAttributesSection);
     addAndMakeVisible(chainExportSection);
     addAndMakeVisible(megabreakExportSection);
+
+    otAttributesSection.backgroundColour = otAttributesSection.backgroundColour.darker(0.02f);
+    chainExportSection.backgroundColour =
+        chainExportSection.backgroundColour.withHue(chainExportSection.backgroundColour.getHue() + 0.03f);
+    megabreakExportSection.backgroundColour =
+        megabreakExportSection.backgroundColour.withHue(megabreakExportSection.backgroundColour.getHue() - 0.05f);
 
     bitrateSection.addAndMakeVisible(bitrate16Bit);
     bitrateSection.addAndMakeVisible(bitrate24Bit);

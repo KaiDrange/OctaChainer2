@@ -28,6 +28,8 @@ StyleSheet::StyleSheet()
     setColour(juce::ToggleButton::textColourId, juce::Colour(controlTextColour));
     setColour(juce::ToggleButton::tickColourId, juce::Colour(toggleTickColour));
     setColour(juce::ToggleButton::tickDisabledColourId, juce::Colour(controlBorderColour));
+    setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(controlBorderFocusedColour));
+    setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colour(controlBorderColour));
 }
 
 juce::Font StyleSheet::getLabelFont(juce::Label&)
@@ -120,6 +122,48 @@ void StyleSheet::drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
                      1);
 }
 
+void StyleSheet::drawRotarySlider(juce::Graphics& g, const int x, const int y, const int width, const int height,
+                                  const float sliderPos, const float rotaryStartAngle, const float rotaryEndAngle,
+                                  juce::Slider& slider)
+{
+    const auto bounds = juce::Rectangle<float>(static_cast<float>(x), static_cast<float>(y),
+                                               static_cast<float>(width), static_cast<float>(height)).reduced(2.0f);
+    const auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f;
+    const auto centreX = bounds.getCentreX();
+    const auto centreY = bounds.getCentreY();
+    const auto pointerThickness = juce::jmax(1.5f, radius * 0.14f);
+    const auto trackThickness = juce::jmax(2.0f, radius * 0.12f);
+    const auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
+    const auto arcRadius = radius - pointerThickness;
+
+    auto outline = slider.findColour(juce::Slider::rotarySliderOutlineColourId);
+    auto fill = slider.findColour(juce::Slider::rotarySliderFillColourId);
+
+    if (! slider.isEnabled())
+    {
+        outline = outline.withMultipliedAlpha(0.45f);
+        fill = fill.withMultipliedAlpha(0.45f);
+    }
+
+    g.setColour(juce::Colour(controlBackgroundColour));
+    g.fillEllipse(bounds);
+
+    g.setColour(outline);
+    g.drawEllipse(bounds, trackThickness);
+
+    juce::Path arc;
+    arc.addCentredArc(centreX, centreY, arcRadius, arcRadius, 0.0f,
+                      rotaryStartAngle, angle, true);
+    g.setColour(fill);
+    g.strokePath(arc, juce::PathStrokeType(trackThickness, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+    juce::Path pointer;
+    const auto pointerLength = radius * 0.62f;
+    pointer.addRoundedRectangle(-pointerThickness * 0.5f, -pointerLength, pointerThickness, pointerLength, pointerThickness * 0.5f);
+    g.setColour(juce::Colour(buttonBackgroundColour));
+    g.fillPath(pointer, juce::AffineTransform::rotation(angle).translated(centreX, centreY));
+}
+
 void StyleSheet::drawTickBox(juce::Graphics& g, juce::Component& component,
                              const float x, const float y, const float w, const float h,
                              const bool ticked, const bool isEnabled,
@@ -186,7 +230,7 @@ void StyleSheet::changeToggleButtonWidthToFitText(juce::ToggleButton& button)
 
 juce::Font StyleSheet::getComboBoxFont(juce::ComboBox&)
 {
-    return juce::FontOptions(13.0f);
+    return juce::FontOptions(StyleSheet::fontDefaultSize);
 }
 
 void StyleSheet::drawComboBox(juce::Graphics& g, const int width, const int height, const bool isButtonDown,

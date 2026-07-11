@@ -1,6 +1,6 @@
 #include "SampleListComponent.h"
 
-SampleListComponent::SampleListComponent(PanelComponent::Dimension height, PanelComponent::Dimension width,
+SampleListComponent::SampleListComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                                          const juce::String& title)
     : PanelComponent(height, width, title)
 {
