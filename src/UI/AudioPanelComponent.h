@@ -2,8 +2,8 @@
 
 #include <JuceHeader.h>
 
-#include "StyleSheet.h"
 #include "PanelComponent.h"
+#include "TransportButtonComponent.h"
 
 
 class AudioPanelComponent : public PanelComponent
@@ -14,10 +14,8 @@ public:
     void resized() override;
 
 private:
-    juce::DrawableButton btnPlaySlice{"Play Slice", juce::DrawableButton::ImageFitted};
-    juce::DrawableButton btnPlayChain{"Play Chain", juce::DrawableButton::ImageFitted};
-    juce::Label sliceLabel;
-    juce::Label chainLabel;
+    TransportButtonComponent btnPlaySlice{"Slice"};
+    TransportButtonComponent btnPlayChain{"Chain"};
     juce::Slider masterVolumeSlider;
     juce::Label masterVolumeLabel;
 };

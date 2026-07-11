@@ -1,5 +1,71 @@
 #include "StyleSheet.h"
 
+namespace
+{
+    bool isTransportDrawableButton(const juce::Button& button)
+    {
+        const auto* drawable = dynamic_cast<const juce::DrawableButton*>(&button);
+        return drawable != nullptr && drawable->getButtonText().startsWithIgnoreCase("Play");
+    }
+
+    void drawTransportButtonBackground(juce::Graphics& g, juce::Button& button,
+                                       const bool shouldDrawButtonAsHighlighted, const bool shouldDrawButtonAsDown)
+    {
+        auto bounds = button.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
+        const auto accent = button.getToggleState() ? juce::Colour(0xFFD94B4B)
+                                                    : juce::Colour(0xFF2EAF58);
+        auto base = juce::Colour(StyleSheet::controlBackgroundColour);
+
+        if (! button.isEnabled())
+        {
+            base = base.withMultipliedAlpha(0.45f);
+        }
+
+        const auto shadowOffset = shouldDrawButtonAsDown ? 1.0f : 2.0f;
+        g.setColour(juce::Colours::black.withAlpha(button.isEnabled() ? (shouldDrawButtonAsDown ? 0.12f : 0.16f) : 0.0f));
+        g.fillRoundedRectangle(bounds.translated(0.0f, shadowOffset), 10.0f);
+
+        auto top = base.brighter(0.16f).interpolatedWith(accent.withAlpha(0.14f), 0.16f);
+        auto bottom = base.darker(0.10f).interpolatedWith(accent.withAlpha(0.24f), 0.24f);
+
+        if (shouldDrawButtonAsDown)
+        {
+            top = top.darker(0.03f);
+            bottom = bottom.darker(0.08f);
+        }
+        else if (shouldDrawButtonAsHighlighted)
+        {
+            top = top.brighter(0.04f);
+            bottom = bottom.brighter(0.02f);
+        }
+
+        juce::ColourGradient gradient(top, bounds.getCentreX(), bounds.getY(),
+                                      bottom, bounds.getCentreX(), bounds.getBottom(), false);
+        g.setGradientFill(gradient);
+        g.fillRoundedRectangle(bounds, 10.0f);
+
+        auto inner = bounds.reduced(1.0f);
+        juce::ColourGradient sheen(juce::Colours::white.withAlpha(shouldDrawButtonAsDown ? 0.08f : 0.18f),
+                                   inner.getCentreX(), inner.getY(),
+                                   juce::Colours::transparentWhite,
+                                   inner.getCentreX(), inner.getCentreY(), false);
+        g.setGradientFill(sheen);
+        g.fillRoundedRectangle(inner, 9.0f);
+
+        auto border = accent.withAlpha(0.38f);
+        if (shouldDrawButtonAsDown)
+            border = border.brighter(0.18f);
+        else if (shouldDrawButtonAsHighlighted)
+            border = border.brighter(0.08f);
+
+        g.setColour(border.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.55f));
+        g.drawRoundedRectangle(bounds, 10.0f, 1.0f);
+
+        g.setColour(juce::Colours::white.withAlpha(button.isEnabled() ? (shouldDrawButtonAsDown ? 0.08f : 0.18f) : 0.0f));
+        g.drawRoundedRectangle(bounds.reduced(1.5f), 8.0f, 1.0f);
+    }
+}
+
 StyleSheet::StyleSheet()
 {
     setColour(juce::Label::backgroundColourId, juce::Colour(controlBackgroundColour));
@@ -72,6 +138,12 @@ juce::Font StyleSheet::getTextButtonFont(juce::TextButton&, const int buttonHeig
 void StyleSheet::drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
                                       const bool shouldDrawButtonAsHighlighted, const bool shouldDrawButtonAsDown)
 {
+    if (isTransportDrawableButton(button))
+    {
+        drawTransportButtonBackground(g, button, shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
+        return;
+    }
+
     const auto bounds = button.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
     auto fill = backgroundColour;
 
