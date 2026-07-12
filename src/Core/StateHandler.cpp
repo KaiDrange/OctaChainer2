@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "StateHandler.h"
 
 namespace
@@ -9,9 +11,7 @@ namespace
 StateHandler::StateHandler()
     : valueTree(stateTypeId)
 {
-    valueTree.setProperty(normalizationModePropertyId,
-                          static_cast<int>(NormalizationMode::None),
-                          nullptr);
+    valueTree.setProperty(cbNormalization, getComboBoxOptions(cbNormalization).front().value, nullptr);
     valueTree.addListener(this);
 }
 
@@ -62,53 +62,72 @@ bool StateHandler::restoreFromXml(const juce::XmlElement& xml)
     return true;
 }
 
-StateHandler::NormalizationMode StateHandler::getNormalizationMode() const
+StateHandler::ComboBoxOption StateHandler::getComboBoxOption(const juce::Identifier& comboBox) const
 {
-    return static_cast<NormalizationMode>(static_cast<int>(valueTree.getProperty(normalizationModePropertyId,
-                                                                                  static_cast<int>(NormalizationMode::None))));
+    const auto options = getComboBoxOptions(comboBox);
+    if (options.empty())
+        return { 0, {} };
+
+    const auto value = static_cast<int>(valueTree.getProperty(comboBox, options.front().value));
+
+    const auto it = std::find_if(options.begin(), options.end(),
+                                 [value](const ComboBoxOption& option)
+                                 {
+                                     return option.value == value;
+                                 });
+
+    if (it != options.end())
+        return *it;
+
+    return options.front();
 }
 
-bool StateHandler::setNormalizationMode(NormalizationMode mode, juce::UndoManager* undoManager)
+bool StateHandler::setComboBoxValue(const juce::Identifier& comboBox, const int value, juce::UndoManager* undoManager)
 {
-    if (getNormalizationMode() == mode)
+    if (getComboBoxOption(comboBox).value == value)
         return false;
 
-    valueTree.setProperty(normalizationModePropertyId, static_cast<int>(mode), undoManager);
+    valueTree.setProperty(comboBox, value, undoManager);
     return true;
 }
 
-std::vector<StateHandler::NormalizationOption> StateHandler::getNormalizationOptions()
+std::vector<StateHandler::ComboBoxOption> StateHandler::getComboBoxOptions(const juce::Identifier& comboBox) const
 {
-    return
-    {
-        { NormalizationMode::None, getNormalizationLabel(NormalizationMode::None) },
-        { NormalizationMode::Slice, getNormalizationLabel(NormalizationMode::Slice) },
-        { NormalizationMode::Chain, getNormalizationLabel(NormalizationMode::Chain) }
-    };
+    if (comboBox == this->cbNormalization)
+        return normalizationOptions;
+
+    return {};
 }
 
-juce::String StateHandler::getNormalizationLabel(const NormalizationMode mode)
+void StateHandler::refreshComboBox(const juce::Identifier& comboBox, juce::ComboBox& comboBoxRef)
 {
-    switch (mode)
+    const auto options = getComboBoxOptions(comboBox);
+    const auto selectedOption = getComboBoxOption(comboBox).value;
+
+    comboBoxRef.clear(juce::dontSendNotification);
+
+    bool selectedOptionStillValid = false;
+
+    for (const auto& option : options)
     {
-        case NormalizationMode::None:  return "No normalization";
-        case NormalizationMode::Slice: return "Normalize slices";
-        case NormalizationMode::Chain: return "Normalize chain";
+        comboBoxRef.addItem(option.name, option.value);
+
+        if (option.value == selectedOption)
+            selectedOptionStillValid = true;
     }
-    return "No normalization";
-}
 
-int StateHandler::getNormalizationItemId(NormalizationMode mode)
-{
-    return static_cast<int>(mode) + 1;
-}
+    if (! options.empty())
+    {
+        const auto optionToSelect = selectedOptionStillValid ? selectedOption : options.front().value;
+        comboBoxRef.setSelectedId(optionToSelect, juce::dontSendNotification);
 
-StateHandler::NormalizationMode StateHandler::normalizationModeFromItemId(int itemId)
-{
-    if (itemId <= 0)
-        return NormalizationMode::None;
-
-    return static_cast<NormalizationMode>(itemId - 1);
+        if (! selectedOptionStillValid)
+            setComboBoxValue(comboBox, optionToSelect);
+    }
+    else
+    {
+        comboBoxRef.setSelectedId(0, juce::dontSendNotification);
+    }
 }
 
 void StateHandler::notifyListeners()

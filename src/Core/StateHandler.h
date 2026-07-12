@@ -1,23 +1,23 @@
 #pragma once
 
 #include <JuceHeader.h>
-
 #include <vector>
 
 class StateHandler : private juce::ValueTree::Listener
 {
 public:
-    enum class NormalizationMode : int
+    const juce::Identifier cbNormalization = "normalizationMode";
+
+    struct ComboBoxOption
     {
-        None = 0,
-        Slice = 1,
-        Chain = 2
+        int value;
+        juce::String name;
     };
 
-    struct NormalizationOption
-    {
-        NormalizationMode mode;
-        juce::String label;
+    const std::vector<ComboBoxOption> normalizationOptions = {
+        { 1, "No normalization" },
+        { 2, "Normalize slices" },
+        { 3, "Normalize chain" }
     };
 
     class Listener
@@ -38,13 +38,10 @@ public:
     juce::XmlElement* createXml() const;
     bool restoreFromXml(const juce::XmlElement& xml);
 
-    NormalizationMode getNormalizationMode() const;
-    bool setNormalizationMode(NormalizationMode mode, juce::UndoManager* undoManager = nullptr);
-
-    static std::vector<NormalizationOption> getNormalizationOptions();
-    static juce::String getNormalizationLabel(NormalizationMode mode);
-    static int getNormalizationItemId(NormalizationMode mode);
-    static NormalizationMode normalizationModeFromItemId(int itemId);
+    ComboBoxOption getComboBoxOption(const juce::Identifier& comboBox) const;
+    bool setComboBoxValue(const juce::Identifier& comboBox, int value, juce::UndoManager* undoManager = nullptr);
+    std::vector<ComboBoxOption> getComboBoxOptions(const juce::Identifier& comboBox) const;
+    void refreshComboBox(const juce::Identifier& comboBox, juce::ComboBox& comboBoxRef);
 
     void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override;
     void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override;

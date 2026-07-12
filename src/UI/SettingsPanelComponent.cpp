@@ -75,13 +75,10 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
 
     normalizationBox.onChange = [this]
     {
-        if (updatingNormalizationBox)
-            return;
-
-        stateHandler.setNormalizationMode(StateHandler::normalizationModeFromItemId(normalizationBox.getSelectedId()));
+        stateHandler.setComboBoxValue(stateHandler.cbNormalization,  normalizationBox.getSelectedId());
     };
 
-    refreshNormalizationOptions();
+    stateHandler.refreshComboBox(stateHandler.cbNormalization, normalizationBox);
 }
 
 SettingsPanelComponent::~SettingsPanelComponent()
@@ -185,40 +182,5 @@ void SettingsPanelComponent::resized()
 
 void SettingsPanelComponent::stateChanged()
 {
-    refreshNormalizationOptions();
-}
-
-void SettingsPanelComponent::refreshNormalizationOptions()
-{
-    const auto options = StateHandler::getNormalizationOptions();
-    const auto selectedMode = stateHandler.getNormalizationMode();
-
-    updatingNormalizationBox = true;
-    normalizationBox.clear(juce::dontSendNotification);
-
-    bool selectedModeStillValid = false;
-
-    for (const auto& option : options)
-    {
-        const auto itemId = StateHandler::getNormalizationItemId(option.mode);
-        normalizationBox.addItem(option.label, itemId);
-
-        if (option.mode == selectedMode)
-            selectedModeStillValid = true;
-    }
-
-    if (! options.empty())
-    {
-        const auto modeToSelect = selectedModeStillValid ? selectedMode : options.front().mode;
-        normalizationBox.setSelectedId(StateHandler::getNormalizationItemId(modeToSelect), juce::dontSendNotification);
-
-        if (! selectedModeStillValid)
-            stateHandler.setNormalizationMode(modeToSelect);
-    }
-    else
-    {
-        normalizationBox.setSelectedId(0, juce::dontSendNotification);
-    }
-
-    updatingNormalizationBox = false;
+    stateHandler.refreshComboBox(stateHandler.cbNormalization, normalizationBox);
 }

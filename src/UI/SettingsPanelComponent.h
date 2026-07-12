@@ -67,8 +67,5 @@ private:
 
     static void configureRadioButton(juce::ToggleButton& button, int groupId, bool selected);
 
-    void refreshNormalizationOptions();
-
     StateHandler& stateHandler;
-    bool updatingNormalizationBox = false;
 };
