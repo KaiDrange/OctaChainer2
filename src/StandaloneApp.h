@@ -2,12 +2,13 @@
 
 #include <JuceHeader.h>
 
-#include "UI/StyleSheet.h"
-#include "UI/MainMenuBarModel.h"
+#include "StandaloneAppMainWindow.h"
 
 class OctaChainer2StandaloneApplication final : public juce::JUCEApplication
 {
 public:
+    OctaChainer2StandaloneApplication() = default;
+
     const juce::String getApplicationName() override;
     const juce::String getApplicationVersion() override;
 
@@ -19,22 +20,7 @@ public:
     void anotherInstanceStarted(const juce::String& commandLine) override;
 
 private:
-    class MainWindow final : public juce::DocumentWindow
-    {
-    public:
-        explicit MainWindow(const juce::String& name);
-        ~MainWindow() override;
+    std::unique_ptr<StandaloneAppMainWindow> mainWindow;
 
-        void initialise();
-        void closeButtonPressed() override;
-
-
-    private:
-        StyleSheet style;
-        MainMenuBarModel menuBarModel;
-
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
-    };
-
-    std::unique_ptr<MainWindow> mainWindow;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OctaChainer2StandaloneApplication)
 };

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(OctaChainer2 VERSION 0.1.0 LANGUAGES C CXX)
+project(OctaChainer2 VERSION 2.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -73,6 +73,8 @@ target_sources(OctaChainer2_App
         PRIVATE
         src/StandaloneApp.cpp
         src/StandaloneApp.h
+        src/StandaloneAppMainWindow.cpp
+        src/StandaloneAppMainWindow.h
         ${OCTA_SHARED_SOURCES}
 )
 
@@ -83,6 +85,8 @@ target_compile_definitions(OctaChainer2_App
 
 target_link_libraries(OctaChainer2_App
         PRIVATE
+        juce::juce_audio_devices
+        juce::juce_audio_utils
         juce::juce_gui_extra
         PUBLIC
         ${OCTA_COMMON_PUBLIC_LIBS}

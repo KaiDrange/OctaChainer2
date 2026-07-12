@@ -10,6 +10,8 @@ public:
     static constexpr uint32 backgroundGradientColour = 0xFFB9B6B0;
     static constexpr uint32 panelBackgroundColour = 0xFFF4EBDD;
     static constexpr uint32 panelBorderColour = 0x809DA79D;
+    static constexpr uint32 dialogBackgroundColour = 0xFF555555;
+
     static constexpr int panelMargins = 3;
     static constexpr int panelPadding = 5;
     static constexpr int panelBorderThickness = 2;

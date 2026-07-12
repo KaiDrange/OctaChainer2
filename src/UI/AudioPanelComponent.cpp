@@ -23,10 +23,10 @@ void AudioPanelComponent::resized()
 {
     PanelComponent::resized();
 
-    const auto panelHeight = innerBounds.getHeight();
-    setVisible(panelHeight > 40);
+    const auto height = innerBounds.getHeight();
+    setVisible(height > 40);
 
-    const auto hideLabels = panelHeight < 80;
+    const auto hideLabels = height < 80;
     btnPlaySlice.showLabel = !hideLabels;
     btnPlayChain.showLabel = !hideLabels;
     masterVolumeLabel.setVisible(!hideLabels);

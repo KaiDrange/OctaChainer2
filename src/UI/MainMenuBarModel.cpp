@@ -1,8 +1,17 @@
 #include "MainMenuBarModel.h"
 
+#include <utility>
+
+MainMenuBarModel::MainMenuBarModel(Action onQuit, Action onAudioSettings, Action onHelp)
+    : onQuit(std::move(onQuit)),
+      onAudioSettings(std::move(onAudioSettings)),
+      onHelp(std::move(onHelp))
+{
+}
+
 juce::StringArray MainMenuBarModel::getMenuBarNames()
 {
-    return { "File", "Options", "About" };
+    return { "File", "Options", "Help" };
 }
 
 juce::PopupMenu MainMenuBarModel::getMenuForIndex(int topLevelMenuIndex, const juce::String& menuName)
@@ -17,7 +26,7 @@ juce::PopupMenu MainMenuBarModel::getMenuForIndex(int topLevelMenuIndex, const j
     {
         menu.addItem(2, "Audio settings");
     }
-    else if (menuName == "About")
+    else if (menuName == "Help")
     {
         menu.addItem(3, "About OctaChainer");
     }
@@ -25,10 +34,20 @@ juce::PopupMenu MainMenuBarModel::getMenuForIndex(int topLevelMenuIndex, const j
     return menu;
 }
 
-void MainMenuBarModel::menuItemSelected(int menuItemID, int topLevelMenuIndex)
+void MainMenuBarModel::menuItemSelected(const int menuItemID, int topLevelMenuIndex)
 {
-    if (menuItemID == 1) // Quit
+    juce::ignoreUnused(topLevelMenuIndex);
+
+    if (menuItemID == 1 && onQuit) // Quit
     {
-        juce::JUCEApplication::getInstance()->systemRequestedQuit();
+        onQuit();
+    }
+    else if (menuItemID == 2 && onAudioSettings)
+    {
+        onAudioSettings();
+    }
+    else if (menuItemID == 3 && onHelp)
+    {
+        onHelp();
     }
 }
