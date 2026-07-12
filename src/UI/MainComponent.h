@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 
+#include "../Core/StateHandler.h"
 #include "AudioPanelComponent.h"
 #include "SampleListComponent.h"
 #include "SettingsPanelComponent.h"
@@ -31,7 +32,7 @@ public:
     static constexpr int sliceWaveformHeightPercentage = (100 - sampleListHeightPercentage) / 2;
     static constexpr int chainWaveformWidthPercentage = sliceWaveformHeightPercentage;
 
-    MainComponent();
+    MainComponent(StateHandler& stateHandlerToUse);
     ~MainComponent() override;
 
     void paint(juce::Graphics& g) override;
@@ -41,6 +42,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 
     StyleSheet style;
+    StateHandler& stateHandler;
     SampleListComponent sampleListComponent;
     SettingsPanelComponent settingsPanelComponent;
     WaveformComponent sliceWaveformComponent;

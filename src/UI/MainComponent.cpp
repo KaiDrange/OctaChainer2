@@ -1,18 +1,20 @@
 #include "MainComponent.h"
 
-MainComponent::MainComponent()
-    : sampleListComponent(PanelComponent::Dimension::percentage(sampleListHeightPercentage, sampleListMinHeight),
+MainComponent::MainComponent(StateHandler& stateHandlerToUse)
+    : stateHandler(stateHandlerToUse),
+      sampleListComponent(PanelComponent::Dimension::percentage(sampleListHeightPercentage, sampleListMinHeight),
                           PanelComponent::Dimension::percentage(sampleListWidthPercentage)),
       settingsPanelComponent(PanelComponent::Dimension::fixed(settingsPanelFixedHeight),
-                             PanelComponent::Dimension::fixed(settingsPanelFixedWidth)),
-      audioPanelComponent(PanelComponent::Dimension::fixed(audioSectionFixedHeight),
-                       PanelComponent::Dimension::fixed(settingsPanelFixedWidth)),
+                             PanelComponent::Dimension::fixed(settingsPanelFixedWidth),
+                             stateHandler),
       sliceWaveformComponent(PanelComponent::Dimension::percentage(sliceWaveformHeightPercentage),
                              PanelComponent::Dimension::percentage(sliceWaveformHeightPercentage),
                              "Slice waveform"),
       chainWaveformComponent(PanelComponent::Dimension::percentage(chainWaveformWidthPercentage),
                              PanelComponent::Dimension::percentage(chainWaveformWidthPercentage),
-                             "Chain waveforms")
+                             "Chain waveforms"),
+      audioPanelComponent(PanelComponent::Dimension::fixed(audioSectionFixedHeight),
+                          PanelComponent::Dimension::fixed(settingsPanelFixedWidth))
 {
     setLookAndFeel(&style);
     addAndMakeVisible(sampleListComponent);

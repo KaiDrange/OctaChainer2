@@ -2,21 +2,27 @@
 
 #include <JuceHeader.h>
 
+#include "../Core/StateHandler.h"
 #include "NumberInputComponent.h"
 #include "PanelComponent.h"
 #include "SectionComponent.h"
 
-class SettingsPanelComponent : public PanelComponent
+class SettingsPanelComponent : public PanelComponent,
+                              private StateHandler::Listener
 {
 public:
     SettingsPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
+                           StateHandler& stateHandler,
                            const juce::String& title = "");
+    ~SettingsPanelComponent() override;
     void resized() override;
 
     static constexpr int topSectionHeight = 80;
     static constexpr int otSectionHeight = 240;
     static constexpr int chainExportSectionHeight = 96;
     static constexpr int megabreakExportSectionHeight = 63;
+
+    void stateChanged() override;
 
 private:
     enum RadioGroupId
@@ -60,4 +66,9 @@ private:
     juce::TextButton createMegabreakButton{"Save megabreak"};
 
     static void configureRadioButton(juce::ToggleButton& button, int groupId, bool selected);
+
+    void refreshNormalizationOptions();
+
+    StateHandler& stateHandler;
+    bool updatingNormalizationBox = false;
 };

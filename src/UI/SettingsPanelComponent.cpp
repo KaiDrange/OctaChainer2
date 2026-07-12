@@ -4,9 +4,13 @@
 
 
 SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
+                                               StateHandler& stateHandlerToUse,
                                                const juce::String& title)
-    : PanelComponent(height, width, title)
+    : PanelComponent(height, width, title),
+      stateHandler(stateHandlerToUse)
 {
+    stateHandler.addListener(this);
+
     addAndMakeVisible(bitrateSection);
     addAndMakeVisible(channelSection);
     addAndMakeVisible(sampleRateSection);
@@ -65,10 +69,24 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     configureCombo(timestretchBox, { "Timestretch off", "Timestretch on" }, 1);
     configureCombo(loopBox, { "Loop off", "Loop on" }, 1);
     configureCombo(trigQuantBox, { "Trig quant direct", "Trig quant quantized" }, 1);
-    configureCombo(normalizationBox, { "No normalization", "Normalize on" }, 1);
     configureCombo(fadeinBox, { "No fade-in", "Fade in" }, 1);
     configureCombo(fadeoutBox, { "No fade-out", "Fade out" }, 1);
     configureCombo(megabreakFileCountBox, { "File count: 16" }, 1);
+
+    normalizationBox.onChange = [this]
+    {
+        if (updatingNormalizationBox)
+            return;
+
+        stateHandler.setNormalizationMode(StateHandler::normalizationModeFromItemId(normalizationBox.getSelectedId()));
+    };
+
+    refreshNormalizationOptions();
+}
+
+SettingsPanelComponent::~SettingsPanelComponent()
+{
+    stateHandler.removeListener(this);
 }
 
 void SettingsPanelComponent::configureRadioButton(juce::ToggleButton& button, const int groupId, const bool selected)
@@ -163,4 +181,44 @@ void SettingsPanelComponent::resized()
     megabreakFileCountBox.setBounds(megabreakRow.getX(), megabreakRow.getY(), megabreakWidth, StyleSheet::comboboxHeight);
     createMegabreakButton.setBounds(megabreakRow.getX() + megabreakWidth + StyleSheet::controlGap,
                                     megabreakRow.getY(), megabreakWidth, StyleSheet::comboboxHeight);
+}
+
+void SettingsPanelComponent::stateChanged()
+{
+    refreshNormalizationOptions();
+}
+
+void SettingsPanelComponent::refreshNormalizationOptions()
+{
+    const auto options = StateHandler::getNormalizationOptions();
+    const auto selectedMode = stateHandler.getNormalizationMode();
+
+    updatingNormalizationBox = true;
+    normalizationBox.clear(juce::dontSendNotification);
+
+    bool selectedModeStillValid = false;
+
+    for (const auto& option : options)
+    {
+        const auto itemId = StateHandler::getNormalizationItemId(option.mode);
+        normalizationBox.addItem(option.label, itemId);
+
+        if (option.mode == selectedMode)
+            selectedModeStillValid = true;
+    }
+
+    if (! options.empty())
+    {
+        const auto modeToSelect = selectedModeStillValid ? selectedMode : options.front().mode;
+        normalizationBox.setSelectedId(StateHandler::getNormalizationItemId(modeToSelect), juce::dontSendNotification);
+
+        if (! selectedModeStillValid)
+            stateHandler.setNormalizationMode(modeToSelect);
+    }
+    else
+    {
+        normalizationBox.setSelectedId(0, juce::dontSendNotification);
+    }
+
+    updatingNormalizationBox = false;
 }

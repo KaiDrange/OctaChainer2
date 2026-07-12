@@ -3,7 +3,7 @@
 OctaChainer2AudioProcessorEditor::OctaChainer2AudioProcessorEditor(OctaChainer2AudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
-    mainComponent = std::make_unique<MainComponent>();
+    mainComponent = std::make_unique<MainComponent>(audioProcessor.getStateHandler());
     addAndMakeVisible(*mainComponent);
     setResizable(true, true);
     setResizeLimits(MainComponent::minWidth, MainComponent::minHeight, MainComponent::maxWidth,

@@ -11,6 +11,16 @@ OctaChainer2AudioProcessor::OctaChainer2AudioProcessor()
 
 OctaChainer2AudioProcessor::~OctaChainer2AudioProcessor() = default;
 
+StateHandler& OctaChainer2AudioProcessor::getStateHandler() noexcept
+{
+    return stateHandler;
+}
+
+const StateHandler& OctaChainer2AudioProcessor::getStateHandler() const noexcept
+{
+    return stateHandler;
+}
+
 const juce::String OctaChainer2AudioProcessor::getName() const
 {
     return JucePlugin_Name;
@@ -134,12 +144,18 @@ juce::AudioProcessorEditor* OctaChainer2AudioProcessor::createEditor()
 
 void OctaChainer2AudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
-    juce::ignoreUnused(destData);
+    std::unique_ptr<juce::XmlElement> xml(stateHandler.createXml());
+
+    if (xml != nullptr)
+        copyXmlToBinary(*xml, destData);
 }
 
 void OctaChainer2AudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
-    juce::ignoreUnused(data, sizeInBytes);
+    std::unique_ptr<juce::XmlElement> xml(getXmlFromBinary(data, sizeInBytes));
+
+    if (xml != nullptr)
+        stateHandler.restoreFromXml(*xml);
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

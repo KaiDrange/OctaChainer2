@@ -49,7 +49,7 @@ void StandaloneAppMainWindow::initialise()
     setResizeLimits(MainComponent::minWidth, MainComponent::minHeight, MainComponent::maxWidth,
                     MainComponent::maxHeight);
 
-    setContentOwned(new MainComponent(), false);
+    setContentOwned(new MainComponent(stateHandler), false);
 
     centreWithSize(MainComponent::defaultWidth, MainComponent::defaultHeight);
     setVisible(true);

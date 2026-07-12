@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 
+#include "Core/StateHandler.h"
 #include "UI/MainMenuBarModel.h"
 #include "UI/StyleSheet.h"
 
@@ -22,6 +23,7 @@ private:
     StyleSheet style;
     juce::AudioDeviceManager audioDeviceManager;
     MainMenuBarModel menuBarModel;
+    StateHandler stateHandler;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StandaloneAppMainWindow)
 };
