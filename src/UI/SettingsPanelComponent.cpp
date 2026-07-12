@@ -48,15 +48,6 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     megabreakExportSection.addAndMakeVisible(megabreakFileCountBox);
     megabreakExportSection.addAndMakeVisible(createMegabreakButton);
 
-    auto configureCombo = [](juce::ComboBox& box, std::initializer_list<juce::String> items, int selectedId)
-    {
-        int itemId = 1;
-        for (const auto& item : items)
-            box.addItem(item, itemId++);
-
-        box.setSelectedId(selectedId, juce::dontSendNotification);
-    };
-
     configureRadioButton(bitrate16Bit, bitrateGroupId, true);
     configureRadioButton(bitrate24Bit, bitrateGroupId, false);
 
@@ -66,19 +57,15 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     configureRadioButton(sampleRate48k, sampleRateGroupId, false);
     configureRadioButton(sampleRate44k1, sampleRateGroupId, true);
 
-    configureCombo(timestretchBox, { "Timestretch off", "Timestretch on" }, 1);
-    configureCombo(loopBox, { "Loop off", "Loop on" }, 1);
-    configureCombo(trigQuantBox, { "Trig quant direct", "Trig quant quantized" }, 1);
-    configureCombo(fadeinBox, { "No fade-in", "Fade in" }, 1);
-    configureCombo(fadeoutBox, { "No fade-out", "Fade out" }, 1);
-    configureCombo(megabreakFileCountBox, { "File count: 16" }, 1);
+    timestretchBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.timestretchId,  timestretchBox.getSelectedId()); };
+    loopBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.loopModeId,  loopBox.getSelectedId()); };
+    trigQuantBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.triqQuantId,  trigQuantBox.getSelectedId()); };
+    normalizationBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.normalizationId,  normalizationBox.getSelectedId()); };
+    fadeinBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.fadeinId,  fadeinBox.getSelectedId()); };
+    fadeoutBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.fadeoutId,  fadeoutBox.getSelectedId()); };
+    megabreakFileCountBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.megabreakFileCountId,  megabreakFileCountBox.getSelectedId()); };
 
-    normalizationBox.onChange = [this]
-    {
-        stateHandler.setComboBoxValue(stateHandler.cbNormalization,  normalizationBox.getSelectedId());
-    };
-
-    stateHandler.refreshComboBox(stateHandler.cbNormalization, normalizationBox);
+    SettingsPanelComponent::stateChanged();
 }
 
 SettingsPanelComponent::~SettingsPanelComponent()
@@ -182,5 +169,11 @@ void SettingsPanelComponent::resized()
 
 void SettingsPanelComponent::stateChanged()
 {
-    stateHandler.refreshComboBox(stateHandler.cbNormalization, normalizationBox);
+    stateHandler.refreshComboBox(stateHandler.timestretchId, timestretchBox);
+    stateHandler.refreshComboBox(stateHandler.loopModeId, loopBox);
+    stateHandler.refreshComboBox(stateHandler.triqQuantId, trigQuantBox);
+    stateHandler.refreshComboBox(stateHandler.normalizationId, normalizationBox);
+    stateHandler.refreshComboBox(stateHandler.fadeinId, fadeinBox);
+    stateHandler.refreshComboBox(stateHandler.fadeoutId, fadeoutBox);
+    stateHandler.refreshComboBox(stateHandler.megabreakFileCountId, megabreakFileCountBox);
 }

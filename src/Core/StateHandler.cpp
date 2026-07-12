@@ -2,16 +2,16 @@
 
 #include "StateHandler.h"
 
-namespace
-{
-    const juce::Identifier stateTypeId { "octaChainerState" };
-    const juce::Identifier normalizationModePropertyId { "normalizationMode" };
-}
-
 StateHandler::StateHandler()
     : valueTree(stateTypeId)
 {
-    valueTree.setProperty(cbNormalization, getComboBoxOptions(cbNormalization).front().value, nullptr);
+    valueTree.setProperty(versionId, ProjectInfo::versionString, nullptr);
+    valueTree.setProperty(timestretchId, getComboBoxOptions(timestretchId).front().value, nullptr);
+    valueTree.setProperty(loopModeId, getComboBoxOptions(loopModeId).front().value, nullptr);
+    valueTree.setProperty(triqQuantId, getComboBoxOptions(triqQuantId).front().value, nullptr);
+    valueTree.setProperty(normalizationId, getComboBoxOptions(normalizationId).front().value, nullptr);
+    valueTree.setProperty(fadeinId, getComboBoxOptions(fadeinId).front().value, nullptr);
+    valueTree.setProperty(fadeoutId, getComboBoxOptions(fadeoutId).front().value, nullptr);
     valueTree.addListener(this);
 }
 
@@ -93,8 +93,20 @@ bool StateHandler::setComboBoxValue(const juce::Identifier& comboBox, const int 
 
 std::vector<StateHandler::ComboBoxOption> StateHandler::getComboBoxOptions(const juce::Identifier& comboBox) const
 {
-    if (comboBox == this->cbNormalization)
+    if (comboBox == this->timestretchId)
+        return timestretchOptions;
+    else if (comboBox == this->loopModeId)
+        return loopOptions;
+    else if (comboBox == this->triqQuantId)
+        return trigQuantOptions;
+    else if (comboBox == this->normalizationId)
         return normalizationOptions;
+    else if (comboBox == this->fadeinId)
+        return fadeinOptions;
+    else if (comboBox == this->fadeoutId)
+        return fadeoutOptions;
+    else if (comboBox == this->megabreakFileCountId)
+        return megabreakFileCountOptions;
 
     return {};
 }
