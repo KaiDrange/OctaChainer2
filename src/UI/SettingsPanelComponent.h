@@ -63,8 +63,8 @@ private:
     juce::ComboBox fadeoutBox;
     juce::ComboBox megabreakFileCountBox;
 
-    NumberInputComponent gainInput{"Gain:", -24, 24, 0.0f, 0.5f, false};
-    NumberInputComponent bpmInput{"BPM:", 30, 300, 120, 0.25f, false};
+    NumberInputComponent gainInput{"Gain:", stateHandler.gainValue.min, stateHandler.gainValue.max, stateHandler.gainValue.defaultValue, stateHandler.gainValue.stepSize, false};
+    NumberInputComponent bpmInput{"BPM:", stateHandler.bpmValue.min, stateHandler.bpmValue.max, stateHandler.bpmValue.defaultValue, stateHandler.bpmValue.stepSize, false};
 
     juce::ToggleButton exportOtFile{"OT file"};
     juce::ToggleButton exportEvenGrid{"Even grid"};

@@ -32,7 +32,7 @@ int SampleListComponent::getNumRows()
     return 0;
 }
 
-void SampleListComponent::paintRowBackground(juce::Graphics& g, int rowNumber, int, int, bool rowIsSelected)
+void SampleListComponent::paintRowBackground(juce::Graphics& g, int rowNumber, int, int, const bool rowIsSelected)
 {
     auto alternateColour = getLookAndFeel().findColour (juce::ListBox::backgroundColourId).interpolatedWith (getLookAndFeel().findColour (juce::ListBox::textColourId), 0.03f);
     if (rowIsSelected)
@@ -42,6 +42,6 @@ void SampleListComponent::paintRowBackground(juce::Graphics& g, int rowNumber, i
 }
 
 void SampleListComponent::paintCell(juce::Graphics& g, int rowNumber, int columnId, int width, int height,
-    bool rowIsSelected)
+    const bool rowIsSelected)
 {
 }

@@ -4,6 +4,7 @@
 
 #include "NumberInputComponent.h"
 #include "PanelComponent.h"
+#include "../Core/StateHandler.h"
 
 class SampleListComponent : public PanelComponent, public juce::TableListBoxModel
 {
@@ -23,5 +24,8 @@ private:
     juce::TextButton btnAddSilence{"Add blank"};
     juce::TextButton btnRemove{"Remove"};
     juce::TextButton btnRemoveAll{"Clear"};
-    NumberInputComponent chainMaxLength{"Max slices:", 0, 120, 0, 1, false};
+    NumberInputComponent chainMaxLength{
+        "Max slices:", StateHandler::chainMaxLengthValue.min, StateHandler::chainMaxLengthValue.max,
+        StateHandler::chainMaxLengthValue.defaultValue, StateHandler::chainMaxLengthValue.stepSize, false
+    };
 };
