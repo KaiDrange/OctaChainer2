@@ -37,8 +37,6 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     otAttributesSection.addAndMakeVisible(trigQuantBox);
     otAttributesSection.addAndMakeVisible(gainInput);
     otAttributesSection.addAndMakeVisible(bpmInput);
-    gainInput.addListener(this);
-    bpmInput.addListener(this);
 
     chainExportSection.addAndMakeVisible(normalizationBox);
     chainExportSection.addAndMakeVisible(fadeinBox);
@@ -62,6 +60,9 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     fadeinBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.fadeinId, fadeinBox.getSelectedId()); };
     fadeoutBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.fadeoutId, fadeoutBox.getSelectedId()); };
     megabreakFileCountBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.megabreakFileCountId, megabreakFileCountBox.getSelectedId()); };
+
+    gainInput.addListener(this);
+    bpmInput.addListener(this);
 
     SettingsPanelComponent::stateChanged();
 }

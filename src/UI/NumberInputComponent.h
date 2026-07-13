@@ -3,7 +3,8 @@
 
 class NumberInputComponent  : public juce::Component {
 public:
-    NumberInputComponent(const juce::String& labelText, int maxDigits, int minValue, int maxValue, bool labelAboveInput);
+    NumberInputComponent(const juce::String& labelText, double minValue, double maxValue,
+                         double defaultValue, double stepSize, bool labelAboveInput);
     ~NumberInputComponent() override;
 
     juce::var getValue() const;
@@ -23,10 +24,20 @@ public:
     juce::TextEditor input;
 
 private:
+    static bool isValidNumberText(const juce::String& text);
+    void setValueInternal(double number, bool notifyListeners);
+    double snapToStep(double number) const;
+    juce::var getValidatedValue() const;
+    void adjustValueByStep(int direction);
+    void updateStepButtonStates();
     void sendChangeMessage();
     juce::Label label;
-    int maxValue;
-    int minValue;
+    juce::TextButton decrementButton;
+    juce::TextButton incrementButton;
+    double maxValue;
+    double minValue;
+    double defaultValue;
+    double stepSize;
     juce::ListenerList<Listener> listeners;
     bool labelAboveInput;
 
