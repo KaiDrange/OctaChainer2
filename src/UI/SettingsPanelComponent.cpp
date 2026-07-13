@@ -115,6 +115,14 @@ void SettingsPanelComponent::resized()
 {
     PanelComponent::resized();
 
+    layoutTopSections();
+    layoutOtAttributesSection();
+    layoutChainExportSection();
+    layoutMegabreakExportSection();
+}
+
+void SettingsPanelComponent::layoutTopSections()
+{
     auto topSections = innerBounds.withHeight(juce::jmin(innerBounds.getHeight(), topSectionHeight));
     const auto topSectionWidth = (topSections.getWidth() - StyleSheet::sectionGap * 2) / 3;
 
@@ -123,18 +131,6 @@ void SettingsPanelComponent::resized()
     channelSection.setBounds(topSections.removeFromLeft(topSectionWidth));
     topSections.removeFromLeft(StyleSheet::sectionGap);
     sampleRateSection.setBounds(topSections);
-
-    auto otArea = innerBounds;
-    otArea.removeFromTop(topSectionHeight + StyleSheet::sectionGap);
-    otArea = otArea.removeFromTop(otSectionHeight);
-    otAttributesSection.setBounds(otArea);
-
-    auto exportArea = innerBounds;
-    exportArea.removeFromTop(topSectionHeight + otSectionHeight + StyleSheet::sectionGap * 2);
-    auto chainExportArea = exportArea.removeFromTop(chainExportSectionHeight);
-    chainExportSection.setBounds(chainExportArea);
-    exportArea.removeFromTop(StyleSheet::sectionGap);
-    megabreakExportSection.setBounds(exportArea.removeFromTop(megabreakExportSectionHeight));
 
     auto placeButtons = [](const SectionComponent& section, const std::initializer_list<juce::ToggleButton*> buttons)
     {
@@ -149,6 +145,14 @@ void SettingsPanelComponent::resized()
     placeButtons(bitrateSection, { &bitrate16Bit, &bitrate24Bit });
     placeButtons(channelSection, { &channelMono, &channelStereo });
     placeButtons(sampleRateSection, { &sampleRate44k, &sampleRate48k });
+}
+
+void SettingsPanelComponent::layoutOtAttributesSection()
+{
+    auto otArea = innerBounds;
+    otArea.removeFromTop(topSectionHeight + StyleSheet::sectionGap);
+    otArea = otArea.removeFromTop(otSectionHeight);
+    otAttributesSection.setBounds(otArea);
 
     const auto otContent = otAttributesSection.getContentBounds();
     auto controls = otContent;
@@ -165,6 +169,14 @@ void SettingsPanelComponent::resized()
 
     gainInput.setBounds(inputRow.getX(), inputRow.getY(), inputWidth, StyleSheet::inputHeight);
     bpmInput.setBounds(inputRow.getX() + inputWidth + StyleSheet::controlGap, inputRow.getY(), inputWidth, StyleSheet::inputHeight);
+}
+
+void SettingsPanelComponent::layoutChainExportSection()
+{
+    auto exportArea = innerBounds;
+    exportArea.removeFromTop(topSectionHeight + otSectionHeight + StyleSheet::sectionGap * 2);
+    auto chainExportArea = exportArea.removeFromTop(chainExportSectionHeight);
+    chainExportSection.setBounds(chainExportArea);
 
     auto chainExportControls = chainExportSection.getContentBounds();
     normalizationBox.setBounds(chainExportControls.removeFromTop(StyleSheet::comboboxHeight));
@@ -189,6 +201,14 @@ void SettingsPanelComponent::resized()
     exportEmbedMarkers.setBounds(chainActionRow.getX(), chainActionRow.getY(), chainActionWidth, StyleSheet::comboboxHeight);
     createButton.setBounds(chainActionRow.getX() + chainActionWidth + StyleSheet::controlGap,
                            chainActionRow.getY(), chainActionWidth, StyleSheet::comboboxHeight);
+}
+
+void SettingsPanelComponent::layoutMegabreakExportSection()
+{
+    auto exportArea = innerBounds;
+    exportArea.removeFromTop(topSectionHeight + otSectionHeight + StyleSheet::sectionGap * 2);
+    exportArea.removeFromTop(chainExportSectionHeight + StyleSheet::sectionGap);
+    megabreakExportSection.setBounds(exportArea.removeFromTop(megabreakExportSectionHeight));
 
     auto megabreakExportControls = megabreakExportSection.getContentBounds();
     const auto megabreakRow = megabreakExportControls.removeFromTop(StyleSheet::comboboxHeight);

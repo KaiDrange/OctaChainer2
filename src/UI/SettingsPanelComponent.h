@@ -25,6 +25,11 @@ public:
     void stateChanged() override;
 
 private:
+    void layoutTopSections();
+    void layoutOtAttributesSection();
+    void layoutChainExportSection();
+    void layoutMegabreakExportSection();
+
     enum RadioGroupId
     {
         bitrateGroupId = 1,
