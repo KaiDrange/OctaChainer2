@@ -1,5 +1,6 @@
 #pragma once
 
+#include <any>
 #include <JuceHeader.h>
 #include <initializer_list>
 #include <vector>
@@ -8,9 +9,9 @@ class StateHandler : private juce::ValueTree::Listener
 {
 public:
     // Root identifiers
-    const juce::Identifier stateTypeId { "octaChainer2" };
-    const juce::Identifier versionId { "version" };
-    const juce::Identifier settingsId { "settings" };
+    const juce::Identifier stateTypeId{"octaChainer2"};
+    const juce::Identifier versionId{"version"};
+    const juce::Identifier settingsId{"settings"};
 
     // Settings identifiers
     const juce::Identifier bitrateId = "bitrate";
@@ -19,10 +20,13 @@ public:
     const juce::Identifier timestretchId = "timeStretch";
     const juce::Identifier loopModeId = "loopMode";
     const juce::Identifier triqQuantId = "trigQuant";
+    const juce::Identifier gainId = "gain";
+    const juce::Identifier bpmId = "bpm";
     const juce::Identifier normalizationId = "normalizationMode";
     const juce::Identifier fadeinId = "fade-in";
     const juce::Identifier fadeoutId = "fade-out";
     const juce::Identifier megabreakFileCountId = "megabreakFileCount";
+    const juce::Identifier masterVolumeId = "masterVolume";
 
 #include "SettingsOptions.h"
 
@@ -46,6 +50,15 @@ public:
 
     Option getCurrentOption(const juce::Identifier& identifier) const;
     static var getOptionValue(const Option& option);
+    template <typename T>
+    T getStateValue(const juce::Identifier& identifier, T defaultValue)
+    {
+        if (! settingsTree.isValid() || ! settingsTree.hasProperty(identifier))
+            return defaultValue;
+
+        return static_cast<T>(settingsTree.getProperty(identifier, defaultValue));
+    }
+
     bool setStateValue(const juce::Identifier& identifier, const var& value, juce::UndoManager* undoManager = nullptr);
     bool setStateValueFromItemId(const juce::Identifier& identifier, int itemId);
     std::vector<Option> getOptions(const juce::Identifier& identifier) const;
@@ -64,6 +77,7 @@ private:
     void removeTreeListeners();
     void initialiseDefaultState();
     void ensureSettingsTree();
+    void setDefaultStateValue(const juce::Identifier& identifier, const juce::var& value);
     void notifyListeners();
 
     juce::ValueTree valueTree;

@@ -6,8 +6,10 @@ public:
     NumberInputComponent(const juce::String& labelText, int maxDigits, int minValue, int maxValue, bool labelAboveInput);
     ~NumberInputComponent() override;
 
-    int getValue() const;
+    juce::var getValue() const;
     void setValue(int number);
+    void setValue(double number);
+    void setValue(const juce::var& value);
     void setLabelText(const juce::String& text);
     void resized() override;
     

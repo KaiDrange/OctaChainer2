@@ -37,6 +37,8 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     otAttributesSection.addAndMakeVisible(trigQuantBox);
     otAttributesSection.addAndMakeVisible(gainInput);
     otAttributesSection.addAndMakeVisible(bpmInput);
+    gainInput.addListener(this);
+    bpmInput.addListener(this);
 
     chainExportSection.addAndMakeVisible(normalizationBox);
     chainExportSection.addAndMakeVisible(fadeinBox);
@@ -66,6 +68,8 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
 
 SettingsPanelComponent::~SettingsPanelComponent()
 {
+    gainInput.removeListener(this);
+    bpmInput.removeListener(this);
     stateHandler.removeListener(this);
 }
 
@@ -175,7 +179,7 @@ void SettingsPanelComponent::layoutChainExportSection()
 {
     auto exportArea = innerBounds;
     exportArea.removeFromTop(topSectionHeight + otSectionHeight + StyleSheet::sectionGap * 2);
-    auto chainExportArea = exportArea.removeFromTop(chainExportSectionHeight);
+    const auto chainExportArea = exportArea.removeFromTop(chainExportSectionHeight);
     chainExportSection.setBounds(chainExportArea);
 
     auto chainExportControls = chainExportSection.getContentBounds();
@@ -231,4 +235,27 @@ void SettingsPanelComponent::stateChanged()
     stateHandler.refreshComboBox(stateHandler.fadeinId, fadeinBox);
     stateHandler.refreshComboBox(stateHandler.fadeoutId, fadeoutBox);
     stateHandler.refreshComboBox(stateHandler.megabreakFileCountId, megabreakFileCountBox);
+    refreshNumberInputs();
+}
+
+void SettingsPanelComponent::numberInputChanged(NumberInputComponent* numberInput)
+{
+    const auto value = numberInput->getValue();
+    if (value.isVoid())
+        return;
+
+    if (numberInput == &gainInput)
+    {
+        stateHandler.setStateValue(stateHandler.gainId, value);
+        return;
+    }
+
+    if (numberInput == &bpmInput)
+        stateHandler.setStateValue(stateHandler.bpmId, value);
+}
+
+void SettingsPanelComponent::refreshNumberInputs()
+{
+    gainInput.setValue(juce::var(stateHandler.getStateValue<double>(stateHandler.gainId, 0.0)));
+    bpmInput.setValue(juce::var(stateHandler.getStateValue<double>(stateHandler.bpmId, 120.0)));
 }

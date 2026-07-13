@@ -8,11 +8,12 @@
 #include "SectionComponent.h"
 
 class SettingsPanelComponent : public PanelComponent,
-                              private StateHandler::Listener
+                              private StateHandler::Listener,
+                              private NumberInputComponent::Listener
 {
 public:
     SettingsPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
-                           StateHandler& stateHandler,
+                           StateHandler& stateHandlerToUse,
                            const juce::String& title = "");
     ~SettingsPanelComponent() override;
     void resized() override;
@@ -23,12 +24,14 @@ public:
     static constexpr int megabreakExportSectionHeight = 63;
 
     void stateChanged() override;
+    void numberInputChanged(NumberInputComponent* numberInput) override;
 
 private:
     void layoutTopSections();
     void layoutOtAttributesSection();
     void layoutChainExportSection();
     void layoutMegabreakExportSection();
+    void refreshNumberInputs();
 
     enum RadioGroupId
     {

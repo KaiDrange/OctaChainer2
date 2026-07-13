@@ -1,6 +1,4 @@
-#include <array>
 #include <algorithm>
-
 #include "StateHandler.h"
 
 StateHandler::StateHandler()
@@ -83,19 +81,19 @@ StateHandler::Option StateHandler::getCurrentOption(const juce::Identifier& iden
 var StateHandler::getOptionValue(const Option& option)
 {
     if (option.valueType == typeid(int))
-        return juce::var(static_cast<int>(option.value));
+        return {static_cast<int>(option.value)};
 
     if (option.valueType == typeid(bool))
-        return juce::var(static_cast<bool>(option.value));
+        return {static_cast<bool>(option.value)};
 
     if (option.valueType == typeid(double))
-        return juce::var(static_cast<double>(option.value));
+        return {static_cast<double>(option.value)};
 
     if (option.valueType == typeid(float))
-        return juce::var(static_cast<double>(static_cast<float>(option.value)));
+        return {static_cast<double>(static_cast<float>(option.value))};
 
     if (option.valueType == typeid(juce::String))
-        return juce::var(option.value.toString());
+        return {option.value.toString()};
 
     jassertfalse;
     return option.value;
@@ -103,8 +101,17 @@ var StateHandler::getOptionValue(const Option& option)
 
 bool StateHandler::setStateValue(const juce::Identifier& identifier, const var& value, juce::UndoManager* undoManager)
 {
-    if (getCurrentOption(identifier).value == value)
+    const auto options = getOptions(identifier);
+
+    if (! options.empty())
+    {
+        if (getCurrentOption(identifier).value == value)
+            return false;
+    }
+    else if (settingsTree.hasProperty(identifier) && settingsTree.getProperty(identifier) == value)
+    {
         return false;
+    }
 
     settingsTree.setProperty(identifier, value, undoManager);
     return true;
@@ -250,6 +257,8 @@ void StateHandler::initialiseDefaultState()
     setDefaultOption(timestretchId);
     setDefaultOption(loopModeId);
     setDefaultOption(triqQuantId);
+    setDefaultStateValue(gainId, 0);
+    setDefaultStateValue(bpmId, 120);
     setDefaultOption(normalizationId);
     setDefaultOption(fadeinId);
     setDefaultOption(fadeoutId);
@@ -263,10 +272,22 @@ void StateHandler::ensureSettingsTree()
     settingsTree = valueTree.getChildWithName(settingsId);
 
     if (settingsTree.isValid())
+    {
+        setDefaultStateValue(gainId, 0);
+        setDefaultStateValue(bpmId, 120);
         return;
+    }
 
     settingsTree = juce::ValueTree(settingsId);
+    setDefaultStateValue(gainId, 0);
+    setDefaultStateValue(bpmId, 120);
     valueTree.addChild(settingsTree, -1, nullptr);
+}
+
+void StateHandler::setDefaultStateValue(const juce::Identifier& identifier, const juce::var& value)
+{
+    if (! settingsTree.hasProperty(identifier))
+        settingsTree.setProperty(identifier, value, nullptr);
 }
 
 void StateHandler::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&)
