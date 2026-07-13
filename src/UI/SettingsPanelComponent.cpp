@@ -57,13 +57,13 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     configureRadioButton(sampleRate48k, sampleRateGroupId, false);
     configureRadioButton(sampleRate44k1, sampleRateGroupId, true);
 
-    timestretchBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.timestretchId,  timestretchBox.getSelectedId()); };
-    loopBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.loopModeId,  loopBox.getSelectedId()); };
-    trigQuantBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.triqQuantId,  trigQuantBox.getSelectedId()); };
-    normalizationBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.normalizationId,  normalizationBox.getSelectedId()); };
-    fadeinBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.fadeinId,  fadeinBox.getSelectedId()); };
-    fadeoutBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.fadeoutId,  fadeoutBox.getSelectedId()); };
-    megabreakFileCountBox.onChange = [this]{ stateHandler.setComboBoxValue(stateHandler.megabreakFileCountId,  megabreakFileCountBox.getSelectedId()); };
+    timestretchBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.timestretchId, timestretchBox.getSelectedId()); };
+    loopBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.loopModeId, loopBox.getSelectedId()); };
+    trigQuantBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.triqQuantId, trigQuantBox.getSelectedId()); };
+    normalizationBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.normalizationId, normalizationBox.getSelectedId()); };
+    fadeinBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.fadeinId, fadeinBox.getSelectedId()); };
+    fadeoutBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.fadeoutId, fadeoutBox.getSelectedId()); };
+    megabreakFileCountBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.megabreakFileCountId, megabreakFileCountBox.getSelectedId()); };
 
     SettingsPanelComponent::stateChanged();
 }

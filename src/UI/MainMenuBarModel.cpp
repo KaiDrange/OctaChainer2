@@ -2,8 +2,10 @@
 
 #include <utility>
 
-MainMenuBarModel::MainMenuBarModel(Action onQuit, Action onAudioSettings, Action onHelp)
+MainMenuBarModel::MainMenuBarModel(Action onQuit, Action onProjectSave, Action onProjectLoad, Action onAudioSettings, Action onHelp)
     : onQuit(std::move(onQuit)),
+      onProjectSave(std::move(onProjectSave)),
+      onProjectLoad(std::move(onProjectLoad)),
       onAudioSettings(std::move(onAudioSettings)),
       onHelp(std::move(onHelp))
 {
@@ -20,15 +22,17 @@ juce::PopupMenu MainMenuBarModel::getMenuForIndex(int topLevelMenuIndex, const j
 
     if (menuName == "File")
     {
+        menu.addItem(2, "Save project");
+        menu.addItem(3, "Load project");
         menu.addItem(1, "Quit");
     }
     else if(menuName == "Options")
     {
-        menu.addItem(2, "Audio settings");
+        menu.addItem(20, "Audio settings");
     }
     else if (menuName == "Help")
     {
-        menu.addItem(3, "About OctaChainer");
+        menu.addItem(30, "About OctaChainer");
     }
 
     return menu;
@@ -42,11 +46,19 @@ void MainMenuBarModel::menuItemSelected(const int menuItemID, int topLevelMenuIn
     {
         onQuit();
     }
-    else if (menuItemID == 2 && onAudioSettings)
+    else if (menuItemID == 2 && onProjectSave) // Save project
+    {
+        onProjectSave();
+    }
+    else if (menuItemID == 3 && onProjectLoad) // Load project
+    {
+        onProjectLoad();
+    }
+    else if (menuItemID == 20 && onAudioSettings)
     {
         onAudioSettings();
     }
-    else if (menuItemID == 3 && onHelp)
+    else if (menuItemID == 30 && onHelp)
     {
         onHelp();
     }

@@ -6,14 +6,11 @@ StandaloneAppMainWindow::StandaloneAppMainWindow(const juce::String& name)
                      juce::Colours::black,
                      juce::DocumentWindow::allButtons),
       menuBarModel(
-          []
-          {
-              juce::JUCEApplication::getInstance()->systemRequestedQuit();
-          },
-          [this]
-          {
-              showAudioSettings();
-          })
+          [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); },
+          [this] { saveProject(); },
+          [this] { loadProject(); },
+          [this] { showAudioSettings(); }
+      )
 {
     setLookAndFeel(&style);
 
@@ -40,7 +37,7 @@ void StandaloneAppMainWindow::initialise()
 {
     const auto error = audioDeviceManager.initialise(0, 2, nullptr, true);
     if (error.isNotEmpty())
-        DBG(error);
+    DBG(error);
 
     loadAudioSettings();
 
@@ -93,9 +90,9 @@ void StandaloneAppMainWindow::saveAudioSettings() const
     if (xml != nullptr)
     {
         const juce::File settingsDirectory = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-                                            .getChildFile(ProjectInfo::projectName);
+            .getChildFile(ProjectInfo::projectName);
 
-        if (! settingsDirectory.createDirectory())
+        if (!settingsDirectory.createDirectory())
         {
             DBG("Failed to create audio settings directory");
             return;
@@ -103,16 +100,16 @@ void StandaloneAppMainWindow::saveAudioSettings() const
 
         const juce::File settingsFile = settingsDirectory.getChildFile("AudioSettings.xml");
 
-        if (! xml->writeTo(settingsFile))
-            DBG("Failed to write audio settings");
+        if (!xml->writeTo(settingsFile))
+        DBG("Failed to write audio settings");
     }
 }
 
 void StandaloneAppMainWindow::loadAudioSettings()
 {
-    juce::File settingsFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-                                  .getChildFile(ProjectInfo::projectName)
-                                  .getChildFile("AudioSettings.xml");
+    const juce::File settingsFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                                    .getChildFile(ProjectInfo::projectName)
+                                    .getChildFile("AudioSettings.xml");
 
     if (settingsFile.existsAsFile())
     {
@@ -126,4 +123,47 @@ void StandaloneAppMainWindow::loadAudioSettings()
     }
 
     audioDeviceManager.initialiseWithDefaultDevices(0, 2);
+}
+
+void StandaloneAppMainWindow::saveProject()
+{
+    fileChooser = std::make_unique<juce::FileChooser>("Save current project", juce::File(), "*.xml");
+    constexpr auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
+        juce::FileBrowserComponent::warnAboutOverwriting;
+    fileChooser->launchAsync(flags, [this](const juce::FileChooser& chooser)
+    {
+        auto xmlFile = chooser.getResult();
+        if (xmlFile != juce::File{})
+        {
+            if (xmlFile.getFileExtension() != ".xml")
+            {
+                xmlFile = xmlFile.withFileExtension(".xml");
+            }
+
+            const std::unique_ptr<juce::XmlElement> xml(stateHandler.createXml());
+            if (xml != nullptr)
+            {
+                if (!xml->writeTo(xmlFile))
+                    DBG("Failed to save project");
+            }
+        }
+    });
+}
+
+void StandaloneAppMainWindow::loadProject()
+{
+    fileChooser = std::make_unique<juce::FileChooser>("Select a project file to load", juce::File(), "*.xml");
+    constexpr auto flags = juce::FileBrowserComponent::openMode;
+    fileChooser->launchAsync(flags, [this](const juce::FileChooser& chooser)
+    {
+        const auto xmlFile = chooser.getResult();
+        if (xmlFile.existsAsFile())
+        {
+            if (const auto xml = juce::XmlDocument::parse(xmlFile))
+            {
+                const juce::ValueTree newTree = juce::ValueTree::fromXml(*xml);
+                stateHandler.setState(newTree);
+            }
+        }
+    });
 }

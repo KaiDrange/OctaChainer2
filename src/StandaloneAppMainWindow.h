@@ -17,6 +17,9 @@ public:
 
     void showAudioSettings();
     void saveAudioSettings() const;
+
+    void saveProject();
+    void loadProject();
 private:
     void loadAudioSettings();
 
@@ -24,6 +27,7 @@ private:
     juce::AudioDeviceManager audioDeviceManager;
     MainMenuBarModel menuBarModel;
     StateHandler stateHandler;
+    std::unique_ptr<juce::FileChooser> fileChooser;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StandaloneAppMainWindow)
 };
