@@ -29,18 +29,18 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     bitrateSection.addAndMakeVisible(bitrate24Bit);
     channelSection.addAndMakeVisible(channelMono);
     channelSection.addAndMakeVisible(channelStereo);
-    sampleRateSection.addAndMakeVisible(sampleRate48k);
     sampleRateSection.addAndMakeVisible(sampleRate44k);
+    sampleRateSection.addAndMakeVisible(sampleRate48k);
 
     otAttributesSection.addAndMakeVisible(timestretchBox);
     otAttributesSection.addAndMakeVisible(loopBox);
     otAttributesSection.addAndMakeVisible(trigQuantBox);
-    otAttributesSection.addAndMakeVisible(normalizationBox);
-    otAttributesSection.addAndMakeVisible(fadeinBox);
-    otAttributesSection.addAndMakeVisible(fadeoutBox);
     otAttributesSection.addAndMakeVisible(gainInput);
     otAttributesSection.addAndMakeVisible(bpmInput);
 
+    chainExportSection.addAndMakeVisible(normalizationBox);
+    chainExportSection.addAndMakeVisible(fadeinBox);
+    chainExportSection.addAndMakeVisible(fadeoutBox);
     chainExportSection.addAndMakeVisible(exportOtFile);
     chainExportSection.addAndMakeVisible(exportEvenGrid);
     chainExportSection.addAndMakeVisible(exportEmbedMarkers);
@@ -51,7 +51,7 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
 
     configureRadioButtons(stateHandler, stateHandler.bitrateId, bitrateGroupId, { &bitrate16Bit, &bitrate24Bit });
     configureRadioButtons(stateHandler, stateHandler.channelsId, channelGroupId, { &channelMono, &channelStereo });
-    configureRadioButtons(stateHandler, stateHandler.samplerateId, sampleRateGroupId, { &sampleRate48k, &sampleRate44k  });
+    configureRadioButtons(stateHandler, stateHandler.samplerateId, sampleRateGroupId, { &sampleRate44k, &sampleRate48k });
 
     timestretchBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.timestretchId, timestretchBox.getSelectedId()); };
     loopBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.loopModeId, loopBox.getSelectedId()); };
@@ -148,7 +148,7 @@ void SettingsPanelComponent::resized()
 
     placeButtons(bitrateSection, { &bitrate16Bit, &bitrate24Bit });
     placeButtons(channelSection, { &channelMono, &channelStereo });
-    placeButtons(sampleRateSection, { &sampleRate48k, &sampleRate44k });
+    placeButtons(sampleRateSection, { &sampleRate44k, &sampleRate48k });
 
     const auto otContent = otAttributesSection.getContentBounds();
     auto controls = otContent;
@@ -159,15 +159,6 @@ void SettingsPanelComponent::resized()
     controls.removeFromTop(StyleSheet::controlGap);
     trigQuantBox.setBounds(controls.removeFromTop(StyleSheet::comboboxHeight));
     controls.removeFromTop(StyleSheet::controlGap);
-    normalizationBox.setBounds(controls.removeFromTop(StyleSheet::comboboxHeight));
-    controls.removeFromTop(StyleSheet::controlGap);
-
-    const auto fadeRow = controls;
-    const auto fadeWidth = (fadeRow.getWidth() - StyleSheet::controlGap) / 2;
-    fadeinBox.setBounds(fadeRow.getX(), fadeRow.getY(), fadeWidth, StyleSheet::comboboxHeight);
-    fadeoutBox.setBounds(fadeRow.getX() + fadeWidth + StyleSheet::controlGap, fadeRow.getY(), fadeWidth, StyleSheet::comboboxHeight);
-
-    controls.removeFromTop(StyleSheet::comboboxHeight + StyleSheet::controlGap);
 
     const auto inputRow = controls;
     const auto inputWidth = (inputRow.getWidth() - StyleSheet::controlGap) / 2;
@@ -176,6 +167,15 @@ void SettingsPanelComponent::resized()
     bpmInput.setBounds(inputRow.getX() + inputWidth + StyleSheet::controlGap, inputRow.getY(), inputWidth, StyleSheet::inputHeight);
 
     auto chainExportControls = chainExportSection.getContentBounds();
+    normalizationBox.setBounds(chainExportControls.removeFromTop(StyleSheet::comboboxHeight));
+    chainExportControls.removeFromTop(StyleSheet::controlGap);
+
+    const auto fadeRow = chainExportControls;
+    const auto fadeWidth = (fadeRow.getWidth() - StyleSheet::controlGap) / 2;
+    fadeinBox.setBounds(fadeRow.getX(), fadeRow.getY(), fadeWidth, StyleSheet::comboboxHeight);
+    fadeoutBox.setBounds(fadeRow.getX() + fadeWidth + StyleSheet::controlGap, fadeRow.getY(), fadeWidth, StyleSheet::comboboxHeight);
+
+    chainExportControls.removeFromTop(StyleSheet::comboboxHeight + StyleSheet::controlGap);
 
     const auto exportToggleRow = chainExportControls.removeFromTop(StyleSheet::comboboxHeight);
     const auto exportToggleWidth = (exportToggleRow.getWidth() - StyleSheet::controlGap) / 2;
@@ -202,7 +202,7 @@ void SettingsPanelComponent::stateChanged()
 {
     stateHandler.refreshRadioButtons(stateHandler.bitrateId, { &bitrate16Bit, &bitrate24Bit });
     stateHandler.refreshRadioButtons(stateHandler.channelsId, { &channelMono, &channelStereo });
-    stateHandler.refreshRadioButtons(stateHandler.samplerateId, { &sampleRate48k, &sampleRate44k });
+    stateHandler.refreshRadioButtons(stateHandler.samplerateId, { &sampleRate44k, &sampleRate48k });
 
     stateHandler.refreshComboBox(stateHandler.timestretchId, timestretchBox);
     stateHandler.refreshComboBox(stateHandler.loopModeId, loopBox);

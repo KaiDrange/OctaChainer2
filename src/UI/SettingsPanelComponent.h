@@ -18,8 +18,8 @@ public:
     void resized() override;
 
     static constexpr int topSectionHeight = 80;
-    static constexpr int otSectionHeight = 240;
-    static constexpr int chainExportSectionHeight = 96;
+    static constexpr int otSectionHeight = 160;
+    static constexpr int chainExportSectionHeight = 180;
     static constexpr int megabreakExportSectionHeight = 63;
 
     void stateChanged() override;
