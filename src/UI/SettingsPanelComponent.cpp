@@ -1,5 +1,6 @@
 #include "SettingsPanelComponent.h"
 
+#include <algorithm>
 #include <initializer_list>
 
 
@@ -29,7 +30,7 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     channelSection.addAndMakeVisible(channelMono);
     channelSection.addAndMakeVisible(channelStereo);
     sampleRateSection.addAndMakeVisible(sampleRate48k);
-    sampleRateSection.addAndMakeVisible(sampleRate44k1);
+    sampleRateSection.addAndMakeVisible(sampleRate44k);
 
     otAttributesSection.addAndMakeVisible(timestretchBox);
     otAttributesSection.addAndMakeVisible(loopBox);
@@ -48,22 +49,17 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     megabreakExportSection.addAndMakeVisible(megabreakFileCountBox);
     megabreakExportSection.addAndMakeVisible(createMegabreakButton);
 
-    configureRadioButton(bitrate16Bit, bitrateGroupId, true);
-    configureRadioButton(bitrate24Bit, bitrateGroupId, false);
+    configureRadioButtons(stateHandler, stateHandler.bitrateId, bitrateGroupId, { &bitrate16Bit, &bitrate24Bit });
+    configureRadioButtons(stateHandler, stateHandler.channelsId, channelGroupId, { &channelMono, &channelStereo });
+    configureRadioButtons(stateHandler, stateHandler.samplerateId, sampleRateGroupId, { &sampleRate48k, &sampleRate44k  });
 
-    configureRadioButton(channelMono, channelGroupId, false);
-    configureRadioButton(channelStereo, channelGroupId, true);
-
-    configureRadioButton(sampleRate48k, sampleRateGroupId, false);
-    configureRadioButton(sampleRate44k1, sampleRateGroupId, true);
-
-    timestretchBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.timestretchId, timestretchBox.getSelectedId()); };
-    loopBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.loopModeId, loopBox.getSelectedId()); };
-    trigQuantBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.triqQuantId, trigQuantBox.getSelectedId()); };
-    normalizationBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.normalizationId, normalizationBox.getSelectedId()); };
-    fadeinBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.fadeinId, fadeinBox.getSelectedId()); };
-    fadeoutBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.fadeoutId, fadeoutBox.getSelectedId()); };
-    megabreakFileCountBox.onChange = [this]{ stateHandler.setComboBoxValueFromItemId(stateHandler.megabreakFileCountId, megabreakFileCountBox.getSelectedId()); };
+    timestretchBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.timestretchId, timestretchBox.getSelectedId()); };
+    loopBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.loopModeId, loopBox.getSelectedId()); };
+    trigQuantBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.triqQuantId, trigQuantBox.getSelectedId()); };
+    normalizationBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.normalizationId, normalizationBox.getSelectedId()); };
+    fadeinBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.fadeinId, fadeinBox.getSelectedId()); };
+    fadeoutBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.fadeoutId, fadeoutBox.getSelectedId()); };
+    megabreakFileCountBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.megabreakFileCountId, megabreakFileCountBox.getSelectedId()); };
 
     SettingsPanelComponent::stateChanged();
 }
@@ -73,11 +69,46 @@ SettingsPanelComponent::~SettingsPanelComponent()
     stateHandler.removeListener(this);
 }
 
-void SettingsPanelComponent::configureRadioButton(juce::ToggleButton& button, const int groupId, const bool selected)
+void SettingsPanelComponent::configureRadioButton(juce::ToggleButton& button, const int groupId)
 {
     button.setClickingTogglesState(true);
     button.setRadioGroupId(groupId, juce::dontSendNotification);
-    button.setToggleState(selected, juce::dontSendNotification);
+}
+
+void SettingsPanelComponent::configureRadioButtons(StateHandler& stateHandler, const juce::Identifier& identifier,
+                                                   const int groupId, const std::initializer_list<juce::ToggleButton*> buttons)
+{
+    auto options = stateHandler.getOptions(identifier);
+    std::sort(options.begin(), options.end(),
+              [](const StateHandler::Option& lhs, const StateHandler::Option& rhs)
+              {
+                  return lhs.itemId < rhs.itemId;
+              });
+    auto optionIt = options.begin();
+
+    for (auto* button : buttons)
+    {
+        if (button == nullptr)
+            continue;
+
+        configureRadioButton(*button, groupId);
+
+        if (optionIt == options.end())
+        {
+            button->onClick = {};
+            continue;
+        }
+
+        const auto itemId = optionIt->itemId;
+        button->setButtonText(optionIt->name);
+        button->onClick = [button, &stateHandler, identifier, itemId]
+        {
+            if (button->getToggleState())
+                stateHandler.setStateValueFromItemId(identifier, itemId);
+        };
+
+        ++optionIt;
+    }
 }
 
 void SettingsPanelComponent::resized()
@@ -117,7 +148,7 @@ void SettingsPanelComponent::resized()
 
     placeButtons(bitrateSection, { &bitrate16Bit, &bitrate24Bit });
     placeButtons(channelSection, { &channelMono, &channelStereo });
-    placeButtons(sampleRateSection, { &sampleRate48k, &sampleRate44k1 });
+    placeButtons(sampleRateSection, { &sampleRate48k, &sampleRate44k });
 
     const auto otContent = otAttributesSection.getContentBounds();
     auto controls = otContent;
@@ -169,6 +200,10 @@ void SettingsPanelComponent::resized()
 
 void SettingsPanelComponent::stateChanged()
 {
+    stateHandler.refreshRadioButtons(stateHandler.bitrateId, { &bitrate16Bit, &bitrate24Bit });
+    stateHandler.refreshRadioButtons(stateHandler.channelsId, { &channelMono, &channelStereo });
+    stateHandler.refreshRadioButtons(stateHandler.samplerateId, { &sampleRate48k, &sampleRate44k });
+
     stateHandler.refreshComboBox(stateHandler.timestretchId, timestretchBox);
     stateHandler.refreshComboBox(stateHandler.loopModeId, loopBox);
     stateHandler.refreshComboBox(stateHandler.triqQuantId, trigQuantBox);

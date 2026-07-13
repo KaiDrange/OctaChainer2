@@ -128,9 +128,9 @@ void StandaloneAppMainWindow::loadAudioSettings()
 void StandaloneAppMainWindow::saveProject()
 {
     fileChooser = std::make_unique<juce::FileChooser>("Save current project", juce::File(), "*.xml");
-    constexpr auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
+    constexpr auto browserFlags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
         juce::FileBrowserComponent::warnAboutOverwriting;
-    fileChooser->launchAsync(flags, [this](const juce::FileChooser& chooser)
+    fileChooser->launchAsync(browserFlags, [this](const juce::FileChooser& chooser)
     {
         auto xmlFile = chooser.getResult();
         if (xmlFile != juce::File{})
@@ -153,8 +153,8 @@ void StandaloneAppMainWindow::saveProject()
 void StandaloneAppMainWindow::loadProject()
 {
     fileChooser = std::make_unique<juce::FileChooser>("Select a project file to load", juce::File(), "*.xml");
-    constexpr auto flags = juce::FileBrowserComponent::openMode;
-    fileChooser->launchAsync(flags, [this](const juce::FileChooser& chooser)
+    constexpr auto browserFlags = juce::FileBrowserComponent::openMode;
+    fileChooser->launchAsync(browserFlags, [this](const juce::FileChooser& chooser)
     {
         const auto xmlFile = chooser.getResult();
         if (xmlFile.existsAsFile())

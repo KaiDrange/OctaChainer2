@@ -32,14 +32,14 @@ private:
         sampleRateGroupId = 3
     };
 
-    juce::ToggleButton bitrate16Bit{"16bit"};
-    juce::ToggleButton bitrate24Bit{"24bit"};
+    juce::ToggleButton bitrate16Bit;
+    juce::ToggleButton bitrate24Bit;
 
-    juce::ToggleButton channelMono{"Mono"};
-    juce::ToggleButton channelStereo{"Stereo"};
+    juce::ToggleButton channelMono;
+    juce::ToggleButton channelStereo;
 
-    juce::ToggleButton sampleRate48k{"48k"};
-    juce::ToggleButton sampleRate44k1{"44.1k"};
+    juce::ToggleButton sampleRate48k;
+    juce::ToggleButton sampleRate44k;
 
     SectionComponent bitrateSection{"Bitrate"};
     SectionComponent channelSection{"Channels"};
@@ -65,7 +65,9 @@ private:
     juce::TextButton createButton{"Save chain"};
     juce::TextButton createMegabreakButton{"Save megabreak"};
 
-    static void configureRadioButton(juce::ToggleButton& button, int groupId, bool selected);
+    static void configureRadioButtons(StateHandler& stateHandler, const juce::Identifier& identifier,
+                                      int groupId, std::initializer_list<juce::ToggleButton*> buttons);
+    static void configureRadioButton(juce::ToggleButton& button, int groupId);
 
     StateHandler& stateHandler;
 };

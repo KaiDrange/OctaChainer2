@@ -1,14 +1,21 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <initializer_list>
 #include <vector>
 
 class StateHandler : private juce::ValueTree::Listener
 {
 public:
-    const juce::Identifier stateTypeId { "octaChainer2State" };
+    // Root identifiers
+    const juce::Identifier stateTypeId { "octaChainer2" };
     const juce::Identifier versionId { "version" };
     const juce::Identifier settingsId { "settings" };
+
+    // Settings identifiers
+    const juce::Identifier bitrateId = "bitrate";
+    const juce::Identifier channelsId = "channels";
+    const juce::Identifier samplerateId = "samplerate";
     const juce::Identifier timestretchId = "timeStretch";
     const juce::Identifier loopModeId = "loopMode";
     const juce::Identifier triqQuantId = "trigQuant";
@@ -37,12 +44,13 @@ public:
     juce::XmlElement* createXml() const;
     bool restoreFromXml(const juce::XmlElement& xml);
 
-    ComboBoxOption getCurrentComboBoxOption(const juce::Identifier& comboBox) const;
-    static var getComboBoxValue(const ComboBoxOption& option);
-    bool setComboBoxValue(const juce::Identifier& comboBox, const var& value, juce::UndoManager* undoManager = nullptr);
-    bool setComboBoxValueFromItemId(const juce::Identifier& comboBox, int itemId);
-    std::vector<ComboBoxOption> getComboBoxOptions(const juce::Identifier& comboBox) const;
-    void refreshComboBox(const juce::Identifier& comboBox, juce::ComboBox& comboBoxRef);
+    Option getCurrentOption(const juce::Identifier& identifier) const;
+    static var getOptionValue(const Option& option);
+    bool setStateValue(const juce::Identifier& identifier, const var& value, juce::UndoManager* undoManager = nullptr);
+    bool setStateValueFromItemId(const juce::Identifier& identifier, int itemId);
+    std::vector<Option> getOptions(const juce::Identifier& identifier) const;
+    void refreshComboBox(const juce::Identifier& identifier, juce::ComboBox& comboBoxRef);
+    void refreshRadioButtons(const juce::Identifier& identifier, std::initializer_list<juce::ToggleButton*> buttons);
 
     void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override;
     void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override;

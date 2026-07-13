@@ -61,15 +61,15 @@ bool StateHandler::restoreFromXml(const juce::XmlElement& xml)
     return true;
 }
 
-StateHandler::ComboBoxOption StateHandler::getCurrentComboBoxOption(const juce::Identifier& comboBox) const
+StateHandler::Option StateHandler::getCurrentOption(const juce::Identifier& identifier) const
 {
-    const auto options = getComboBoxOptions(comboBox);
+    const auto options = getOptions(identifier);
     if (options.empty())
         return { 0, typeid(int), 0, {} };
 
-    const auto selectedOption = settingsTree.getProperty(comboBox);
+    const auto selectedOption = settingsTree.getProperty(identifier);
     const auto it = std::find_if(options.begin(), options.end(),
-                                 [selectedOption](const ComboBoxOption& option)
+                                 [selectedOption](const Option& option)
                                  {
                                      return option.value == selectedOption;
                                  });
@@ -80,7 +80,7 @@ StateHandler::ComboBoxOption StateHandler::getCurrentComboBoxOption(const juce::
     return options.front();
 }
 
-var StateHandler::getComboBoxValue(const ComboBoxOption& option)
+var StateHandler::getOptionValue(const Option& option)
 {
     if (option.valueType == typeid(int))
         return juce::var(static_cast<int>(option.value));
@@ -101,55 +101,61 @@ var StateHandler::getComboBoxValue(const ComboBoxOption& option)
     return option.value;
 }
 
-bool StateHandler::setComboBoxValue(const juce::Identifier& comboBox, const var& value, juce::UndoManager* undoManager)
+bool StateHandler::setStateValue(const juce::Identifier& identifier, const var& value, juce::UndoManager* undoManager)
 {
-    if (getCurrentComboBoxOption(comboBox).value == value)
+    if (getCurrentOption(identifier).value == value)
         return false;
 
-    settingsTree.setProperty(comboBox, value, undoManager);
+    settingsTree.setProperty(identifier, value, undoManager);
     return true;
 }
 
-bool StateHandler::setComboBoxValueFromItemId(const juce::Identifier& comboBox, int itemId)
+bool StateHandler::setStateValueFromItemId(const juce::Identifier& identifier, int itemId)
 {
-    const auto options = getComboBoxOptions(comboBox);
+    const auto options = getOptions(identifier);
     const auto it = std::find_if(options.begin(), options.end(),
-                                 [itemId](const ComboBoxOption& option)
+                                 [itemId](const Option& option)
                                  {
                                      return option.itemId == itemId;
                                  });
 
     if (it != options.end())
-        return setComboBoxValue(comboBox, it->value);
+        return setStateValue(identifier, it->value);
 
     jassertfalse;
     return false;
 }
 
-std::vector<StateHandler::ComboBoxOption> StateHandler::getComboBoxOptions(const juce::Identifier& comboBox) const
+std::vector<StateHandler::Option> StateHandler::getOptions(const juce::Identifier& identifier) const
 {
-    if (comboBox == this->timestretchId)
+    if (identifier == this->bitrateId)
+        return bitrateOptions;
+    if (identifier == this->channelsId)
+        return channelOptions;
+    if (identifier == this->samplerateId)
+        return samplerateOptions;
+    if (identifier == this->timestretchId)
         return timestretchOptions;
-    else if (comboBox == this->loopModeId)
+    if (identifier == this->loopModeId)
         return loopOptions;
-    else if (comboBox == this->triqQuantId)
+    if (identifier == this->triqQuantId)
         return trigQuantOptions;
-    else if (comboBox == this->normalizationId)
+    if (identifier == this->normalizationId)
         return normalizationOptions;
-    else if (comboBox == this->fadeinId)
+    if (identifier == this->fadeinId)
         return fadeinOptions;
-    else if (comboBox == this->fadeoutId)
+    if (identifier == this->fadeoutId)
         return fadeoutOptions;
-    else if (comboBox == this->megabreakFileCountId)
+    if (identifier == this->megabreakFileCountId)
         return megabreakFileCountOptions;
 
     return {};
 }
 
-void StateHandler::refreshComboBox(const juce::Identifier& comboBox, juce::ComboBox& comboBoxRef)
+void StateHandler::refreshComboBox(const juce::Identifier& identifier, juce::ComboBox& comboBoxRef)
 {
-    const auto options = getComboBoxOptions(comboBox);
-    const auto selectedOption = getCurrentComboBoxOption(comboBox);
+    const auto options = getOptions(identifier);
+    const auto selectedOption = getCurrentOption(identifier);
 
     comboBoxRef.clear(juce::dontSendNotification);
 
@@ -169,12 +175,48 @@ void StateHandler::refreshComboBox(const juce::Identifier& comboBox, juce::Combo
         comboBoxRef.setSelectedId(optionToSelect.itemId, juce::dontSendNotification);
 
         if (! selectedOptionStillValid)
-            setComboBoxValueFromItemId(comboBox, optionToSelect.itemId);
+            setStateValueFromItemId(identifier, optionToSelect.itemId);
     }
     else
     {
         comboBoxRef.setSelectedId(0, juce::dontSendNotification);
     }
+}
+
+void StateHandler::refreshRadioButtons(const juce::Identifier& identifier, const std::initializer_list<juce::ToggleButton*> buttons)
+{
+    auto options = getOptions(identifier);
+    std::sort(options.begin(), options.end(),
+              [](const Option& lhs, const Option& rhs)
+              {
+                  return lhs.itemId < rhs.itemId;
+              });
+    const auto selectedOption = getCurrentOption(identifier);
+
+    auto optionIt = options.begin();
+    bool selectedOptionStillValid = false;
+
+    for (auto* button : buttons)
+    {
+        if (button == nullptr)
+            continue;
+
+        if (optionIt != options.end())
+        {
+            const auto& option = *optionIt++;
+            button->setButtonText(option.name);
+            const auto isSelected = option.value == selectedOption.value;
+            button->setToggleState(isSelected, juce::dontSendNotification);
+            selectedOptionStillValid |= isSelected;
+        }
+        else
+        {
+            button->setToggleState(false, juce::dontSendNotification);
+        }
+    }
+
+    if (! options.empty() && ! selectedOptionStillValid)
+        setStateValueFromItemId(identifier, options.front().itemId);
 }
 
 void StateHandler::notifyListeners()
@@ -197,13 +239,21 @@ void StateHandler::initialiseDefaultState()
     valueTree.setProperty(versionId, ProjectInfo::versionString, nullptr);
 
     settingsTree = juce::ValueTree(settingsId);
-    settingsTree.setProperty(timestretchId, getComboBoxOptions(timestretchId).front().value, nullptr);
-    settingsTree.setProperty(loopModeId, getComboBoxOptions(loopModeId).front().value, nullptr);
-    settingsTree.setProperty(triqQuantId, getComboBoxOptions(triqQuantId).front().value, nullptr);
-    settingsTree.setProperty(normalizationId, getComboBoxOptions(normalizationId).front().value, nullptr);
-    settingsTree.setProperty(fadeinId, getComboBoxOptions(fadeinId).front().value, nullptr);
-    settingsTree.setProperty(fadeoutId, getComboBoxOptions(fadeoutId).front().value, nullptr);
-    settingsTree.setProperty(megabreakFileCountId, getComboBoxOptions(megabreakFileCountId).front().value, nullptr);
+    const auto setDefaultOption = [this](const juce::Identifier& identifier)
+    {
+        const auto options = getOptions(identifier);
+        if (! options.empty())
+            settingsTree.setProperty(identifier, options.front().value, nullptr);
+    };
+
+    setDefaultOption(bitrateId);
+    setDefaultOption(timestretchId);
+    setDefaultOption(loopModeId);
+    setDefaultOption(triqQuantId);
+    setDefaultOption(normalizationId);
+    setDefaultOption(fadeinId);
+    setDefaultOption(fadeoutId);
+    setDefaultOption(megabreakFileCountId);
 
     valueTree.addChild(settingsTree, -1, nullptr);
 }

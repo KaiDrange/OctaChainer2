@@ -3,7 +3,16 @@
 #include <JuceHeader.h>
 #include <vector>
 
-struct ComboBoxOption
+/*
+ * UI components use an int Id that is not 0 for selected option, while state values
+ * are untyped with no direct relation to the UI. The Option struct couples the state value with UI index
+ * and keeps track of the actual value type stored in the state.
+ *
+ * Top-most option is always the default value, which is used to initialise the state if no value is present.
+ * Radio buttons will be sorted by itemId in ascending order.
+ */
+
+struct Option
 {
     int itemId;
     std::type_index valueType{typeid(void)};
@@ -11,7 +20,22 @@ struct ComboBoxOption
     juce::String name;
 };
 
-const std::vector<ComboBoxOption> trigQuantOptions = {
+const std::vector<Option> bitrateOptions = {
+    {1, typeid(int), 16, "16bit"},
+    {2, typeid(int), 24, "24bit"}
+};
+
+const std::vector<Option> channelOptions = {
+    {2, typeid(juce::String), "stereo", "Stereo"},
+    {1, typeid(juce::String), "mono", "Mono"}
+};
+
+const std::vector<Option> samplerateOptions = {
+    {1, typeid(int), 44100, "44.1k"},
+    {2, typeid(int), 48000, "48k"}
+};
+
+const std::vector<Option> trigQuantOptions = {
     {1, typeid(juce::String), "direct", "Trig quant direct"},
     {2, typeid(juce::String), "pattern", "Trig quant pattern"},
     {3, typeid(int), 1, "Trig quant 1"},
@@ -32,25 +56,25 @@ const std::vector<ComboBoxOption> trigQuantOptions = {
     {18, typeid(int), 256, "Trig quant 256"}
 };
 
-const std::vector<ComboBoxOption> timestretchOptions = {
+const std::vector<Option> timestretchOptions = {
     {1, typeid(juce::String), "off", "Timestretch off"},
     {2, typeid(juce::String), "normal", "Timestretch normal"},
     {3, typeid(juce::String), "beat", "Timestretch beat"}
 };
 
-const std::vector<ComboBoxOption> loopOptions = {
+const std::vector<Option> loopOptions = {
     {1, typeid(juce::String), "off", "Loop off"},
     {2, typeid(juce::String), "on", "Loop on"},
     {3, typeid(juce::String), "pingpong", "Loop pingpong"}
 };
 
-const std::vector<ComboBoxOption> normalizationOptions = {
+const std::vector<Option> normalizationOptions = {
     {1, typeid(juce::String), "none", "No normalization"},
     {2, typeid(juce::String), "slices", "Normalize slices"},
     {3, typeid(juce::String), "chain", "Normalize chain"}
 };
 
-const std::vector<ComboBoxOption> fadeinOptions = {
+const std::vector<Option> fadeinOptions = {
     {1, typeid(juce::String), "none", "No fade-in"},
     {2, typeid(int), 1, "1ms fade-in"},
     {3, typeid(int), 2, "2ms fade-in"},
@@ -59,7 +83,7 @@ const std::vector<ComboBoxOption> fadeinOptions = {
     {6, typeid(int), 10, "10ms fade-in"}
 };
 
-const std::vector<ComboBoxOption> fadeoutOptions = {
+const std::vector<Option> fadeoutOptions = {
     {1, typeid(juce::String), "none", "No fade-out"},
     {2, typeid(int), 1, "1ms fade-out"},
     {3, typeid(int), 2, "2ms fade-out"},
@@ -68,7 +92,7 @@ const std::vector<ComboBoxOption> fadeoutOptions = {
     {6, typeid(int), 10, "10ms fade-out"}
 };
 
-const std::vector<ComboBoxOption> megabreakFileCountOptions = {
+const std::vector<Option> megabreakFileCountOptions = {
     {1, typeid(int), 1, "File count: 1"},
     {2, typeid(int), 2, "File count: 2"},
     {3, typeid(int), 3, "File count: 3"},
