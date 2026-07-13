@@ -236,7 +236,9 @@ void SettingsPanelComponent::stateChanged()
     stateHandler.refreshComboBox(stateHandler.fadeinId, fadeinBox);
     stateHandler.refreshComboBox(stateHandler.fadeoutId, fadeoutBox);
     stateHandler.refreshComboBox(stateHandler.megabreakFileCountId, megabreakFileCountBox);
-    refreshNumberInputs();
+
+    gainInput.setValue(juce::var(stateHandler.getStateValue<double>(stateHandler.gainId, 0.0)));
+    bpmInput.setValue(juce::var(stateHandler.getStateValue<double>(stateHandler.bpmId, 120.0)));
 }
 
 void SettingsPanelComponent::numberInputChanged(NumberInputComponent* numberInput)
@@ -253,10 +255,4 @@ void SettingsPanelComponent::numberInputChanged(NumberInputComponent* numberInpu
 
     if (numberInput == &bpmInput)
         stateHandler.setStateValue(stateHandler.bpmId, value);
-}
-
-void SettingsPanelComponent::refreshNumberInputs()
-{
-    gainInput.setValue(juce::var(stateHandler.getStateValue<double>(stateHandler.gainId, 0.0)));
-    bpmInput.setValue(juce::var(stateHandler.getStateValue<double>(stateHandler.bpmId, 120.0)));
 }

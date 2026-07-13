@@ -31,7 +31,6 @@ private:
     void layoutOtAttributesSection();
     void layoutChainExportSection();
     void layoutMegabreakExportSection();
-    void refreshNumberInputs();
 
     enum RadioGroupId
     {
