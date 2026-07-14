@@ -274,6 +274,11 @@ juce::ValueTree StateHandler::getSliceTree(const int index) const
     return dataTree.getChild(index);
 }
 
+juce::ValueTree StateHandler::getSelectedSliceTree() const
+{
+    return getSliceTree(getSelectedSliceIndex());
+}
+
 int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager)
 {
     ensureDataTree();
@@ -284,11 +289,11 @@ int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager)
     sliceTree.setProperty(sliceChannelsId, slice.channels, nullptr);
     sliceTree.setProperty(sliceSamplerateId, slice.samplerate, nullptr);
     sliceTree.setProperty(sliceBitrateId, static_cast<int>(slice.bitDepth), nullptr);
-    sliceTree.setProperty(sliceNumSamplesId, static_cast<juce::int64>(slice.lengthInSamples), nullptr);
-    sliceTree.setProperty(sliceStartSampleId, static_cast<juce::int64>(slice.start), nullptr);
-    sliceTree.setProperty(sliceEndSampleId, static_cast<juce::int64>(slice.end), nullptr);
-    sliceTree.setProperty(sliceLoopStartSampleId, static_cast<juce::int64>(slice.loopStart), nullptr);
-    sliceTree.setProperty(sliceLoopEndSampleId, static_cast<juce::int64>(slice.loopEnd), nullptr);
+    sliceTree.setProperty(sliceNumSamplesId, slice.lengthInSamples, nullptr);
+    sliceTree.setProperty(sliceStartSampleId, slice.start, nullptr);
+    sliceTree.setProperty(sliceEndSampleId, slice.end, nullptr);
+    sliceTree.setProperty(sliceLoopStartSampleId, slice.loopStart, nullptr);
+    sliceTree.setProperty(sliceLoopEndSampleId, slice.loopEnd, nullptr);
     sliceTree.setProperty(sliceAudioDataId, juce::var(createAudioDataBlock(slice)), nullptr);
 
     const auto newIndex = dataTree.getNumChildren();
@@ -296,6 +301,27 @@ int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager)
     dataTree.setProperty(selectedSliceId, newIndex, undoManager);
 
     return newIndex;
+}
+
+bool StateHandler::selectSlice(const int index, juce::UndoManager* undoManager)
+{
+    ensureDataTree();
+
+    const auto selectedIndex = juce::isPositiveAndBelow(index, dataTree.getNumChildren()) ? index : -1;
+    if (getSelectedSliceIndex() == selectedIndex)
+        return false;
+
+    dataTree.setProperty(selectedSliceId, selectedIndex, undoManager);
+    return true;
+}
+
+int StateHandler::getSelectedSliceIndex() const
+{
+    if (! dataTree.isValid())
+        return -1;
+
+    const auto selectedIndex = static_cast<int>(dataTree.getProperty(selectedSliceId, -1));
+    return juce::isPositiveAndBelow(selectedIndex, dataTree.getNumChildren()) ? selectedIndex : -1;
 }
 
 void StateHandler::notifyListeners()

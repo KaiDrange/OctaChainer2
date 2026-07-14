@@ -10,10 +10,11 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse)
                              stateHandler),
       sliceWaveformComponent(PanelComponent::Dimension::percentage(sliceWaveformHeightPercentage),
                              PanelComponent::Dimension::percentage(sliceWaveformHeightPercentage),
-                             "Slice waveform"),
+                             "Slice waveform",
+                             stateHandler),
       chainWaveformComponent(PanelComponent::Dimension::percentage(chainWaveformWidthPercentage),
                              PanelComponent::Dimension::percentage(chainWaveformWidthPercentage),
-                             "Chain waveforms"),
+                             "Chain waveforms", stateHandler),
       audioPanelComponent(PanelComponent::Dimension::fixed(audioSectionFixedHeight),
                           PanelComponent::Dimension::fixed(settingsPanelFixedWidth))
 {

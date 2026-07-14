@@ -56,14 +56,14 @@ public:
 
     int getNumSlices() const;
     juce::ValueTree getSliceTree(int index) const;
-    // juce::ValueTree getSelectedSliceTree() const;
+    juce::ValueTree getSelectedSliceTree() const;
 
     int addSlice(const Slice& slice, juce::UndoManager* undoManager = nullptr);
     // void removeSelectedSlice();
     // void clearSlices();
-    //
-    // void selectSlice(int index);
-    // int getSelectedSliceIndex() const;
+
+    bool selectSlice(int index, juce::UndoManager* undoManager = nullptr);
+    int getSelectedSliceIndex() const;
     //
     // bool moveSlice(int fromIndex, int toIndex);
     // bool moveSelectedSliceUp();

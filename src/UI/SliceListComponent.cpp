@@ -80,6 +80,11 @@ void SliceListComponent::paintCell(juce::Graphics& g, const int rowNumber, const
     g.drawVerticalLine(width - 1, 0.0f, static_cast<float>(height));
 }
 
+void SliceListComponent::selectedRowsChanged(const int lastRowSelected)
+{
+    stateHandler.selectSlice(lastRowSelected);
+}
+
 void SliceListComponent::stateChanged()
 {
     table.updateContent();
