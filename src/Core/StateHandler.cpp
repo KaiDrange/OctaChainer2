@@ -26,7 +26,7 @@ void StateHandler::initialiseDefaultState()
             settingsTree.setProperty(identifier, options.front().value, nullptr);
     };
 
-    setDefaultOption(bitrateId);
+    setDefaultOption(bitDepthId);
     setDefaultOption(timestretchId);
     setDefaultOption(loopModeId);
     setDefaultOption(triqQuantId);
@@ -170,8 +170,8 @@ bool StateHandler::setStateValueFromItemId(const juce::Identifier& identifier, i
 
 std::vector<StateHandler::Option> StateHandler::getOptions(const juce::Identifier& identifier) const
 {
-    if (identifier == this->bitrateId)
-        return bitrateOptions;
+    if (identifier == this->bitDepthId)
+        return bitDepthOptions;
     if (identifier == this->channelsId)
         return channelOptions;
     if (identifier == this->samplerateId)

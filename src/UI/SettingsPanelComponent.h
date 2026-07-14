@@ -34,13 +34,13 @@ private:
 
     enum RadioGroupId
     {
-        bitrateGroupId = 1,
+        bitDepthGroupId = 1,
         channelGroupId = 2,
         sampleRateGroupId = 3
     };
 
-    juce::ToggleButton bitrate16Bit;
-    juce::ToggleButton bitrate24Bit;
+    juce::ToggleButton bitDepth16Bit;
+    juce::ToggleButton bitDepth24Bit;
 
     juce::ToggleButton channelMono;
     juce::ToggleButton channelStereo;
@@ -48,7 +48,7 @@ private:
     juce::ToggleButton sampleRate48k;
     juce::ToggleButton sampleRate44k;
 
-    SectionComponent bitrateSection{"Bitrate"};
+    SectionComponent bitDepthSection{"Bit depth"};
     SectionComponent channelSection{"Channels"};
     SectionComponent sampleRateSection{"Sample rate"};
     SectionComponent otAttributesSection{"OT attributes"};
@@ -63,8 +63,8 @@ private:
     juce::ComboBox fadeoutBox;
     juce::ComboBox megabreakFileCountBox;
 
-    NumberInputComponent gainInput{"Gain:", stateHandler.gainValue.min, stateHandler.gainValue.max, stateHandler.gainValue.defaultValue, stateHandler.gainValue.stepSize, false};
-    NumberInputComponent bpmInput{"BPM:", stateHandler.bpmValue.min, stateHandler.bpmValue.max, stateHandler.bpmValue.defaultValue, stateHandler.bpmValue.stepSize, false};
+    NumberInputComponent gainInput{"Gain:", StateHandler::gainValue.min, StateHandler::gainValue.max, StateHandler::gainValue.defaultValue, StateHandler::gainValue.stepSize, false};
+    NumberInputComponent bpmInput{"BPM:", StateHandler::bpmValue.min, StateHandler::bpmValue.max, StateHandler::bpmValue.defaultValue, StateHandler::bpmValue.stepSize, false};
 
     juce::ToggleButton exportOtFile{"OT file"};
     juce::ToggleButton exportEvenGrid{"Even grid"};

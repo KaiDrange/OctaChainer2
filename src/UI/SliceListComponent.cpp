@@ -159,7 +159,7 @@ juce::String SliceListComponent::formatAudioformat(const StateHandler& stateHand
 
     juce::String channelsString;
     if (numChannels > 2)
-        channelsString = juce::String(numChannels) + " channels";
+        channelsString = juce::String(numChannels) + " ch";
     else
         channelsString = numChannels == 1 ? "Mono" : "Stereo";
 

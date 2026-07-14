@@ -20,7 +20,7 @@ struct Option
     juce::String name;
 };
 
-const std::vector<Option> bitrateOptions = {
+const std::vector<Option> bitDepthOptions = {
     {1, typeid(int), 16, "16bit"},
     {2, typeid(int), 24, "24bit"}
 };

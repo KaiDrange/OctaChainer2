@@ -12,7 +12,7 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
 {
     stateHandler.addListener(this);
 
-    addAndMakeVisible(bitrateSection);
+    addAndMakeVisible(bitDepthSection);
     addAndMakeVisible(channelSection);
     addAndMakeVisible(sampleRateSection);
     addAndMakeVisible(otAttributesSection);
@@ -25,8 +25,8 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     megabreakExportSection.backgroundColour =
         megabreakExportSection.backgroundColour.withHue(megabreakExportSection.backgroundColour.getHue() - 0.05f);
 
-    bitrateSection.addAndMakeVisible(bitrate16Bit);
-    bitrateSection.addAndMakeVisible(bitrate24Bit);
+    bitDepthSection.addAndMakeVisible(bitDepth16Bit);
+    bitDepthSection.addAndMakeVisible(bitDepth24Bit);
     channelSection.addAndMakeVisible(channelMono);
     channelSection.addAndMakeVisible(channelStereo);
     sampleRateSection.addAndMakeVisible(sampleRate44k);
@@ -49,7 +49,7 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     megabreakExportSection.addAndMakeVisible(megabreakFileCountBox);
     megabreakExportSection.addAndMakeVisible(createMegabreakButton);
 
-    configureRadioButtons(stateHandler, stateHandler.bitrateId, bitrateGroupId, { &bitrate16Bit, &bitrate24Bit });
+    configureRadioButtons(stateHandler, stateHandler.bitDepthId, bitDepthGroupId, { &bitDepth16Bit, &bitDepth24Bit });
     configureRadioButtons(stateHandler, stateHandler.channelsId, channelGroupId, { &channelMono, &channelStereo });
     configureRadioButtons(stateHandler, stateHandler.samplerateId, sampleRateGroupId, { &sampleRate44k, &sampleRate48k });
 
@@ -131,7 +131,7 @@ void SettingsPanelComponent::layoutTopSections()
     auto topSections = innerBounds.withHeight(juce::jmin(innerBounds.getHeight(), topSectionHeight));
     const auto topSectionWidth = (topSections.getWidth() - StyleSheet::sectionGap * 2) / 3;
 
-    bitrateSection.setBounds(topSections.removeFromLeft(topSectionWidth));
+    bitDepthSection.setBounds(topSections.removeFromLeft(topSectionWidth));
     topSections.removeFromLeft(StyleSheet::sectionGap);
     channelSection.setBounds(topSections.removeFromLeft(topSectionWidth));
     topSections.removeFromLeft(StyleSheet::sectionGap);
@@ -147,7 +147,7 @@ void SettingsPanelComponent::layoutTopSections()
         }
     };
 
-    placeButtons(bitrateSection, { &bitrate16Bit, &bitrate24Bit });
+    placeButtons(bitDepthSection, { &bitDepth16Bit, &bitDepth24Bit });
     placeButtons(channelSection, { &channelMono, &channelStereo });
     placeButtons(sampleRateSection, { &sampleRate44k, &sampleRate48k });
 }
@@ -225,7 +225,7 @@ void SettingsPanelComponent::layoutMegabreakExportSection()
 
 void SettingsPanelComponent::stateChanged()
 {
-    stateHandler.refreshRadioButtons(stateHandler.bitrateId, { &bitrate16Bit, &bitrate24Bit });
+    stateHandler.refreshRadioButtons(stateHandler.bitDepthId, { &bitDepth16Bit, &bitDepth24Bit });
     stateHandler.refreshRadioButtons(stateHandler.channelsId, { &channelMono, &channelStereo });
     stateHandler.refreshRadioButtons(stateHandler.samplerateId, { &sampleRate44k, &sampleRate48k });
 

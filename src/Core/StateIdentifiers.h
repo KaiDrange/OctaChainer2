@@ -8,7 +8,7 @@ const juce::Identifier versionId{"version"};
 const juce::Identifier settingsId{"settings"};
 
 // Settings identifiers
-const juce::Identifier bitrateId = "bitrate";
+const juce::Identifier bitDepthId = "bitDepth";
 const juce::Identifier channelsId = "channels";
 const juce::Identifier samplerateId = "samplerate";
 const juce::Identifier timestretchId = "timeStretch";
