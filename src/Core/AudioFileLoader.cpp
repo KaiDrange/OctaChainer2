@@ -65,7 +65,7 @@ bool AudioFileLoader::loadFile(const juce::File& file, Slice& destination, juce:
     }
 
     destination.samplerate = reader->sampleRate;
-    destination.bitrate = reader->bitsPerSample;
+    destination.bitDepth = reader->bitsPerSample;
     destination.channels = numChannels;
     destination.lengthInSamples = reader->lengthInSamples;
     destination.start = 0;

@@ -283,7 +283,7 @@ int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager)
     sliceTree.setProperty(sliceSourcePathId, slice.sourcePath, nullptr);
     sliceTree.setProperty(sliceChannelsId, slice.channels, nullptr);
     sliceTree.setProperty(sliceSamplerateId, slice.samplerate, nullptr);
-    sliceTree.setProperty(sliceBitrateId, static_cast<int>(slice.bitrate), nullptr);
+    sliceTree.setProperty(sliceBitrateId, static_cast<int>(slice.bitDepth), nullptr);
     sliceTree.setProperty(sliceNumSamplesId, static_cast<juce::int64>(slice.lengthInSamples), nullptr);
     sliceTree.setProperty(sliceStartSampleId, static_cast<juce::int64>(slice.start), nullptr);
     sliceTree.setProperty(sliceEndSampleId, static_cast<juce::int64>(slice.end), nullptr);

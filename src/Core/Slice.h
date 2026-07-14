@@ -9,7 +9,7 @@ public:
     [[nodiscard]] const juce::AudioBuffer<float>* getAudioData() const { return &audioData; }
 
     double samplerate = 0.0f;
-    unsigned int bitrate = 0;
+    unsigned int bitDepth = 0;
     int channels = 0;
     int64 lengthInSamples = 0;
     int64 start = 0;
