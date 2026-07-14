@@ -9,7 +9,8 @@
 #include "StyleSheet.h"
 #include "WaveformComponent.h"
 
-class MainComponent : public juce::Component
+class MainComponent : public juce::Component,
+                      private StateHandler::Listener
 {
 public:
     static constexpr int defaultWidth = 1536;
@@ -37,9 +38,13 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    void stateChanged() override;
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
+
+    void updateSliceWaveform();
+    bool loadSelectedSliceAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const;
 
     StyleSheet style;
     StateHandler& stateHandler;

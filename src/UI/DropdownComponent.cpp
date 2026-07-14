@@ -1,4 +1,3 @@
-#include <JuceHeader.h>
 #include "DropdownComponent.h"
 
 DropdownComponent::DropdownComponent() {
