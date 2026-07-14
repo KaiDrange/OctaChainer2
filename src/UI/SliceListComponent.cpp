@@ -67,11 +67,11 @@ void SliceListComponent::paintCell(juce::Graphics& g, const int rowNumber, const
     if (columnId == 1)
         text = sliceTree.getProperty(stateHandler.sliceNameId).toString();
     else if (columnId == 2)
-        text = formatDuration(stateHandler, sliceTree);
+        text = formatAudioformat(stateHandler, sliceTree);
     else if (columnId == 3)
-        text = juce::String(static_cast<double>(sliceTree.getProperty(stateHandler.sliceSamplerateId, 0.0)), 0) + " Hz";
+        text = formatDuration(stateHandler, sliceTree);
     else if (columnId == 4)
-        text = juce::String(static_cast<int>(sliceTree.getProperty(stateHandler.sliceChannelsId, 0)));
+        text = sliceTree.getProperty(stateHandler.sliceSourcePathId).toString();
 
     g.setColour(getLookAndFeel().findColour(juce::ListBox::textColourId));
     g.drawText(text, 4, 0, width - 8, height, juce::Justification::centredLeft, true);
@@ -147,4 +147,22 @@ juce::String SliceListComponent::formatDuration(const StateHandler& stateHandler
         return {};
 
     return juce::String(static_cast<double>(lengthInSamples) / sampleRate, 2) + "s";
+}
+
+juce::String SliceListComponent::formatAudioformat(const StateHandler& stateHandler, const juce::ValueTree& sliceTree)
+{
+    const auto numChannels = static_cast<int>(sliceTree.getProperty(stateHandler.sliceChannelsId, 0));
+    const auto bitrate = static_cast<int>(sliceTree.getProperty(stateHandler.sliceBitrateId, 0));
+    const auto samplerate = static_cast<int>(sliceTree.getProperty(stateHandler.sliceSamplerateId, 0));
+    if (bitrate <= 0 || samplerate <= 0  || numChannels <= 0)
+        return {};
+
+    juce::String channelsString;
+    if (numChannels > 2)
+        channelsString = juce::String(numChannels) + " channels";
+    else
+        channelsString = numChannels == 1 ? "Mono" : "Stereo";
+
+
+    return channelsString + ", " + juce::String(samplerate/1000) + "kHz/" + juce::String(bitrate) + "bit";
 }

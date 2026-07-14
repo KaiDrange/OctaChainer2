@@ -35,10 +35,10 @@ private:
     };
 
     const std::vector<Column> columns = {
-        {1, "Slice", 280, 120, 800},
-        {2, "Length", 90, 60, 160},
-        {3, "Sample rate", 110, 80, 180},
-        {4, "Channels", 80, 60, 120}
+        {1, "Slice", 200, 120, 400},
+        {2, "Format", 90, 60, 160},
+        {3, "Length", 90, 0, 160},
+        {4, "Source path", 280, 0, 800}
     };
 
     void configureTable();
@@ -46,6 +46,7 @@ private:
     void loadFiles(const juce::Array<juce::File>& files);
     static void showLoadError(const juce::String& message);
     static juce::String formatDuration(const StateHandler& stateHandler, const juce::ValueTree& sliceTree);
+    static juce::String formatAudioformat(const StateHandler& stateHandler, const juce::ValueTree& sliceTree);
 
     StateHandler& stateHandler;
     AudioFileLoader audioFileLoader;
