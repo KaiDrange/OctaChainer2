@@ -13,6 +13,35 @@ StateHandler::~StateHandler()
     removeTreeListeners();
 }
 
+void StateHandler::initialiseDefaultState()
+{
+    valueTree.setProperty(versionId, ProjectInfo::versionString, nullptr);
+
+    settingsTree = juce::ValueTree(settingsId);
+    const auto setDefaultOption = [this](const juce::Identifier& identifier)
+    {
+        const auto options = getOptions(identifier);
+        if (! options.empty())
+            settingsTree.setProperty(identifier, options.front().value, nullptr);
+    };
+
+    setDefaultOption(bitrateId);
+    setDefaultOption(timestretchId);
+    setDefaultOption(loopModeId);
+    setDefaultOption(triqQuantId);
+    setDefaultStateValue(gainId, gainValue.defaultValue);
+    setDefaultStateValue(bpmId, bpmValue.defaultValue);
+    setDefaultOption(normalizationId);
+    setDefaultOption(fadeinId);
+    setDefaultOption(fadeoutId);
+    setDefaultStateValue(otFileId, otFileDefault);
+    setDefaultStateValue(evenGridId, evenGridDefault);
+    setDefaultStateValue(embedMarkersId, embedMarkersDefault);
+    setDefaultOption(megabreakFileCountId);
+
+    valueTree.addChild(settingsTree, -1, nullptr);
+}
+
 void StateHandler::addListener(Listener* listenerToAdd)
 {
     listeners.add(listenerToAdd);
@@ -239,32 +268,6 @@ void StateHandler::addTreeListeners()
 void StateHandler::removeTreeListeners()
 {
     valueTree.removeListener(this);
-}
-
-void StateHandler::initialiseDefaultState()
-{
-    valueTree.setProperty(versionId, ProjectInfo::versionString, nullptr);
-
-    settingsTree = juce::ValueTree(settingsId);
-    const auto setDefaultOption = [this](const juce::Identifier& identifier)
-    {
-        const auto options = getOptions(identifier);
-        if (! options.empty())
-            settingsTree.setProperty(identifier, options.front().value, nullptr);
-    };
-
-    setDefaultOption(bitrateId);
-    setDefaultOption(timestretchId);
-    setDefaultOption(loopModeId);
-    setDefaultOption(triqQuantId);
-    setDefaultStateValue(gainId, 0);
-    setDefaultStateValue(bpmId, 120);
-    setDefaultOption(normalizationId);
-    setDefaultOption(fadeinId);
-    setDefaultOption(fadeoutId);
-    setDefaultOption(megabreakFileCountId);
-
-    valueTree.addChild(settingsTree, -1, nullptr);
 }
 
 void StateHandler::ensureSettingsTree()

@@ -9,8 +9,7 @@ class StateHandler : private juce::ValueTree::Listener
 {
 public:
 #include "StateIdentifiers.h"
-#include "SettingsOptions.h"
-#include "NumberValues.h"
+#include "StateValueDefinitions.h"
 
     class Listener
     {

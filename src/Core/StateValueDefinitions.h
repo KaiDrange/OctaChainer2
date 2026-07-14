@@ -106,3 +106,22 @@ const std::vector<Option> megabreakFileCountOptions = {
     {11, typeid(int), 48, "File count: 48"},
     {12, typeid(int), 64, "File count: 64"}
 };
+
+// Shown as number inputs in UI
+struct NumberValue
+{
+    double min;
+    double max;
+    double defaultValue;
+    double stepSize;
+};
+
+static const inline NumberValue gainValue = { -24, 24, 0, 0.5f };
+static const inline NumberValue bpmValue = { 30, 300, 120, 0.25f };
+static const inline NumberValue chainMaxLengthValue = { 1, 120, 64, 1 };
+
+
+// Checkboxes in UI
+static const bool otFileDefault = true;
+static const bool evenGridDefault = false;
+static const bool embedMarkersDefault = false;

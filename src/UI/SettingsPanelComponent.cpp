@@ -239,6 +239,9 @@ void SettingsPanelComponent::stateChanged()
 
     gainInput.setValue(juce::var(stateHandler.getStateValue<double>(stateHandler.gainId, StateHandler::gainValue.defaultValue)));
     bpmInput.setValue(juce::var(stateHandler.getStateValue<double>(stateHandler.bpmId, StateHandler::bpmValue.defaultValue)));
+    exportOtFile.setToggleState(juce::var(stateHandler.getStateValue<bool>(stateHandler.otFileId, StateHandler::otFileDefault)), juce::NotificationType::dontSendNotification);
+    exportEvenGrid.setToggleState(juce::var(stateHandler.getStateValue<bool>(stateHandler.evenGridId, StateHandler::evenGridDefault)), juce::NotificationType::dontSendNotification);
+    exportEmbedMarkers.setToggleState(juce::var(stateHandler.getStateValue<bool>(stateHandler.embedMarkersId, StateHandler::embedMarkersDefault)), juce::NotificationType::dontSendNotification);
 }
 
 void SettingsPanelComponent::numberInputChanged(NumberInputComponent* numberInput)
