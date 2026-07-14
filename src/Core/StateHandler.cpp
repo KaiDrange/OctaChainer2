@@ -1,5 +1,6 @@
 #include <algorithm>
 #include "StateHandler.h"
+#include "Slice.h"
 
 StateHandler::StateHandler()
     : valueTree(stateTypeId)
@@ -40,6 +41,10 @@ void StateHandler::initialiseDefaultState()
     setDefaultOption(megabreakFileCountId);
 
     valueTree.addChild(settingsTree, -1, nullptr);
+
+    dataTree = juce::ValueTree(dataId);
+    dataTree.setProperty(selectedSliceId, -1, nullptr);
+    valueTree.addChild(dataTree, -1, nullptr);
 }
 
 void StateHandler::addListener(Listener* listenerToAdd)
@@ -68,6 +73,7 @@ void StateHandler::setState(const juce::ValueTree& newState)
     removeTreeListeners();
     valueTree = newState;
     ensureSettingsTree();
+    ensureDataTree();
     addTreeListeners();
     notifyListeners();
 }
@@ -255,6 +261,43 @@ void StateHandler::refreshRadioButtons(const juce::Identifier& identifier, const
         setStateValueFromItemId(identifier, options.front().itemId);
 }
 
+int StateHandler::getNumSlices() const
+{
+    return dataTree.isValid() ? dataTree.getNumChildren() : 0;
+}
+
+juce::ValueTree StateHandler::getSliceTree(const int index) const
+{
+    if (! dataTree.isValid() || ! juce::isPositiveAndBelow(index, dataTree.getNumChildren()))
+        return {};
+
+    return dataTree.getChild(index);
+}
+
+int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager)
+{
+    ensureDataTree();
+
+    juce::ValueTree sliceTree(sliceId);
+    sliceTree.setProperty(sliceNameId, slice.name, nullptr);
+    sliceTree.setProperty(sliceSourcePathId, slice.sourcePath, nullptr);
+    sliceTree.setProperty(sliceChannelsId, slice.channels, nullptr);
+    sliceTree.setProperty(sliceSamplerateId, slice.samplerate, nullptr);
+    sliceTree.setProperty(sliceBitrateId, static_cast<int>(slice.bitrate), nullptr);
+    sliceTree.setProperty(sliceNumSamplesId, static_cast<juce::int64>(slice.lengthInSamples), nullptr);
+    sliceTree.setProperty(sliceStartSampleId, static_cast<juce::int64>(slice.start), nullptr);
+    sliceTree.setProperty(sliceEndSampleId, static_cast<juce::int64>(slice.end), nullptr);
+    sliceTree.setProperty(sliceLoopStartSampleId, static_cast<juce::int64>(slice.loopStart), nullptr);
+    sliceTree.setProperty(sliceLoopEndSampleId, static_cast<juce::int64>(slice.loopEnd), nullptr);
+    sliceTree.setProperty(sliceAudioDataId, juce::var(createAudioDataBlock(slice)), nullptr);
+
+    const auto newIndex = dataTree.getNumChildren();
+    dataTree.addChild(sliceTree, -1, undoManager);
+    dataTree.setProperty(selectedSliceId, newIndex, undoManager);
+
+    return newIndex;
+}
+
 void StateHandler::notifyListeners()
 {
     listeners.call([](Listener& listener) { listener.stateChanged(); });
@@ -275,16 +318,27 @@ void StateHandler::ensureSettingsTree()
     settingsTree = valueTree.getChildWithName(settingsId);
 
     if (settingsTree.isValid())
+        return;
+
+    settingsTree = juce::ValueTree(settingsId);
+    valueTree.addChild(settingsTree, -1, nullptr);
+}
+
+void StateHandler::ensureDataTree()
+{
+    dataTree = valueTree.getChildWithName(dataId);
+
+    if (dataTree.isValid())
     {
-        setDefaultStateValue(gainId, 0);
-        setDefaultStateValue(bpmId, 120);
+        if (! dataTree.hasProperty(selectedSliceId))
+            dataTree.setProperty(selectedSliceId, -1, nullptr);
+
         return;
     }
 
-    settingsTree = juce::ValueTree(settingsId);
-    setDefaultStateValue(gainId, 0);
-    setDefaultStateValue(bpmId, 120);
-    valueTree.addChild(settingsTree, -1, nullptr);
+    dataTree = juce::ValueTree(dataId);
+    dataTree.setProperty(selectedSliceId, -1, nullptr);
+    valueTree.addChild(dataTree, -1, nullptr);
 }
 
 void StateHandler::setDefaultStateValue(const juce::Identifier& identifier, const juce::var& value)
@@ -321,4 +375,17 @@ void StateHandler::valueTreeParentChanged(juce::ValueTree&)
 void StateHandler::valueTreeRedirected(juce::ValueTree&)
 {
     notifyListeners();
+}
+
+juce::MemoryBlock StateHandler::createAudioDataBlock(const Slice& slice)
+{
+    const auto* audioData = slice.getAudioData();
+    juce::MemoryOutputStream stream(static_cast<size_t>(audioData->getNumChannels())
+                                    * static_cast<size_t>(audioData->getNumSamples())
+                                    * sizeof(float));
+
+    for (int channel = 0; channel < audioData->getNumChannels(); ++channel)
+        stream.write(audioData->getReadPointer(channel), static_cast<size_t>(audioData->getNumSamples()) * sizeof(float));
+
+    return stream.getMemoryBlock();
 }

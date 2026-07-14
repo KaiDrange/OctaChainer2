@@ -4,7 +4,7 @@
 
 #include "../Core/StateHandler.h"
 #include "AudioPanelComponent.h"
-#include "SampleListComponent.h"
+#include "SliceListComponent.h"
 #include "SettingsPanelComponent.h"
 #include "StyleSheet.h"
 #include "WaveformComponent.h"
@@ -43,7 +43,7 @@ private:
 
     StyleSheet style;
     StateHandler& stateHandler;
-    SampleListComponent sampleListComponent;
+    SliceListComponent sampleListComponent;
     SettingsPanelComponent settingsPanelComponent;
     WaveformComponent sliceWaveformComponent;
     WaveformComponent chainWaveformComponent;

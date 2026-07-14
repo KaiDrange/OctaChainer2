@@ -24,3 +24,19 @@ const juce::Identifier evenGridId = "evenGrid";
 const juce::Identifier embedMarkersId = "embedMarkers";
 const juce::Identifier megabreakFileCountId = "megabreakFileCount";
 const juce::Identifier masterVolumeId = "masterVolume";
+
+// Data identifiers
+const juce::Identifier dataId = "data";
+const juce::Identifier sliceId = "slice";
+const juce::Identifier selectedSliceId = "selectedSlice";
+const juce::Identifier sliceNameId = "sliceName";
+const juce::Identifier sliceSourcePathId = "sliceSourcePath";
+const juce::Identifier sliceChannelsId = "sliceChannels";
+const juce::Identifier sliceSamplerateId = "sliceSampleRate";
+const juce::Identifier sliceBitrateId = "sliceBitrate";
+const juce::Identifier sliceNumSamplesId = "sliceNumSamples";
+const juce::Identifier sliceAudioDataId = "sliceAudioData";
+const juce::Identifier sliceStartSampleId = "sliceStartSample";
+const juce::Identifier sliceEndSampleId = "sliceEndSample";
+const juce::Identifier sliceLoopStartSampleId = "sliceLoopStartSample";
+const juce::Identifier sliceLoopEndSampleId = "sliceLoopEndSample";

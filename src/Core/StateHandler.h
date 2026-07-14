@@ -1,9 +1,10 @@
 #pragma once
 
-#include <any>
 #include <JuceHeader.h>
 #include <initializer_list>
 #include <vector>
+
+class Slice;
 
 class StateHandler : private juce::ValueTree::Listener
 {
@@ -53,15 +54,33 @@ public:
     void valueTreeParentChanged(juce::ValueTree&) override;
     void valueTreeRedirected(juce::ValueTree&) override;
 
+    int getNumSlices() const;
+    juce::ValueTree getSliceTree(int index) const;
+    // juce::ValueTree getSelectedSliceTree() const;
+
+    int addSlice(const Slice& slice, juce::UndoManager* undoManager = nullptr);
+    // void removeSelectedSlice();
+    // void clearSlices();
+    //
+    // void selectSlice(int index);
+    // int getSelectedSliceIndex() const;
+    //
+    // bool moveSlice(int fromIndex, int toIndex);
+    // bool moveSelectedSliceUp();
+    // bool moveSelectedSliceDown();
+
 private:
     void addTreeListeners();
     void removeTreeListeners();
     void initialiseDefaultState();
     void ensureSettingsTree();
+    void ensureDataTree();
     void setDefaultStateValue(const juce::Identifier& identifier, const juce::var& value);
     void notifyListeners();
+    static juce::MemoryBlock createAudioDataBlock(const Slice& slice);
 
     juce::ValueTree valueTree;
     juce::ValueTree settingsTree;
+    juce::ValueTree dataTree;
     juce::ListenerList<Listener> listeners;
 };

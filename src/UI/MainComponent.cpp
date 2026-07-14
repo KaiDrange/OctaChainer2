@@ -3,7 +3,8 @@
 MainComponent::MainComponent(StateHandler& stateHandlerToUse)
     : stateHandler(stateHandlerToUse),
       sampleListComponent(PanelComponent::Dimension::percentage(sampleListHeightPercentage, sampleListMinHeight),
-                          PanelComponent::Dimension::percentage(sampleListWidthPercentage)),
+                          PanelComponent::Dimension::percentage(sampleListWidthPercentage),
+                          stateHandler),
       settingsPanelComponent(PanelComponent::Dimension::fixed(settingsPanelFixedHeight),
                              PanelComponent::Dimension::fixed(settingsPanelFixedWidth),
                              stateHandler),
