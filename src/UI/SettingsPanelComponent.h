@@ -7,9 +7,7 @@
 #include "PanelComponent.h"
 #include "SectionComponent.h"
 
-class SettingsPanelComponent : public PanelComponent,
-                              private StateHandler::Listener,
-                              private NumberInputComponent::Listener
+class SettingsPanelComponent : public PanelComponent, StateHandler::Listener, NumberInputComponent::Listener
 {
 public:
     SettingsPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,

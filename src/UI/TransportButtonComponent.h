@@ -5,6 +5,13 @@
 class TransportButtonComponent : public juce::Component
 {
 public:
+    enum class TransportEvent
+    {
+        PlaySlice,
+        PlayChain,
+        Stop
+    };
+
     explicit TransportButtonComponent(const juce::String& labelText);
 
     juce::DrawableButton& getButton() noexcept;

@@ -1,14 +1,14 @@
 #include "PanelComponent.h"
 
 
-PanelComponent::PanelComponent(Dimension heightDimension, Dimension widthDimension, juce::String title)
-    : panelWidth(widthDimension),
-      panelHeight(heightDimension),
+PanelComponent::PanelComponent(const Dimension& height, const Dimension& width, juce::String title)
+    : panelWidth(width),
+      panelHeight(height),
       title(std::move(title))
 {
 }
 
-int PanelComponent::resolveDimension(const Dimension dimension, const int availableSize)
+int PanelComponent::resolveDimension(const Dimension& dimension, const int availableSize)
 {
     const auto minimum = juce::jmax(0, dimension.minimum);
     const auto resolved = dimension.mode == Dimension::Mode::Fixed

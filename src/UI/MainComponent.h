@@ -10,7 +10,8 @@
 #include "WaveformComponent.h"
 
 class MainComponent : public juce::Component,
-                      private StateHandler::Listener
+                      StateHandler::Listener,
+                      AudioPanelComponent::Listener
 {
 public:
     static constexpr int defaultWidth = 1536;
@@ -39,6 +40,7 @@ public:
     void paint(juce::Graphics& g) override;
     void resized() override;
     void stateChanged() override;
+    void transportButtonPressed(TransportButtonComponent::TransportEvent event) override;
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)

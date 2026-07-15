@@ -25,6 +25,7 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse)
     addAndMakeVisible(audioPanelComponent);
 
     stateHandler.addListener(this);
+    audioPanelComponent.addListener(this);
     updateSliceWaveform();
 }
 
@@ -32,6 +33,7 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse)
 MainComponent::~MainComponent()
 {
     stateHandler.removeListener(this);
+    audioPanelComponent.removeListener(this);
     setLookAndFeel(nullptr);
 }
 
@@ -72,6 +74,18 @@ void MainComponent::resized()
 void MainComponent::stateChanged()
 {
     updateSliceWaveform();
+}
+
+void MainComponent::transportButtonPressed(TransportButtonComponent::TransportEvent event)
+{
+    juce::String cmd;
+    if (event == TransportButtonComponent::TransportEvent::PlayChain)
+        cmd = "PlayChain";
+    else if (event == TransportButtonComponent::TransportEvent::PlaySlice)
+        cmd = "PlaySlice";
+    else if (event == TransportButtonComponent::TransportEvent::Stop)
+        cmd = "Stop";
+    DBG("Transport button pressed: " << cmd);
 }
 
 void MainComponent::updateSliceWaveform()

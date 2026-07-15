@@ -38,9 +38,9 @@ public:
     juce::Colour borderColour = juce::Colour(StyleSheet::panelBorderColour);
     juce::Colour backgroundColour = juce::Colour(StyleSheet::panelBackgroundColour);
 
-    PanelComponent(Dimension height, Dimension width, juce::String title);
+    PanelComponent(const Dimension& height, const Dimension& width, juce::String title);
 
-    static int resolveDimension(Dimension dimension, int availableSize);
+    static int resolveDimension(const Dimension& dimension, int availableSize);
     int getResolvedWidth(int availableSize) const;
     int getResolvedHeight(int availableSize) const;
 

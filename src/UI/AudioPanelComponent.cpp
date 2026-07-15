@@ -17,6 +17,19 @@ AudioPanelComponent::AudioPanelComponent(const PanelComponent::Dimension& height
     masterVolumeSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     masterVolumeSlider.setRange(0.0, 1.0, 0.001);
     masterVolumeSlider.setValue(0.75, juce::dontSendNotification);
+
+    btnPlaySlice.getButton().onClick = [this]
+    {
+        btnPlayChain.getButton().setToggleState(false, juce::dontSendNotification);
+        const bool isPlaying = !btnPlaySlice.getButton().getToggleState();
+        sendTransportEvent(isPlaying ? TransportButtonComponent::TransportEvent::Stop : TransportButtonComponent::TransportEvent::PlaySlice);
+    };
+    btnPlayChain.getButton().onClick = [this]
+    {
+        btnPlaySlice.getButton().setToggleState(false, juce::dontSendNotification);
+        const bool isPlaying = !btnPlayChain.getButton().getToggleState();
+        sendTransportEvent(isPlaying ? TransportButtonComponent::TransportEvent::Stop : TransportButtonComponent::TransportEvent::PlayChain);
+    };
 }
 
 void AudioPanelComponent::resized()
@@ -50,4 +63,21 @@ void AudioPanelComponent::resized()
     }
     const auto sliderSize = juce::jmax(0, juce::jmin(volumeColumn.getWidth(), volumeColumn.getHeight()));
     masterVolumeSlider.setBounds(volumeColumn.withSizeKeepingCentre(sliderSize, sliderSize));
+}
+
+void AudioPanelComponent::sendTransportEvent(TransportButtonComponent::TransportEvent event)
+{
+    listeners.call([event](Listener& l)
+    {
+        l.transportButtonPressed(event);
+    });
+}
+
+void AudioPanelComponent::addListener(Listener* listener) {
+    listeners.add(listener);
+}
+
+void AudioPanelComponent::removeListener(Listener* listenerToRemove) {
+    jassert(listeners.contains(listenerToRemove));
+    listeners.remove(listenerToRemove);
 }

@@ -4,10 +4,10 @@
 
 MainMenuBarModel::MainMenuBarModel(Action onQuit, Action onProjectSave, Action onProjectLoad, Action onAudioSettings, Action onHelp)
     : onQuit(std::move(onQuit)),
-      onProjectSave(std::move(onProjectSave)),
-      onProjectLoad(std::move(onProjectLoad)),
       onAudioSettings(std::move(onAudioSettings)),
-      onHelp(std::move(onHelp))
+      onHelp(std::move(onHelp)),
+      onProjectSave(std::move(onProjectSave)),
+      onProjectLoad(std::move(onProjectLoad))
 {
 }
 
@@ -18,6 +18,7 @@ juce::StringArray MainMenuBarModel::getMenuBarNames()
 
 juce::PopupMenu MainMenuBarModel::getMenuForIndex(int topLevelMenuIndex, const juce::String& menuName)
 {
+    juce::ignoreUnused(topLevelMenuIndex);
     juce::PopupMenu menu;
 
     if (menuName == "File")

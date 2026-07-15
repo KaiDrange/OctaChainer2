@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 
+#include "Core/AudioPlaybackEngine.h"
 #include "Core/StateHandler.h"
 #include "UI/MainMenuBarModel.h"
 #include "UI/StyleSheet.h"
@@ -25,6 +26,7 @@ private:
 
     StyleSheet style;
     juce::AudioDeviceManager audioDeviceManager;
+    AudioPlaybackEngine audioPlaybackEngine;
     MainMenuBarModel menuBarModel;
     StateHandler stateHandler;
     std::unique_ptr<juce::FileChooser> fileChooser;
