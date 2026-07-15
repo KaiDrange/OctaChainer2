@@ -1,4 +1,6 @@
 #include "StandaloneAppMainWindow.h"
+
+#include "Core/AudioUtil.h"
 #include "UI/MainComponent.h"
 
 StandaloneAppMainWindow::StandaloneAppMainWindow(const juce::String& name)
@@ -25,6 +27,8 @@ StandaloneAppMainWindow::StandaloneAppMainWindow(const juce::String& name)
 
 StandaloneAppMainWindow::~StandaloneAppMainWindow()
 {
+    audioDeviceManager.removeAudioCallback(this);
+
     if (mainComponent != nullptr)
         mainComponent->removeListener(this);
 
@@ -43,6 +47,7 @@ void StandaloneAppMainWindow::initialise()
     DBG(error);
 
     loadAudioSettings();
+    audioDeviceManager.addAudioCallback(this);
 
     setUsingNativeTitleBar(true);
     setResizable(true, true);
@@ -50,10 +55,9 @@ void StandaloneAppMainWindow::initialise()
                     MainComponent::maxHeight);
 
     setContentOwned(new MainComponent(stateHandler), false);
-    mainComponent = static_cast<MainComponent*>(getContentComponent());
+    mainComponent = dynamic_cast<MainComponent*>(getContentComponent());
     jassert(mainComponent != nullptr);
-    if (mainComponent != nullptr)
-        mainComponent->addListener(this);
+    mainComponent->addListener(this);
 
     centreWithSize(MainComponent::defaultWidth, MainComponent::defaultHeight);
     setVisible(true);
@@ -66,14 +70,57 @@ void StandaloneAppMainWindow::closeButtonPressed()
 
 void StandaloneAppMainWindow::transportButtonPressed(const TransportButtonComponent::TransportEvent event)
 {
-    juce::String cmd;
     if (event == TransportButtonComponent::TransportEvent::PlayChain)
-        cmd = "PlayChain";
+    {
+        DBG("PlayChain transport is not implemented yet");
+    }
     else if (event == TransportButtonComponent::TransportEvent::PlaySlice)
-        cmd = "PlaySlice";
+    {
+        juce::AudioBuffer<float> audioData;
+        double sampleRate = 0.0;
+
+        if (stateHandler.loadSelectedSliceAudio(audioData, sampleRate))
+        {
+            const auto renderedClip = AudioUtil::renderPlaybackClip(
+                    AudioClip(std::move(audioData), sampleRate),
+                    audioPlaybackEngine.deviceSampleRate,
+                    audioPlaybackEngine.deviceChannelCount);
+            audioPlaybackEngine.play(renderedClip);
+        }
+        else
+        {
+            DBG("No selected slice audio is available for playback");
+            audioPlaybackEngine.stop();
+        }
+    }
     else if (event == TransportButtonComponent::TransportEvent::Stop)
-        cmd = "Stop";
-    DBG("Transport button pressed: " << cmd);
+    {
+        audioPlaybackEngine.stop();
+    }
+}
+
+void StandaloneAppMainWindow::audioDeviceAboutToStart(juce::AudioIODevice* device)
+{
+    audioPlaybackEngine.deviceSampleRate = device->getCurrentSampleRate();
+    audioPlaybackEngine.deviceChannelCount = device->getActiveOutputChannels().countNumberOfSetBits();
+}
+
+void StandaloneAppMainWindow::audioDeviceStopped()
+{
+    audioPlaybackEngine.stop();
+}
+
+void StandaloneAppMainWindow::audioDeviceIOCallbackWithContext(const float* const* inputChannelData, int numInputChannels,
+                                                               float* const* outputChannelData, const int numOutputChannels,
+                                                               const int numSamples, const juce::AudioIODeviceCallbackContext& context)
+{
+    juce::ignoreUnused(inputChannelData, numInputChannels, context);
+
+    if (outputChannelData == nullptr || numOutputChannels <= 0 || numSamples <= 0)
+        return;
+
+    juce::AudioBuffer<float> outputBuffer(outputChannelData, numOutputChannels, numSamples);
+    audioPlaybackEngine.ProcessBlock(outputBuffer);
 }
 
 void StandaloneAppMainWindow::showAudioSettings()
@@ -81,7 +128,7 @@ void StandaloneAppMainWindow::showAudioSettings()
     auto selector = std::make_unique<juce::AudioDeviceSelectorComponent>(
         audioDeviceManager,
         0, 0,
-        0, 256,
+        0, 2,
         false,
         false,
         true,
@@ -132,7 +179,7 @@ void StandaloneAppMainWindow::loadAudioSettings()
 
     if (settingsFile.existsAsFile())
     {
-        std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(settingsFile));
+        const std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(settingsFile));
 
         if (xml != nullptr)
         {

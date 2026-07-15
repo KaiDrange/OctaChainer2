@@ -9,7 +9,8 @@
 #include "UI/MainComponent.h"
 
 class StandaloneAppMainWindow final : public juce::DocumentWindow,
-                                      public MainComponent::Listener
+                                      public MainComponent::Listener,
+                                      public juce::AudioIODeviceCallback
 {
 public:
     explicit StandaloneAppMainWindow(const juce::String& name);
@@ -18,6 +19,11 @@ public:
     void initialise();
     void closeButtonPressed() override;
     void transportButtonPressed(TransportButtonComponent::TransportEvent event) override;
+    void audioDeviceAboutToStart(juce::AudioIODevice* device) override;
+    void audioDeviceStopped() override;
+    void audioDeviceIOCallbackWithContext(const float* const* inputChannelData, int numInputChannels,
+                                          float* const* outputChannelData, int numOutputChannels,
+                                          int numSamples, const juce::AudioIODeviceCallbackContext& context) override;
 
     void showAudioSettings();
     void saveAudioSettings() const;

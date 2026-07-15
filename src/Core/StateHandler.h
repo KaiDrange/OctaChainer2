@@ -6,7 +6,7 @@
 
 class Slice;
 
-class StateHandler : private juce::ValueTree::Listener
+class StateHandler : juce::ValueTree::Listener
 {
 public:
 #include "StateIdentifiers.h"
@@ -57,6 +57,7 @@ public:
     int getNumSlices() const;
     juce::ValueTree getSliceTree(int index) const;
     juce::ValueTree getSelectedSliceTree() const;
+    bool loadSelectedSliceAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const;
 
     int addSlice(const Slice& slice, juce::UndoManager* undoManager = nullptr);
     // void removeSelectedSlice();

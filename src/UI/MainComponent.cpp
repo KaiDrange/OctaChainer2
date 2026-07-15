@@ -86,55 +86,10 @@ void MainComponent::updateSliceWaveform()
     juce::AudioBuffer<float> audioData;
     double sampleRate = 0.0;
 
-    if (loadSelectedSliceAudio(audioData, sampleRate))
+    if (stateHandler.loadSelectedSliceAudio(audioData, sampleRate))
         sliceWaveformComponent.setAudioData(audioData, sampleRate);
     else
         sliceWaveformComponent.clearAudioData();
-}
-
-bool MainComponent::loadSelectedSliceAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const
-{
-    const auto sliceTree = stateHandler.getSelectedSliceTree();
-    if (! sliceTree.isValid())
-        return false;
-
-    const auto numChannels = static_cast<int>(sliceTree.getProperty(stateHandler.sliceChannelsId, 0));
-    sampleRate = static_cast<double>(sliceTree.getProperty(stateHandler.sliceSamplerateId, 0.0));
-    const auto numSamples = static_cast<juce::int64>(sliceTree.getProperty(stateHandler.sliceNumSamplesId, static_cast<juce::int64>(0)));
-    const auto* audioDataValue = sliceTree.getPropertyPointer(stateHandler.sliceAudioDataId);
-
-    if (numChannels <= 0
-        || sampleRate <= 0.0
-        || numSamples <= 0
-        || numSamples > static_cast<juce::int64>(std::numeric_limits<int>::max())
-        || audioDataValue == nullptr)
-    {
-        return false;
-    }
-
-    const auto* audioDataBlock = audioDataValue->getBinaryData();
-    if (audioDataBlock == nullptr)
-        return false;
-
-    const auto samplesPerChannel = static_cast<size_t>(numSamples);
-    const auto expectedBytes = static_cast<size_t>(numChannels) * samplesPerChannel * sizeof(float);
-    if (audioDataBlock->getSize() < expectedBytes)
-        return false;
-
-    const auto numSamplesAsInt = static_cast<int>(numSamples);
-    const auto* samples = static_cast<const float*>(audioDataBlock->getData());
-
-    destination.setSize(numChannels, numSamplesAsInt, false, false, false);
-
-    for (int channel = 0; channel < numChannels; ++channel)
-    {
-        destination.copyFrom(channel,
-                             0,
-                             samples + static_cast<size_t>(channel) * samplesPerChannel,
-                             numSamplesAsInt);
-    }
-
-    return true;
 }
 
 void MainComponent::sendTransportEvent(TransportButtonComponent::TransportEvent event)

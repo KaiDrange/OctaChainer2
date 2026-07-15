@@ -56,7 +56,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 
     void updateSliceWaveform();
-    bool loadSelectedSliceAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const;
 
     StyleSheet style;
     StateHandler& stateHandler;

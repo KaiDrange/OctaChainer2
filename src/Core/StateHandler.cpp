@@ -1,3 +1,4 @@
+#include <limits>
 #include <algorithm>
 #include "StateHandler.h"
 #include "Slice.h"
@@ -277,6 +278,51 @@ juce::ValueTree StateHandler::getSliceTree(const int index) const
 juce::ValueTree StateHandler::getSelectedSliceTree() const
 {
     return getSliceTree(getSelectedSliceIndex());
+}
+
+bool StateHandler::loadSelectedSliceAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const
+{
+    const auto sliceTree = getSelectedSliceTree();
+    if (! sliceTree.isValid())
+        return false;
+
+    const auto numChannels = static_cast<int>(sliceTree.getProperty(sliceChannelsId, 0));
+    sampleRate = static_cast<double>(sliceTree.getProperty(sliceSamplerateId, 0.0));
+    const auto numSamples = static_cast<juce::int64>(sliceTree.getProperty(sliceNumSamplesId, static_cast<juce::int64>(0)));
+    const auto* audioDataValue = sliceTree.getPropertyPointer(sliceAudioDataId);
+
+    if (numChannels <= 0
+        || sampleRate <= 0.0
+        || numSamples <= 0
+        || numSamples > static_cast<juce::int64>(std::numeric_limits<int>::max())
+        || audioDataValue == nullptr)
+    {
+        return false;
+    }
+
+    const auto* audioDataBlock = audioDataValue->getBinaryData();
+    if (audioDataBlock == nullptr)
+        return false;
+
+    const auto samplesPerChannel = static_cast<size_t>(numSamples);
+    const auto expectedBytes = static_cast<size_t>(numChannels) * samplesPerChannel * sizeof(float);
+    if (audioDataBlock->getSize() < expectedBytes)
+        return false;
+
+    const auto numSamplesAsInt = static_cast<int>(numSamples);
+    const auto* samples = static_cast<const float*>(audioDataBlock->getData());
+
+    destination.setSize(numChannels, numSamplesAsInt, false, false, false);
+
+    for (int channel = 0; channel < numChannels; ++channel)
+    {
+        destination.copyFrom(channel,
+                             0,
+                             samples + static_cast<size_t>(channel) * samplesPerChannel,
+                             numSamplesAsInt);
+    }
+
+    return true;
 }
 
 int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager)
