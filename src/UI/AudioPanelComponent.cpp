@@ -2,8 +2,8 @@
 #include "../Core/AudioPlaybackEngine.h"
 
 AudioPanelComponent::AudioPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
-                                         const juce::String& title)
-    : PanelComponent(height, width, title)
+    StateHandler& stateHandlerToUse, const juce::String& title)
+    : PanelComponent(height, width, title), stateHandler(stateHandlerToUse)
 {
     addAndMakeVisible(btnPlaySlice);
     addAndMakeVisible(btnPlayChain);
@@ -31,6 +31,10 @@ AudioPanelComponent::AudioPanelComponent(const PanelComponent::Dimension& height
         const bool isPlaying = !btnPlayChain.getButton().getToggleState();
         sendTransportEvent(isPlaying ? TransportButtonComponent::TransportEvent::Stop : TransportButtonComponent::TransportEvent::PlayChain);
     };
+
+    stateHandler.addListener(this);
+    btnPlaySlice.setEnabled(stateHandler.getSelectedSliceIndex() >= 0);
+    btnPlayChain.setEnabled(stateHandler.getNumSlices() > 0);
 }
 
 void AudioPanelComponent::resized()
@@ -81,6 +85,12 @@ void AudioPanelComponent::addListener(Listener* listener) {
 void AudioPanelComponent::removeListener(Listener* listenerToRemove) {
     jassert(listeners.contains(listenerToRemove));
     listeners.remove(listenerToRemove);
+}
+
+void AudioPanelComponent::stateChanged()
+{
+    btnPlaySlice.setEnabled(stateHandler.getSelectedSliceIndex() >= 0);
+    btnPlayChain.setEnabled(stateHandler.getNumSlices() > 0);
 }
 
 void AudioPanelComponent::actionListenerCallback(const juce::String& message)

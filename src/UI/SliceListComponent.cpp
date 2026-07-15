@@ -16,7 +16,12 @@ SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, 
     addAndMakeVisible(chainMaxLength);
 
     btnAdd.onClick = [this] { showAddFileChooser(); };
+    btnRemove.onClick = [this] { stateHandler.removeSelectedSlice(); };
+    btnRemoveAll.onClick = [this] { stateHandler.removeAllSlices(); };
     stateHandler.addListener(this);
+
+    btnRemove.setEnabled(stateHandler.getNumSlices() > 0);
+    btnRemoveAll.setEnabled(stateHandler.getNumSlices() > 0);
 }
 
 SliceListComponent::~SliceListComponent()
@@ -88,6 +93,9 @@ void SliceListComponent::selectedRowsChanged(const int lastRowSelected)
 void SliceListComponent::stateChanged()
 {
     table.updateContent();
+    btnRemove.setEnabled(stateHandler.getNumSlices() > 0);
+    btnRemoveAll.setEnabled(stateHandler.getNumSlices() > 0);
+
     table.repaint();
 }
 

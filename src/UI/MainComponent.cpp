@@ -16,7 +16,8 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngin
                              PanelComponent::Dimension::percentage(chainWaveformWidthPercentage),
                              "Chain waveforms"),
       audioPanelComponent(PanelComponent::Dimension::fixed(audioSectionFixedHeight),
-                          PanelComponent::Dimension::fixed(settingsPanelFixedWidth))
+                          PanelComponent::Dimension::fixed(settingsPanelFixedWidth),
+                          stateHandler)
 {
     setLookAndFeel(&style);
     addAndMakeVisible(sampleListComponent);

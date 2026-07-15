@@ -349,6 +349,28 @@ int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager)
     return newIndex;
 }
 
+void StateHandler::removeSelectedSlice()
+{
+    ensureDataTree();
+
+    const auto selectedIndex = getSelectedSliceIndex();
+    if (selectedIndex < 0)
+        return;
+
+    dataTree.removeChild(selectedIndex, nullptr);
+
+    const auto newSelectedIndex = juce::jmin(selectedIndex, dataTree.getNumChildren() - 1);
+    dataTree.setProperty(selectedSliceId, newSelectedIndex, nullptr);
+}
+
+void StateHandler::removeAllSlices()
+{
+    ensureDataTree();
+
+    dataTree.removeAllChildren(nullptr);
+    dataTree.setProperty(selectedSliceId, -1, nullptr);
+}
+
 bool StateHandler::selectSlice(const int index, juce::UndoManager* undoManager)
 {
     ensureDataTree();

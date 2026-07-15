@@ -7,9 +7,7 @@
 #include "NumberInputComponent.h"
 #include "PanelComponent.h"
 
-class SliceListComponent : public PanelComponent,
-                            public juce::TableListBoxModel,
-                            private StateHandler::Listener
+class SliceListComponent : public PanelComponent, public juce::TableListBoxModel, StateHandler::Listener
 {
 public:
     SliceListComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
@@ -54,7 +52,7 @@ private:
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     juce::TableListBox table{"Sample List", this};
-    juce::TextButton btnAdd{"Add file"};
+    juce::TextButton btnAdd{"Load file(s)"};
     juce::TextButton btnAddSilence{"Add blank"};
     juce::TextButton btnRemove{"Remove"};
     juce::TextButton btnRemoveAll{"Clear"};

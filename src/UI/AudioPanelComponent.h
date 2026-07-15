@@ -4,8 +4,11 @@
 
 #include "PanelComponent.h"
 #include "TransportButtonComponent.h"
+#include "../Core/StateHandler.h"
 
-class AudioPanelComponent : public PanelComponent, public juce::ActionListener
+class StateHandler;
+
+class AudioPanelComponent : public PanelComponent, public juce::ActionListener, StateHandler::Listener
 {
 public:
     class Listener
@@ -17,17 +20,20 @@ public:
 
     void addListener(Listener* listener);
     void removeListener(Listener* listenerToRemove);
+    void stateChanged() override;
+
 
     void actionListenerCallback (const juce::String& message) override;
 
     AudioPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
-                        const juce::String& title = "");
+        StateHandler& stateHandlerToUse, const juce::String& title = "");
     void resized() override;
 
     TransportButtonComponent btnPlaySlice{"Slice"};
     TransportButtonComponent btnPlayChain{"Chain"};
 
 private:
+    StateHandler& stateHandler;
     juce::Slider masterVolumeSlider;
     juce::Label masterVolumeLabel;
 
