@@ -119,7 +119,7 @@ void StandaloneAppMainWindow::audioDeviceIOCallbackWithContext(const float* cons
     if (outputChannelData == nullptr || numOutputChannels <= 0 || numSamples <= 0)
         return;
 
-    juce::AudioBuffer<float> outputBuffer(outputChannelData, numOutputChannels, numSamples);
+    juce::AudioBuffer outputBuffer(outputChannelData, numOutputChannels, numSamples);
     audioPlaybackEngine.ProcessBlock(outputBuffer);
 }
 
