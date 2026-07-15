@@ -65,10 +65,7 @@ public:
 
     bool selectSlice(int index, juce::UndoManager* undoManager = nullptr);
     int getSelectedSliceIndex() const;
-    //
-    // bool moveSlice(int fromIndex, int toIndex);
-    // bool moveSelectedSliceUp();
-    // bool moveSelectedSliceDown();
+    bool moveSlice(int fromIndex, int toIndex);
 
 private:
     void addTreeListeners();

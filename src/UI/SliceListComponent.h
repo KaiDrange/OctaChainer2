@@ -7,7 +7,11 @@
 #include "NumberInputComponent.h"
 #include "PanelComponent.h"
 
-class SliceListComponent : public PanelComponent, public juce::TableListBoxModel, StateHandler::Listener
+class SliceListComponent : public PanelComponent,
+                           public juce::TableListBoxModel,
+                           public juce::DragAndDropTarget,
+                           StateHandler::Listener,
+                           NumberInputComponent::Listener
 {
 public:
     SliceListComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
@@ -16,12 +20,20 @@ public:
     ~SliceListComponent() override;
     void resized() override;
     void stateChanged() override;
+    void numberInputChanged(NumberInputComponent* numberInput) override;
 
     int getNumRows() override;
     void paintRowBackground(juce::Graphics& g, int rowNumber, int /*width*/, int /*height*/,
                             bool rowIsSelected) override;
     void paintCell(juce::Graphics& g, int rowNumber, int columnId, int width, int height, bool rowIsSelected) override;
     void selectedRowsChanged(int lastRowSelected) override;
+    juce::var getDragSourceDescription(const juce::SparseSet<int>& currentlySelectedRows) override;
+
+    bool isInterestedInDragSource(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) override;
+    void itemDragEnter(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) override;
+    void itemDragMove(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) override;
+    void itemDragExit(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) override;
+    void itemDropped(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) override;
 
 private:
     struct Column
@@ -41,17 +53,23 @@ private:
     };
 
     void configureTable();
+    int getChainGroupSize() const;
+    int getDragInsertionIndex(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) const;
+    bool isRowDragFromThisTable(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) const;
+    juce::Colour getRowBackgroundColour(int rowNumber, bool rowIsSelected) const;
+    void clearDragIndicator();
     void showAddFileChooser();
     void loadFiles(const juce::Array<juce::File>& files);
     static void showLoadError(const juce::String& message);
     static juce::String formatDuration(const StateHandler& stateHandler, const juce::ValueTree& sliceTree);
-    static juce::String formatAudioformat(const StateHandler& stateHandler, const juce::ValueTree& sliceTree);
+    static juce::String formatAudioFormat(const StateHandler& stateHandler, const juce::ValueTree& sliceTree);
 
     StateHandler& stateHandler;
     AudioFileLoader audioFileLoader;
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     juce::TableListBox table{"Sample List", this};
+    int dragInsertIndex = -1;
     juce::TextButton btnAdd{"Load file(s)"};
     juce::TextButton btnAddSilence{"Add blank"};
     juce::TextButton btnRemove{"Remove"};

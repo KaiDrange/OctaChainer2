@@ -14,7 +14,7 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngin
                              "Slice waveform"),
       chainWaveformComponent(PanelComponent::Dimension::percentage(chainWaveformWidthPercentage),
                              PanelComponent::Dimension::percentage(chainWaveformWidthPercentage),
-                             "Chain waveforms"),
+                             "Chain waveform"),
       audioPanelComponent(PanelComponent::Dimension::fixed(audioSectionFixedHeight),
                           PanelComponent::Dimension::fixed(settingsPanelFixedWidth),
                           stateHandler)

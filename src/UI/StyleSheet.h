@@ -33,6 +33,16 @@ public:
     static constexpr uint32 buttonTextColour = 0xFFF7F5EF;
     static constexpr uint32 toggleTickColour = 0xFF0A84FF;
 
+    static constexpr uint32 sliceListBackgroundColour = 0xFF242B28;
+    static constexpr uint32 sliceListHeaderBackgroundColour = 0xFF2D3531;
+    static constexpr uint32 sliceListBorderColour = 0xFF64766C;
+    static constexpr uint32 sliceListTextColour = 0xFFF6F7F2;
+    static constexpr uint32 sliceListRowColour = 0xFF2A312D;
+    static constexpr uint32 sliceListRowAltColour = 0xFF313935;
+    static constexpr uint32 sliceListRowSelectedColour = 0xFF496255;
+    static constexpr uint32 sliceListDividerColour = 0xFF8A9B92;
+    static constexpr uint32 sliceListDragIndicatorColour = 0xFFAAC4AE;
+
     static constexpr uint32 controlBackgroundColour = 0xFFF7F2E9;
     static constexpr uint32 controlBackgroundFocusedColour = 0xFFFFFFFF;
     static constexpr uint32 controlBorderColour = 0x809DA79D;
@@ -65,6 +75,46 @@ public:
     static juce::Colour getDefaultSectionBackgroundColour()
     {
         return juce::Colour(StyleSheet::panelBackgroundColour).darker(0.03f);
+    }
+
+    static juce::Colour getSliceListBackgroundColour()
+    {
+        return juce::Colour(sliceListBackgroundColour);
+    }
+
+    static juce::Colour getSliceListHeaderBackgroundColour()
+    {
+        return juce::Colour(sliceListHeaderBackgroundColour);
+    }
+
+    static juce::Colour getSliceListBorderColour()
+    {
+        return juce::Colour(sliceListBorderColour);
+    }
+
+    static juce::Colour getSliceListTextColour()
+    {
+        return juce::Colour(sliceListTextColour);
+    }
+
+    static juce::Colour getSliceListRowColour(const bool alternate)
+    {
+        return juce::Colour(alternate ? sliceListRowAltColour : sliceListRowColour);
+    }
+
+    static juce::Colour getSliceListSelectedRowColour()
+    {
+        return juce::Colour(sliceListRowSelectedColour);
+    }
+
+    static juce::Colour getSliceListDividerColour()
+    {
+        return juce::Colour(sliceListDividerColour);
+    }
+
+    static juce::Colour getSliceListDragIndicatorColour()
+    {
+        return juce::Colour(sliceListDragIndicatorColour);
     }
 
     StyleSheet();

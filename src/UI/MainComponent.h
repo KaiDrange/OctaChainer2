@@ -11,6 +11,7 @@
 #include "WaveformComponent.h"
 
 class MainComponent : public juce::Component,
+                      public juce::DragAndDropContainer,
                       public juce::Timer,
                       StateHandler::Listener,
                       AudioPanelComponent::Listener

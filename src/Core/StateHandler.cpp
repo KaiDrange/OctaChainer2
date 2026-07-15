@@ -392,6 +392,33 @@ int StateHandler::getSelectedSliceIndex() const
     return juce::isPositiveAndBelow(selectedIndex, dataTree.getNumChildren()) ? selectedIndex : -1;
 }
 
+bool StateHandler::moveSlice(const int fromIndex, const int toIndex)
+{
+    ensureDataTree();
+
+    if (! juce::isPositiveAndBelow(fromIndex, dataTree.getNumChildren()) ||
+        toIndex < 0 ||
+        toIndex > dataTree.getNumChildren() ||
+        fromIndex == toIndex)
+        return false;
+
+    const auto sliceTree = dataTree.getChild(fromIndex);
+    dataTree.removeChild(fromIndex, nullptr);
+
+    const auto insertionIndex = toIndex > fromIndex ? toIndex - 1 : toIndex;
+    dataTree.addChild(sliceTree, insertionIndex, nullptr);
+
+    const auto selectedIndex = getSelectedSliceIndex();
+    if (selectedIndex == fromIndex)
+        dataTree.setProperty(selectedSliceId, insertionIndex, nullptr);
+    else if (selectedIndex > fromIndex && selectedIndex < toIndex)
+        dataTree.setProperty(selectedSliceId, selectedIndex - 1, nullptr);
+    else if (selectedIndex >= toIndex && selectedIndex < fromIndex)
+        dataTree.setProperty(selectedSliceId, selectedIndex + 1, nullptr);
+
+    return true;
+}
+
 void StateHandler::notifyListeners()
 {
     listeners.call([](Listener& listener) { listener.stateChanged(); });

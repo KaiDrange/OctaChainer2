@@ -6,6 +6,9 @@ SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, 
     : PanelComponent(height, width, title),
       stateHandler(stateHandlerToUse)
 {
+    backgroundColour = StyleSheet::getSliceListBackgroundColour();
+    borderColour = StyleSheet::getSliceListBorderColour();
+
     configureTable();
 
     addAndMakeVisible(table);
@@ -19,6 +22,7 @@ SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, 
     btnRemove.onClick = [this] { stateHandler.removeSelectedSlice(); };
     btnRemoveAll.onClick = [this] { stateHandler.removeAllSlices(); };
     stateHandler.addListener(this);
+    chainMaxLength.addListener(this);
 
     btnRemove.setEnabled(stateHandler.getNumSlices() > 0);
     btnRemoveAll.setEnabled(stateHandler.getNumSlices() > 0);
@@ -26,6 +30,7 @@ SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, 
 
 SliceListComponent::~SliceListComponent()
 {
+    chainMaxLength.removeListener(this);
     stateHandler.removeListener(this);
 }
 
@@ -49,13 +54,62 @@ int SliceListComponent::getNumRows()
     return stateHandler.getNumSlices();
 }
 
+int SliceListComponent::getChainGroupSize() const
+{
+    const auto value = chainMaxLength.getValue();
+    const auto groupSize = value.isVoid() ? static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue)
+                                          : juce::roundToInt(static_cast<double>(value));
+
+    return juce::jmax(1, groupSize);
+}
+
+juce::Colour SliceListComponent::getRowBackgroundColour(const int rowNumber, const bool rowIsSelected) const
+{
+    const auto groupSize = getChainGroupSize();
+    const auto groupIndex = juce::jmax(0, rowNumber) / groupSize;
+    const auto baseColour = StyleSheet::getSliceListRowColour((groupIndex % 2) != 0);
+
+    if (! rowIsSelected)
+        return baseColour;
+
+    return StyleSheet::getSliceListSelectedRowColour().interpolatedWith(baseColour, 0.18f);
+}
+
 void SliceListComponent::paintRowBackground(juce::Graphics& g, const int rowNumber, int, int, const bool rowIsSelected)
 {
-    const auto alternateColour = getLookAndFeel().findColour (juce::ListBox::backgroundColourId).interpolatedWith (getLookAndFeel().findColour (juce::ListBox::textColourId), 0.03f);
-    if (rowIsSelected)
-        g.fillAll (juce::Colours::lightblue);
-    else if (rowNumber % 2)
-        g.fillAll (alternateColour);
+    const auto clipBounds = g.getClipBounds();
+    const auto rowBackgroundColour = getRowBackgroundColour(rowNumber, rowIsSelected);
+    g.setColour(rowBackgroundColour);
+    g.fillRect(clipBounds);
+
+    const auto separatorColour = StyleSheet::getSliceListDividerColour().withAlpha(rowIsSelected ? 0.82f : 0.56f);
+    const auto groupSize = getChainGroupSize();
+    const auto isGroupStart = (rowNumber % groupSize) == 0;
+    const auto isGroupEnd = ((rowNumber + 1) % groupSize) == 0 || rowNumber == getNumRows() - 1;
+
+    if (isGroupStart)
+    {
+        g.setColour(separatorColour);
+        g.fillRect(0, 0, clipBounds.getWidth(), 1);
+    }
+
+    if (isGroupEnd)
+    {
+        g.setColour(separatorColour);
+        g.fillRect(0, juce::jmax(0, clipBounds.getHeight() - 1), clipBounds.getWidth(), 1);
+    }
+
+    if (dragInsertIndex == rowNumber)
+    {
+        g.setColour(StyleSheet::getSliceListDragIndicatorColour().withAlpha(0.70f));
+        g.fillRect(0, 0, g.getClipBounds().getWidth(), 2);
+    }
+
+    if (dragInsertIndex == getNumRows() && rowNumber == getNumRows() - 1)
+    {
+        g.setColour(StyleSheet::getSliceListDragIndicatorColour().withAlpha(0.70f));
+        g.fillRect(0, juce::jmax(0, g.getClipBounds().getHeight() - 2), g.getClipBounds().getWidth(), 2);
+    }
 }
 
 void SliceListComponent::paintCell(juce::Graphics& g, const int rowNumber, const int columnId, const int width, const int height,
@@ -72,16 +126,17 @@ void SliceListComponent::paintCell(juce::Graphics& g, const int rowNumber, const
     if (columnId == 1)
         text = sliceTree.getProperty(stateHandler.sliceNameId).toString();
     else if (columnId == 2)
-        text = formatAudioformat(stateHandler, sliceTree);
+        text = formatAudioFormat(stateHandler, sliceTree);
     else if (columnId == 3)
         text = formatDuration(stateHandler, sliceTree);
     else if (columnId == 4)
         text = sliceTree.getProperty(stateHandler.sliceSourcePathId).toString();
 
-    g.setColour(getLookAndFeel().findColour(juce::ListBox::textColourId));
-    g.drawText(text, 4, 0, width - 8, height, juce::Justification::centredLeft, true);
+    g.setColour(StyleSheet::getSliceListTextColour());
+    g.setFont(StyleSheet::getControlFont());
+    g.drawText(text, 6, 0, width - 12, height, juce::Justification::centredLeft, true);
 
-    g.setColour(getLookAndFeel().findColour(juce::ListBox::backgroundColourId).contrasting(0.2f));
+    g.setColour(StyleSheet::getSliceListDividerColour().withAlpha(0.55f));
     g.drawVerticalLine(width - 1, 0.0f, static_cast<float>(height));
 }
 
@@ -90,22 +145,133 @@ void SliceListComponent::selectedRowsChanged(const int lastRowSelected)
     stateHandler.selectSlice(lastRowSelected);
 }
 
+juce::var SliceListComponent::getDragSourceDescription(const juce::SparseSet<int>& currentlySelectedRows)
+{
+    if (currentlySelectedRows.size() != 1)
+        return {};
+
+    const auto row = currentlySelectedRows[0];
+    if (! juce::isPositiveAndBelow(row, stateHandler.getNumSlices()))
+        return {};
+
+    return "slice-row:" + juce::String(row);
+}
+
+bool SliceListComponent::isRowDragFromThisTable(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) const
+{
+    if (dragSourceDetails.sourceComponent.get() != &table)
+        return false;
+
+    const auto description = dragSourceDetails.description.toString();
+    return description.startsWith("slice-row:");
+}
+
+int SliceListComponent::getDragInsertionIndex(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) const
+{
+    if (! table.getBounds().contains(dragSourceDetails.localPosition))
+        return -1;
+
+    const auto localPositionInTable = dragSourceDetails.localPosition - table.getPosition();
+    return table.getInsertionIndexForPosition(localPositionInTable.x, localPositionInTable.y);
+}
+
+bool SliceListComponent::isInterestedInDragSource(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails)
+{
+    return isRowDragFromThisTable(dragSourceDetails);
+}
+
+void SliceListComponent::itemDragEnter(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails)
+{
+    itemDragMove(dragSourceDetails);
+}
+
+void SliceListComponent::itemDragMove(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails)
+{
+    const auto newInsertIndex = getDragInsertionIndex(dragSourceDetails);
+    if (dragInsertIndex != newInsertIndex)
+    {
+        dragInsertIndex = newInsertIndex;
+        table.repaint();
+    }
+}
+
+void SliceListComponent::itemDragExit(const juce::DragAndDropTarget::SourceDetails&)
+{
+    clearDragIndicator();
+}
+
+void SliceListComponent::itemDropped(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails)
+{
+    const auto sourceRow = dragSourceDetails.description.toString()
+                           .fromFirstOccurrenceOf("slice-row:", false, false)
+                           .getIntValue();
+    const auto insertionIndex = dragInsertIndex >= 0 ? dragInsertIndex : getDragInsertionIndex(dragSourceDetails);
+
+    clearDragIndicator();
+
+    if (sourceRow < 0 || insertionIndex < 0)
+        return;
+
+    if (stateHandler.moveSlice(sourceRow, insertionIndex))
+    {
+        const auto selectedRow = stateHandler.getSelectedSliceIndex();
+        if (selectedRow >= 0)
+            table.selectRow(selectedRow, true, true);
+        else
+            table.deselectAllRows();
+    }
+}
+
+void SliceListComponent::clearDragIndicator()
+{
+    if (dragInsertIndex >= 0)
+        table.repaint();
+
+    dragInsertIndex = -1;
+}
+
 void SliceListComponent::stateChanged()
 {
     table.updateContent();
+    const auto selectedRow = stateHandler.getSelectedSliceIndex();
+    if (selectedRow >= 0)
+        table.selectRow(selectedRow, true, true);
+    else
+        table.deselectAllRows();
+
     btnRemove.setEnabled(stateHandler.getNumSlices() > 0);
     btnRemoveAll.setEnabled(stateHandler.getNumSlices() > 0);
 
     table.repaint();
 }
 
+void SliceListComponent::numberInputChanged(NumberInputComponent* numberInput)
+{
+    if (numberInput == &chainMaxLength)
+        table.repaint();
+}
+
 void SliceListComponent::configureTable()
 {
     table.setMultipleSelectionEnabled(false);
-    for (const auto& column : columns)
-        table.getHeader().addColumn(column.name, column.id, column.width, column.minWidth, column.maxWidth);
+    table.setRowHeight(25);
+    table.setHeaderHeight(26);
+    table.setOutlineThickness(1);
+    table.setColour(juce::ListBox::backgroundColourId, backgroundColour.darker(0.03f));
+    table.setColour(juce::ListBox::outlineColourId, borderColour);
+    table.setColour(juce::ListBox::textColourId, StyleSheet::getSliceListTextColour());
 
-    table.getHeader().setStretchToFitActive(true);
+    auto& header = table.getHeader();
+    header.setColour(juce::TableHeaderComponent::backgroundColourId, StyleSheet::getSliceListHeaderBackgroundColour());
+    header.setColour(juce::TableHeaderComponent::textColourId, StyleSheet::getSliceListTextColour());
+    header.setColour(juce::TableHeaderComponent::outlineColourId, borderColour);
+    header.setColour(juce::TableHeaderComponent::highlightColourId,
+                     StyleSheet::getSliceListDragIndicatorColour().withAlpha(0.22f));
+
+    for (const auto& column : columns)
+        header.addColumn(column.name, column.id, column.width, column.minWidth, column.maxWidth);
+
+    header.setStretchToFitActive(true);
 }
 
 void SliceListComponent::showAddFileChooser()
@@ -162,7 +328,7 @@ juce::String SliceListComponent::formatDuration(const StateHandler& stateHandler
     return juce::String(static_cast<double>(lengthInSamples) / sampleRate, 2) + "s";
 }
 
-juce::String SliceListComponent::formatAudioformat(const StateHandler& stateHandler, const juce::ValueTree& sliceTree)
+juce::String SliceListComponent::formatAudioFormat(const StateHandler& stateHandler, const juce::ValueTree& sliceTree)
 {
     const auto numChannels = static_cast<int>(sliceTree.getProperty(stateHandler.sliceChannelsId, 0));
     const auto bitrate = static_cast<int>(sliceTree.getProperty(stateHandler.sliceBitrateId, 0));
