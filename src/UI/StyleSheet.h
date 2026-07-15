@@ -50,6 +50,7 @@ public:
     static constexpr int sectionGap = 10;
     static constexpr int controlGap = 6;
     static constexpr int inputHeight = 30;
+    static constexpr uint32 playHeadColour = 0x80000000;
 
     static juce::Font getTitleFont()
     {

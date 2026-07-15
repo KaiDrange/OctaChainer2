@@ -1,7 +1,8 @@
 #include "MainComponent.h"
 
-MainComponent::MainComponent(StateHandler& stateHandlerToUse)
+MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngine& audioPlaybackEngineToUse)
     : stateHandler(stateHandlerToUse),
+      audioPlaybackEngine(audioPlaybackEngineToUse),
       sampleListComponent(PanelComponent::Dimension::percentage(sampleListHeightPercentage, sampleListMinHeight),
                           PanelComponent::Dimension::percentage(sampleListWidthPercentage),
                           stateHandler),
@@ -25,13 +26,17 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse)
     addAndMakeVisible(audioPanelComponent);
 
     stateHandler.addListener(this);
+    audioPlaybackEngine.addActionListener(&audioPanelComponent);
     audioPanelComponent.addListener(this);
     updateSliceWaveform();
+
+    startTimerHz(60);
 }
 
 
 MainComponent::~MainComponent()
 {
+    stopTimer();
     stateHandler.removeListener(this);
     audioPanelComponent.removeListener(this);
     setLookAndFeel(nullptr);
@@ -107,4 +112,19 @@ void MainComponent::addListener(Listener* listener) {
 void MainComponent::removeListener(Listener* listenerToRemove) {
     jassert(listeners.contains(listenerToRemove));
     listeners.remove(listenerToRemove);
+}
+
+void MainComponent::detachPlaybackListener()
+{
+    audioPlaybackEngine.removeActionListener(&audioPanelComponent);
+}
+
+void MainComponent::timerCallback()
+{
+    const auto playHeadPositionFactor = audioPlaybackEngine.getCurrentPlaybackPositionFactor();
+    const bool sliceIsPlaying = audioPanelComponent.btnPlaySlice.getButton().getToggleState();
+    const bool chainIsPlaying = audioPanelComponent.btnPlayChain.getButton().getToggleState();
+
+    sliceWaveformComponent.setPlayHeadPositionFactor(sliceIsPlaying ? playHeadPositionFactor : 0.0);
+    chainWaveformComponent.setPlayHeadPositionFactor(chainIsPlaying ? playHeadPositionFactor : 0.0);
 }

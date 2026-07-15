@@ -5,8 +5,7 @@
 #include "PanelComponent.h"
 #include "TransportButtonComponent.h"
 
-
-class AudioPanelComponent : public PanelComponent
+class AudioPanelComponent : public PanelComponent, public juce::ActionListener
 {
 public:
     class Listener
@@ -19,13 +18,16 @@ public:
     void addListener(Listener* listener);
     void removeListener(Listener* listenerToRemove);
 
+    void actionListenerCallback (const juce::String& message) override;
+
     AudioPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
-                           const juce::String& title = "");
+                        const juce::String& title = "");
     void resized() override;
 
-private:
     TransportButtonComponent btnPlaySlice{"Slice"};
     TransportButtonComponent btnPlayChain{"Chain"};
+
+private:
     juce::Slider masterVolumeSlider;
     juce::Label masterVolumeLabel;
 

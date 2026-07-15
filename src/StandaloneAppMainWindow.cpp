@@ -27,6 +27,9 @@ StandaloneAppMainWindow::StandaloneAppMainWindow(const juce::String& name)
 
 StandaloneAppMainWindow::~StandaloneAppMainWindow()
 {
+    if (mainComponent != nullptr)
+        mainComponent->detachPlaybackListener();
+
     audioDeviceManager.removeAudioCallback(this);
 
     if (mainComponent != nullptr)
@@ -54,7 +57,7 @@ void StandaloneAppMainWindow::initialise()
     setResizeLimits(MainComponent::minWidth, MainComponent::minHeight, MainComponent::maxWidth,
                     MainComponent::maxHeight);
 
-    setContentOwned(new MainComponent(stateHandler), false);
+    setContentOwned(new MainComponent(stateHandler, audioPlaybackEngine), false);
     mainComponent = dynamic_cast<MainComponent*>(getContentComponent());
     jassert(mainComponent != nullptr);
     mainComponent->addListener(this);

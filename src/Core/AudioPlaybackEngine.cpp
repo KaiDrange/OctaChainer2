@@ -13,6 +13,7 @@ void AudioPlaybackEngine::stop()
     isPlaying.store(false, std::memory_order_release);
     writeIndex.store(0, std::memory_order_release);
     std::atomic_store_explicit(&currentClip, std::shared_ptr<const AudioClip>{}, std::memory_order_release);
+    sendPlaybackStoppedAction();
 }
 
 void AudioPlaybackEngine::ProcessBlock(juce::AudioBuffer<float>& buffer)
@@ -25,14 +26,14 @@ void AudioPlaybackEngine::ProcessBlock(juce::AudioBuffer<float>& buffer)
     if (! isPlaying.load(std::memory_order_acquire))
         return;
 
-    const auto playback = std::atomic_load_explicit(&currentClip, std::memory_order_acquire);
-    if (playback == nullptr || ! playback->isValid())
+    const auto clip = std::atomic_load_explicit(&currentClip, std::memory_order_acquire);
+    if (clip == nullptr || ! clip->isValid())
     {
         stop();
         return;
     }
 
-    const auto& currentSample = playback->getAudioData();
+    const auto& currentSample = clip->getAudioData();
     const int sampleLength = currentSample.getNumSamples();
     int currentIndex = writeIndex.load(std::memory_order_acquire);
 
@@ -58,4 +59,20 @@ void AudioPlaybackEngine::ProcessBlock(juce::AudioBuffer<float>& buffer)
 
     if (currentIndex >= sampleLength)
         stop();
+}
+
+void AudioPlaybackEngine::sendPlaybackStoppedAction() const
+{
+    sendActionMessage(playbackStoppedMessage);
+}
+
+double AudioPlaybackEngine::getCurrentPlaybackPositionFactor() const
+{
+    const auto clip = std::atomic_load_explicit(&currentClip, std::memory_order_acquire);
+    if (!isPlaying.load(std::memory_order_acquire) || clip == nullptr || !clip->isValid())
+        return 0.0;
+
+    const double currentPosition = writeIndex.load(std::memory_order_acquire);
+    const double sampleLength = currentClip->getAudioData().getNumSamples();
+    return currentPosition / sampleLength;
 }

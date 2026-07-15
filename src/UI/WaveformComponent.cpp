@@ -6,6 +6,8 @@ WaveformComponent::WaveformComponent(const Dimension& height, const Dimension& w
 {
     formatManager.registerBasicFormats();
     thumbnail.addChangeListener(this);
+    addAndMakeVisible(playHeadOverlay);
+    playHeadOverlay.setVisible(false);
 }
 
 WaveformComponent::~WaveformComponent()
@@ -24,6 +26,7 @@ void WaveformComponent::setAudioData(const juce::AudioBuffer<float>& audioData, 
     thumbnailSourceBuffer.makeCopyOf(audioData);
     thumbnail.reset(thumbnailSourceBuffer.getNumChannels(), sampleRate, thumbnailSourceBuffer.getNumSamples());
     thumbnail.addBlock(0, thumbnailSourceBuffer, 0, thumbnailSourceBuffer.getNumSamples());
+    playHeadOverlay.setVisible(true);
     repaint();
 }
 
@@ -31,13 +34,25 @@ void WaveformComponent::clearAudioData()
 {
     thumbnail.clear();
     thumbnailSourceBuffer.setSize(0, 0);
+    playHeadOverlay.setVisible(false);
     repaint();
+}
+
+void WaveformComponent::setPlayHeadPositionFactor(const double newPlayHeadPositionFactor)
+{
+    playHeadOverlay.setPlayHeadPositionFactor(newPlayHeadPositionFactor);
 }
 
 void WaveformComponent::paint(juce::Graphics& g)
 {
     PanelComponent::paint(g);
     drawWaveform(g);
+}
+
+void WaveformComponent::resized()
+{
+    PanelComponent::resized();
+    playHeadOverlay.setBounds(innerBounds.reduced(4));
 }
 
 void WaveformComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
@@ -60,4 +75,31 @@ void WaveformComponent::drawWaveform(juce::Graphics& g)
 
     g.setColour(juce::Colour(StyleSheet::buttonBackgroundColour));
     thumbnail.drawChannels(g, waveformArea, 0.0, thumbnail.getTotalLength(), 1.0f);
+}
+
+WaveformComponent::PlayHeadOverlayComponent::PlayHeadOverlayComponent()
+{
+    setInterceptsMouseClicks(false, false);
+    setOpaque(false);
+}
+
+void WaveformComponent::PlayHeadOverlayComponent::setPlayHeadPositionFactor(double newPlayHeadPositionFactor)
+{
+    const auto clampedFactor = juce::jlimit(0.0, 1.0, newPlayHeadPositionFactor);
+    if (clampedFactor == playHeadPositionFactor)
+        return;
+
+    playHeadPositionFactor = clampedFactor;
+    repaint();
+}
+
+void WaveformComponent::PlayHeadOverlayComponent::paint(juce::Graphics& g)
+{
+    const auto overlayArea = getLocalBounds();
+    if (overlayArea.isEmpty())
+        return;
+
+    const auto playHeadX = static_cast<int>(overlayArea.getX() + playHeadPositionFactor * overlayArea.getWidth());
+    g.setColour(juce::Colour(StyleSheet::playHeadColour));
+    g.drawVerticalLine(playHeadX, static_cast<float>(overlayArea.getY()), static_cast<float>(overlayArea.getBottom()));
 }

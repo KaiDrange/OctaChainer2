@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 
+#include "../Core/AudioPlaybackEngine.h"
 #include "../Core/StateHandler.h"
 #include "AudioPanelComponent.h"
 #include "SliceListComponent.h"
@@ -10,6 +11,7 @@
 #include "WaveformComponent.h"
 
 class MainComponent : public juce::Component,
+                      public juce::Timer,
                       StateHandler::Listener,
                       AudioPanelComponent::Listener
 {
@@ -34,7 +36,7 @@ public:
     static constexpr int sliceWaveformHeightPercentage = (100 - sampleListHeightPercentage) / 2;
     static constexpr int chainWaveformWidthPercentage = sliceWaveformHeightPercentage;
 
-    MainComponent(StateHandler& stateHandlerToUse);
+    MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngine& audioPlaybackEngineToUse);
     ~MainComponent() override;
 
     class Listener
@@ -46,6 +48,8 @@ public:
 
     void addListener(Listener* listener);
     void removeListener(Listener* listenerToRemove);
+    void detachPlaybackListener();
+    void timerCallback() override;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
@@ -59,6 +63,7 @@ private:
 
     StyleSheet style;
     StateHandler& stateHandler;
+    AudioPlaybackEngine& audioPlaybackEngine;
     SliceListComponent sampleListComponent;
     SettingsPanelComponent settingsPanelComponent;
     WaveformComponent sliceWaveformComponent;

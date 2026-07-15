@@ -1,4 +1,5 @@
 #include "AudioPanelComponent.h"
+#include "../Core/AudioPlaybackEngine.h"
 
 AudioPanelComponent::AudioPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                                          const juce::String& title)
@@ -80,4 +81,13 @@ void AudioPanelComponent::addListener(Listener* listener) {
 void AudioPanelComponent::removeListener(Listener* listenerToRemove) {
     jassert(listeners.contains(listenerToRemove));
     listeners.remove(listenerToRemove);
+}
+
+void AudioPanelComponent::actionListenerCallback(const juce::String& message)
+{
+    if (message == AudioPlaybackEngine::playbackStoppedMessage)
+    {
+        btnPlaySlice.getButton().setToggleState(false, juce::dontSendNotification);
+        btnPlayChain.getButton().setToggleState(false, juce::dontSendNotification);
+    }
 }
