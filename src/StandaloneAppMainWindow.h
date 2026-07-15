@@ -6,8 +6,10 @@
 #include "Core/StateHandler.h"
 #include "UI/MainMenuBarModel.h"
 #include "UI/StyleSheet.h"
+#include "UI/MainComponent.h"
 
-class StandaloneAppMainWindow final : public juce::DocumentWindow
+class StandaloneAppMainWindow final : public juce::DocumentWindow,
+                                      public MainComponent::Listener
 {
 public:
     explicit StandaloneAppMainWindow(const juce::String& name);
@@ -15,6 +17,7 @@ public:
 
     void initialise();
     void closeButtonPressed() override;
+    void transportButtonPressed(TransportButtonComponent::TransportEvent event) override;
 
     void showAudioSettings();
     void saveAudioSettings() const;
@@ -24,6 +27,7 @@ public:
 private:
     void loadAudioSettings();
 
+    MainComponent* mainComponent = nullptr;
     StyleSheet style;
     juce::AudioDeviceManager audioDeviceManager;
     AudioPlaybackEngine audioPlaybackEngine;

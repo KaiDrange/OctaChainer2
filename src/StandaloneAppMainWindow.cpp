@@ -25,6 +25,9 @@ StandaloneAppMainWindow::StandaloneAppMainWindow(const juce::String& name)
 
 StandaloneAppMainWindow::~StandaloneAppMainWindow()
 {
+    if (mainComponent != nullptr)
+        mainComponent->removeListener(this);
+
 #if JUCE_MAC
     juce::MenuBarModel::setMacMainMenu(nullptr);
 #endif
@@ -47,6 +50,10 @@ void StandaloneAppMainWindow::initialise()
                     MainComponent::maxHeight);
 
     setContentOwned(new MainComponent(stateHandler), false);
+    mainComponent = static_cast<MainComponent*>(getContentComponent());
+    jassert(mainComponent != nullptr);
+    if (mainComponent != nullptr)
+        mainComponent->addListener(this);
 
     centreWithSize(MainComponent::defaultWidth, MainComponent::defaultHeight);
     setVisible(true);
@@ -55,6 +62,18 @@ void StandaloneAppMainWindow::initialise()
 void StandaloneAppMainWindow::closeButtonPressed()
 {
     juce::JUCEApplication::getInstance()->systemRequestedQuit();
+}
+
+void StandaloneAppMainWindow::transportButtonPressed(const TransportButtonComponent::TransportEvent event)
+{
+    juce::String cmd;
+    if (event == TransportButtonComponent::TransportEvent::PlayChain)
+        cmd = "PlayChain";
+    else if (event == TransportButtonComponent::TransportEvent::PlaySlice)
+        cmd = "PlaySlice";
+    else if (event == TransportButtonComponent::TransportEvent::Stop)
+        cmd = "Stop";
+    DBG("Transport button pressed: " << cmd);
 }
 
 void StandaloneAppMainWindow::showAudioSettings()

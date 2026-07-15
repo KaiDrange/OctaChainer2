@@ -37,6 +37,16 @@ public:
     MainComponent(StateHandler& stateHandlerToUse);
     ~MainComponent() override;
 
+    class Listener
+    {
+    public:
+        virtual ~Listener() = default;
+        virtual void transportButtonPressed(TransportButtonComponent::TransportEvent event) = 0;
+    };
+
+    void addListener(Listener* listener);
+    void removeListener(Listener* listenerToRemove);
+
     void paint(juce::Graphics& g) override;
     void resized() override;
     void stateChanged() override;
@@ -55,4 +65,7 @@ private:
     WaveformComponent sliceWaveformComponent;
     WaveformComponent chainWaveformComponent;
     AudioPanelComponent audioPanelComponent;
+
+    void sendTransportEvent(TransportButtonComponent::TransportEvent event);
+    juce::ListenerList<Listener> listeners;
 };

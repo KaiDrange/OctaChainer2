@@ -76,16 +76,9 @@ void MainComponent::stateChanged()
     updateSliceWaveform();
 }
 
-void MainComponent::transportButtonPressed(TransportButtonComponent::TransportEvent event)
+void MainComponent::transportButtonPressed(const TransportButtonComponent::TransportEvent event)
 {
-    juce::String cmd;
-    if (event == TransportButtonComponent::TransportEvent::PlayChain)
-        cmd = "PlayChain";
-    else if (event == TransportButtonComponent::TransportEvent::PlaySlice)
-        cmd = "PlaySlice";
-    else if (event == TransportButtonComponent::TransportEvent::Stop)
-        cmd = "Stop";
-    DBG("Transport button pressed: " << cmd);
+    sendTransportEvent(event);
 }
 
 void MainComponent::updateSliceWaveform()
@@ -142,4 +135,21 @@ bool MainComponent::loadSelectedSliceAudio(juce::AudioBuffer<float>& destination
     }
 
     return true;
+}
+
+void MainComponent::sendTransportEvent(TransportButtonComponent::TransportEvent event)
+{
+    listeners.call([event](Listener& l)
+    {
+        l.transportButtonPressed(event);
+    });
+}
+
+void MainComponent::addListener(Listener* listener) {
+    listeners.add(listener);
+}
+
+void MainComponent::removeListener(Listener* listenerToRemove) {
+    jassert(listeners.contains(listenerToRemove));
+    listeners.remove(listenerToRemove);
 }
