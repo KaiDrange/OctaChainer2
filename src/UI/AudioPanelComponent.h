@@ -20,6 +20,7 @@ public:
 
     void addListener(Listener* listener);
     void removeListener(Listener* listenerToRemove);
+    ~AudioPanelComponent() override;
     void stateChanged() override;
 
 

@@ -37,6 +37,11 @@ AudioPanelComponent::AudioPanelComponent(const PanelComponent::Dimension& height
     btnPlayChain.setEnabled(stateHandler.getNumSlices() > 0);
 }
 
+AudioPanelComponent::~AudioPanelComponent()
+{
+    stateHandler.removeListener(this);
+}
+
 void AudioPanelComponent::resized()
 {
     PanelComponent::resized();

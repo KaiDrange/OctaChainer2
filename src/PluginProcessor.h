@@ -23,6 +23,7 @@ public:
 
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;
+    void editorDestroyed();
 
     const juce::String getName() const override;
 
