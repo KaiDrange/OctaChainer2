@@ -19,6 +19,7 @@ public:
 
     std::atomic<bool> isPlaying{false};
     std::atomic<int> writeIndex{0};
+    std::atomic<float> gain{0.5f};
     double deviceSampleRate = -1;
     int deviceChannelCount = -1;
 

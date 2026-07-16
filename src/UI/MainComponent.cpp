@@ -80,6 +80,7 @@ void MainComponent::resized()
 void MainComponent::stateChanged()
 {
     updateSliceWaveform();
+    audioPlaybackEngine.gain.store(stateHandler.getStateValue<float>(stateHandler.masterVolumeId, 0.5f));
 }
 
 void MainComponent::transportButtonPressed(const TransportButtonComponent::TransportEvent event)

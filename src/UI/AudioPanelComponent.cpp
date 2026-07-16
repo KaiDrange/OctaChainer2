@@ -1,7 +1,7 @@
 #include "AudioPanelComponent.h"
 #include "../Core/AudioPlaybackEngine.h"
 
-AudioPanelComponent::AudioPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
+AudioPanelComponent::AudioPanelComponent(const Dimension& height, const Dimension& width,
     StateHandler& stateHandlerToUse, const juce::String& title)
     : PanelComponent(height, width, title), stateHandler(stateHandlerToUse)
 {
@@ -16,8 +16,13 @@ AudioPanelComponent::AudioPanelComponent(const PanelComponent::Dimension& height
 
     masterVolumeSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     masterVolumeSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-    masterVolumeSlider.setRange(0.0, 1.0, 0.001);
-    masterVolumeSlider.setValue(0.75, juce::dontSendNotification);
+    masterVolumeSlider.setRange(-48.0f, 0.0f, 0.1f);
+    masterVolumeSlider.setValue(-6.0f, juce::dontSendNotification);
+
+    masterVolumeSlider.onValueChange = [this]
+    {
+        stateHandler.setStateValue(stateHandler.masterVolumeId, juce::Decibels::decibelsToGain(masterVolumeSlider.getValue()));
+    };
 
     btnPlaySlice.getButton().onClick = [this]
     {

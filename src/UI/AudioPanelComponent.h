@@ -24,9 +24,9 @@ public:
     void stateChanged() override;
 
 
-    void actionListenerCallback (const juce::String& message) override;
+    void actionListenerCallback(const juce::String& message) override;
 
-    AudioPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
+    AudioPanelComponent(const Dimension& height, const Dimension& width,
         StateHandler& stateHandlerToUse, const juce::String& title = "");
     void resized() override;
 
