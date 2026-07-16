@@ -21,6 +21,11 @@ const StateHandler& OctaChainer2AudioProcessor::getStateHandler() const noexcept
     return stateHandler;
 }
 
+AudioPlaybackEngine& OctaChainer2AudioProcessor::getAudioPlaybackEngine() noexcept
+{
+    return audioPlaybackEngine;
+}
+
 const juce::String OctaChainer2AudioProcessor::getName() const
 {
     return JucePlugin_Name;

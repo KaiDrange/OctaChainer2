@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 
+#include "Core/AudioPlaybackEngine.h"
 #include "Core/StateHandler.h"
 
 class OctaChainer2AudioProcessor : public juce::AudioProcessor
@@ -12,6 +13,7 @@ public:
 
     StateHandler& getStateHandler() noexcept;
     const StateHandler& getStateHandler() const noexcept;
+    AudioPlaybackEngine& getAudioPlaybackEngine() noexcept;
 
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
@@ -40,6 +42,7 @@ public:
 
 private:
     StateHandler stateHandler;
+    AudioPlaybackEngine audioPlaybackEngine;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OctaChainer2AudioProcessor)
 };
