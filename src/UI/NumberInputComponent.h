@@ -12,6 +12,7 @@ public:
     void setValue(double number);
     void setValue(const juce::var& value);
     void setLabelText(const juce::String& text);
+    void setLabelColour(const juce::Colour& colour);
     void resized() override;
     
     class Listener {

@@ -60,6 +60,7 @@ public:
     bool loadSelectedSliceAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const;
 
     int addSlice(const Slice& slice, juce::UndoManager* undoManager = nullptr);
+    int addBlankSlice(int64 lengthInSamples, juce::UndoManager* undoManager = nullptr);
     void removeSelectedSlice();
     void removeAllSlices();
 

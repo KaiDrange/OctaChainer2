@@ -71,7 +71,6 @@ bool AudioFileLoader::loadFile(const juce::File& file, Slice& destination, juce:
     destination.start = 0;
     destination.end = destination.lengthInSamples / destination.channels;
     destination.loopStart = 0;
-    destination.loopEnd = destination.end;
     destination.name = file.getFileName();
     destination.sourcePath = file.getFullPathName();
 

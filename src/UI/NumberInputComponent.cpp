@@ -157,6 +157,11 @@ void NumberInputComponent::setLabelText(const juce::String& text) {
     label.setText(text, juce::dontSendNotification);
 }
 
+void NumberInputComponent::setLabelColour(const juce::Colour& colour)
+{
+    label.setColour(juce::Label::textColourId, colour);
+}
+
 void NumberInputComponent::addListener(Listener* listenerToAdd) {
     listeners.add(listenerToAdd);
 }

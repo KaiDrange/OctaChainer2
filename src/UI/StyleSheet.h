@@ -33,15 +33,15 @@ public:
     static constexpr uint32 buttonTextColour = 0xFFF7F5EF;
     static constexpr uint32 toggleTickColour = 0xFF0A84FF;
 
-    static constexpr uint32 sliceListBackgroundColour = 0xFF242B28;
-    static constexpr uint32 sliceListHeaderBackgroundColour = 0xFF2D3531;
-    static constexpr uint32 sliceListBorderColour = 0xFF64766C;
+    static constexpr uint32 sliceListBackgroundColour = 0xFF44423D;
+    static constexpr uint32 sliceListHeaderBackgroundColour = 0xFF505B50;
+    static constexpr uint32 sliceListBorderColour = 0xFF756F66;
     static constexpr uint32 sliceListTextColour = 0xFFF6F7F2;
-    static constexpr uint32 sliceListRowColour = 0xFF2A312D;
-    static constexpr uint32 sliceListRowAltColour = 0xFF313935;
-    static constexpr uint32 sliceListRowSelectedColour = 0xFF496255;
-    static constexpr uint32 sliceListDividerColour = 0xFF8A9B92;
-    static constexpr uint32 sliceListDragIndicatorColour = 0xFFAAC4AE;
+    static constexpr uint32 sliceListRowColour = 0xFF383530;
+    static constexpr uint32 sliceListRowAltColour = 0xFF403D37;
+    static constexpr uint32 sliceListRowSelectedColour = 0xFF59635B;
+    static constexpr uint32 sliceListDividerColour = 0xFF827B72;
+    static constexpr uint32 sliceListDragIndicatorColour = 0xFFD0CBC0;
 
     static constexpr uint32 controlBackgroundColour = 0xFFF7F2E9;
     static constexpr uint32 controlBackgroundFocusedColour = 0xFFFFFFFF;

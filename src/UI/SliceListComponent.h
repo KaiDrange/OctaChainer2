@@ -46,10 +46,11 @@ private:
     };
 
     const std::vector<Column> columns = {
-        {1, "Slice", 200, 120, 400},
-        {2, "Format", 90, 60, 160},
-        {3, "Length", 90, 0, 160},
-        {4, "Source path", 280, 0, 800}
+        {1, "#", 40, 40, 40},
+        {2, "Slice", 200, 120, 400},
+        {3, "Format", 90, 60, 160},
+        {4, "Length", 90, 0, 160},
+        {5, "Source path", 280, 0, 800}
     };
 
     void configureTable();

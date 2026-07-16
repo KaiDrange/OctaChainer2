@@ -17,10 +17,12 @@ SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, 
     addAndMakeVisible(btnRemove);
     addAndMakeVisible(btnRemoveAll);
     addAndMakeVisible(chainMaxLength);
+    chainMaxLength.setLabelColour(StyleSheet::getSliceListTextColour());
 
     btnAdd.onClick = [this] { showAddFileChooser(); };
     btnRemove.onClick = [this] { stateHandler.removeSelectedSlice(); };
     btnRemoveAll.onClick = [this] { stateHandler.removeAllSlices(); };
+    btnAddSilence.onClick = [this] { stateHandler.addBlankSlice(22050); };
     stateHandler.addListener(this);
     chainMaxLength.addListener(this);
 
@@ -41,6 +43,8 @@ void SliceListComponent::resized()
     auto contentArea = innerBounds;
     auto buttonArea = contentArea.removeFromBottom(StyleSheet::defaultButtonHeight);
     table.setBounds(contentArea);
+
+    table.getHeader().setColumnVisible(5, contentArea.getWidth() > 700);
 
     btnAdd.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 5).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
     btnAddSilence.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 4).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
@@ -124,17 +128,19 @@ void SliceListComponent::paintCell(juce::Graphics& g, const int rowNumber, const
     juce::String text;
 
     if (columnId == 1)
-        text = sliceTree.getProperty(stateHandler.sliceNameId).toString();
+        text = juce::String(rowNumber + 1);
     else if (columnId == 2)
-        text = formatAudioFormat(stateHandler, sliceTree);
+        text = sliceTree.getProperty(stateHandler.sliceNameId).toString();
     else if (columnId == 3)
-        text = formatDuration(stateHandler, sliceTree);
+        text = formatAudioFormat(stateHandler, sliceTree);
     else if (columnId == 4)
+        text = formatDuration(stateHandler, sliceTree);
+    else if (columnId == 5)
         text = sliceTree.getProperty(stateHandler.sliceSourcePathId).toString();
 
     g.setColour(StyleSheet::getSliceListTextColour());
     g.setFont(StyleSheet::getControlFont());
-    g.drawText(text, 6, 0, width - 12, height, juce::Justification::centredLeft, true);
+    g.drawText(text, 6, 0, width - 12, height, columnId == 1 ? juce::Justification::centredRight : juce::Justification::centredLeft, true);
 
     g.setColour(StyleSheet::getSliceListDividerColour().withAlpha(0.55f));
     g.drawVerticalLine(width - 1, 0.0f, static_cast<float>(height));

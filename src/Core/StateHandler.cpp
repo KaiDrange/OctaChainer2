@@ -339,7 +339,6 @@ int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager)
     sliceTree.setProperty(sliceStartSampleId, slice.start, nullptr);
     sliceTree.setProperty(sliceEndSampleId, slice.end, nullptr);
     sliceTree.setProperty(sliceLoopStartSampleId, slice.loopStart, nullptr);
-    sliceTree.setProperty(sliceLoopEndSampleId, slice.loopEnd, nullptr);
     sliceTree.setProperty(sliceAudioDataId, juce::var(createAudioDataBlock(slice)), nullptr);
 
     const auto newIndex = dataTree.getNumChildren();
@@ -347,6 +346,23 @@ int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager)
     dataTree.setProperty(selectedSliceId, newIndex, undoManager);
 
     return newIndex;
+}
+
+int StateHandler::addBlankSlice(const int64 lengthInSamples, juce::UndoManager* undoManager)
+{
+    ensureDataTree();
+    Slice slice;
+    slice.name = "Blank";
+    slice.sourcePath = {"N/A"};
+    slice.channels = 1;
+    slice.samplerate = 44100;
+    slice.bitDepth = 16;
+    slice.lengthInSamples = lengthInSamples;
+    slice.start = 0;
+    slice.end = slice.lengthInSamples;
+    slice.loopStart = 0;
+    slice.createBlankAudioData(slice.channels, lengthInSamples);
+    return addSlice(slice, undoManager);
 }
 
 void StateHandler::removeSelectedSlice()
