@@ -19,7 +19,7 @@ public:
                         const juce::String& title = "");
     ~SliceListComponent() override;
     void resized() override;
-    void stateChanged() override;
+    void stateChanged(const StateHandler::StateChange& change) override;
     void numberInputChanged(NumberInputComponent* numberInput) override;
 
     int getNumRows() override;

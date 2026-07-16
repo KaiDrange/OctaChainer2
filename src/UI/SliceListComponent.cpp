@@ -25,9 +25,7 @@ SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, 
     btnAddSilence.onClick = [this] { stateHandler.addBlankSlice(22050); };
     stateHandler.addListener(this);
     chainMaxLength.addListener(this);
-
-    btnRemove.setEnabled(stateHandler.getNumSlices() > 0);
-    btnRemoveAll.setEnabled(stateHandler.getNumSlices() > 0);
+    stateChanged({ StateHandler::StateChange::fullReload });
 }
 
 SliceListComponent::~SliceListComponent()
@@ -236,17 +234,35 @@ void SliceListComponent::clearDragIndicator()
     dragInsertIndex = -1;
 }
 
-void SliceListComponent::stateChanged()
+void SliceListComponent::stateChanged(const StateHandler::StateChange& change)
 {
-    table.updateContent();
-    const auto selectedRow = stateHandler.getSelectedSliceIndex();
-    if (selectedRow >= 0)
-        table.selectRow(selectedRow, true, true);
-    else
-        table.deselectAllRows();
+    const bool refreshContent = change.has(StateHandler::StateChange::sliceList)
+                                || change.has(StateHandler::StateChange::fullReload);
+    const bool refreshSelection = change.has(StateHandler::StateChange::sliceList)
+                                  || change.has(StateHandler::StateChange::selectedSlice)
+                                  || change.has(StateHandler::StateChange::fullReload);
 
-    btnRemove.setEnabled(stateHandler.getNumSlices() > 0);
-    btnRemoveAll.setEnabled(stateHandler.getNumSlices() > 0);
+    if (! refreshContent && ! refreshSelection)
+        return;
+
+    if (refreshContent)
+        table.updateContent();
+
+    if (refreshSelection)
+    {
+        const auto selectedRow = stateHandler.getSelectedSliceIndex();
+        if (selectedRow >= 0)
+            table.selectRow(selectedRow, true, true);
+        else
+            table.deselectAllRows();
+    }
+
+    if (refreshContent || change.has(StateHandler::StateChange::fullReload))
+    {
+        const auto hasSlices = stateHandler.getNumSlices() > 0;
+        btnRemove.setEnabled(hasSlices);
+        btnRemoveAll.setEnabled(hasSlices);
+    }
 
     table.repaint();
 }

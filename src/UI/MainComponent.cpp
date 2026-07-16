@@ -77,10 +77,16 @@ void MainComponent::resized()
     chainWaveformComponent.setBounds(bottomBand);
 }
 
-void MainComponent::stateChanged()
+void MainComponent::stateChanged(const StateHandler::StateChange& change)
 {
-    updateSliceWaveform();
-    audioPlaybackEngine.gain.store(stateHandler.getStateValue<float>(stateHandler.masterVolumeId, 0.5f));
+    if (change.has(StateHandler::StateChange::selectedSlice) || change.has(StateHandler::StateChange::fullReload))
+        updateSliceWaveform();
+
+    if ((change.has(StateHandler::StateChange::settings) && change.isSetting(stateHandler.masterVolumeId))
+        || change.has(StateHandler::StateChange::fullReload))
+    {
+        audioPlaybackEngine.gain.store(stateHandler.getStateValue<float>(stateHandler.masterVolumeId, 0.5f));
+    }
 }
 
 void MainComponent::transportButtonPressed(const TransportButtonComponent::TransportEvent event)

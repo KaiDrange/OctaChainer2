@@ -16,8 +16,7 @@ AudioPanelComponent::AudioPanelComponent(const Dimension& height, const Dimensio
 
     masterVolumeSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     masterVolumeSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-    masterVolumeSlider.setRange(-48.0f, 0.0f, 0.1f);
-    masterVolumeSlider.setValue(-6.0f, juce::dontSendNotification);
+    masterVolumeSlider.setRange(-24.0f, 0.0f, 0.1f);
 
     masterVolumeSlider.onValueChange = [this]
     {
@@ -38,8 +37,7 @@ AudioPanelComponent::AudioPanelComponent(const Dimension& height, const Dimensio
     };
 
     stateHandler.addListener(this);
-    btnPlaySlice.setEnabled(stateHandler.getSelectedSliceIndex() >= 0);
-    btnPlayChain.setEnabled(stateHandler.getNumSlices() > 0);
+    stateChanged({ StateHandler::StateChange::fullReload });
 }
 
 AudioPanelComponent::~AudioPanelComponent()
@@ -97,10 +95,23 @@ void AudioPanelComponent::removeListener(Listener* listenerToRemove) {
     listeners.remove(listenerToRemove);
 }
 
-void AudioPanelComponent::stateChanged()
+void AudioPanelComponent::stateChanged(const StateHandler::StateChange& change)
 {
-    btnPlaySlice.setEnabled(stateHandler.getSelectedSliceIndex() >= 0);
-    btnPlayChain.setEnabled(stateHandler.getNumSlices() > 0);
+    if (change.has(StateHandler::StateChange::sliceList)
+        || change.has(StateHandler::StateChange::selectedSlice)
+        || change.has(StateHandler::StateChange::fullReload))
+    {
+        btnPlaySlice.setEnabled(stateHandler.getSelectedSliceIndex() >= 0);
+        btnPlayChain.setEnabled(stateHandler.getNumSlices() > 0);
+    }
+
+    if ((change.has(StateHandler::StateChange::settings) && change.isSetting(stateHandler.masterVolumeId))
+        || change.has(StateHandler::StateChange::fullReload))
+    {
+        const auto volume = juce::Decibels::gainToDecibels(stateHandler.getStateValue<float>(stateHandler.masterVolumeId, 0.5f));
+        if (volume != masterVolumeSlider.getValue())
+            masterVolumeSlider.setValue(volume, juce::dontSendNotification);
+    }
 }
 
 void AudioPanelComponent::actionListenerCallback(const juce::String& message)

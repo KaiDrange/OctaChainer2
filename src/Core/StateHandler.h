@@ -12,11 +12,32 @@ public:
 #include "StateIdentifiers.h"
 #include "StateValueDefinitions.h"
 
+    struct StateChange
+    {
+        enum Flag : uint32_t
+        {
+            none = 0,
+            settings = 1 << 0,
+            sliceList = 1 << 1,
+            selectedSlice = 1 << 2,
+            fullReload = 1 << 3
+        };
+
+        uint32_t flags = none;
+        juce::Identifier property;
+
+        bool has(const Flag flag) const { return (flags & flag) != 0; }
+        bool isSetting(const juce::Identifier& id) const
+        {
+            return has(settings) && property == id;
+        }
+    };
+
     class Listener
     {
     public:
         virtual ~Listener() = default;
-        virtual void stateChanged() = 0;
+        virtual void stateChanged(const StateChange& change) = 0;
     };
 
     StateHandler();
@@ -47,7 +68,7 @@ public:
     void refreshComboBox(const juce::Identifier& identifier, juce::ComboBox& comboBoxRef);
     void refreshRadioButtons(const juce::Identifier& identifier, std::initializer_list<juce::ToggleButton*> buttons);
 
-    void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override;
+    void valueTreePropertyChanged(juce::ValueTree& tree, const juce::Identifier& property) override;
     void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override;
     void valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int) override;
     void valueTreeChildOrderChanged(juce::ValueTree&, int, int) override;
@@ -75,7 +96,7 @@ private:
     void ensureSettingsTree();
     void ensureDataTree();
     void setDefaultStateValue(const juce::Identifier& identifier, const juce::var& value);
-    void notifyListeners();
+    void notifyListeners(const StateChange& change);
     static juce::MemoryBlock createAudioDataBlock(const Slice& slice);
 
     juce::ValueTree valueTree;

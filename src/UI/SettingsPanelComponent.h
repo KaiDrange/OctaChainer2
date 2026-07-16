@@ -21,7 +21,7 @@ public:
     static constexpr int chainExportSectionHeight = 180;
     static constexpr int megabreakExportSectionHeight = 63;
 
-    void stateChanged() override;
+    void stateChanged(const StateHandler::StateChange& change) override;
     void numberInputChanged(NumberInputComponent* numberInput) override;
 
 private:

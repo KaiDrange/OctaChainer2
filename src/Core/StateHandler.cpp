@@ -3,6 +3,63 @@
 #include "StateHandler.h"
 #include "Slice.h"
 
+StateHandler::StateChange makeStateChange(const StateHandler::StateChange::Flag flags, const juce::Identifier& property = {})
+{
+    return { static_cast<uint32_t>(flags), property };
+}
+
+StateHandler::StateChange makeStateChangeFromTreeEvent(const juce::ValueTree& settingsTree,
+                                                       const juce::ValueTree& dataTree,
+                                                       const juce::Identifier& sliceId,
+                                                       const juce::Identifier& selectedSliceId,
+                                                       const juce::ValueTree& changedTree,
+                                                       const juce::Identifier& property)
+{
+    if (changedTree == settingsTree)
+        return makeStateChange(StateHandler::StateChange::settings, property);
+
+    if (changedTree == dataTree)
+    {
+        if (property == selectedSliceId)
+            return makeStateChange(StateHandler::StateChange::selectedSlice, property);
+
+        return makeStateChange(StateHandler::StateChange::sliceList, property);
+    }
+
+    if (changedTree.isValid() && changedTree.getParent() == dataTree)
+    {
+        if (! changedTree.hasType(sliceId))
+            return makeStateChange(StateHandler::StateChange::fullReload, property);
+
+        const auto selectedSliceIndex = static_cast<int>(dataTree.getProperty(selectedSliceId, -1));
+        if (juce::isPositiveAndBelow(selectedSliceIndex, dataTree.getNumChildren()))
+        {
+            const auto selectedSliceTree = dataTree.getChild(selectedSliceIndex);
+            if (changedTree == selectedSliceTree)
+                return makeStateChange(StateHandler::StateChange::sliceList, property);
+        }
+
+        return makeStateChange(StateHandler::StateChange::sliceList, property);
+    }
+
+    return makeStateChange(StateHandler::StateChange::fullReload, property);
+}
+
+StateHandler::StateChange makeStateChangeFromChildEvent(const juce::ValueTree& parent,
+                                                        const juce::ValueTree& child,
+                                                        const juce::Identifier& sliceId,
+                                                        const juce::Identifier& settingsId,
+                                                        const juce::Identifier& dataId)
+{
+    if (parent.hasType(dataId) && child.hasType(sliceId))
+        return makeStateChange(StateHandler::StateChange::sliceList);
+
+    if (parent.hasType(settingsId) || parent.hasType(dataId))
+        return makeStateChange(StateHandler::StateChange::fullReload);
+
+    return makeStateChange(StateHandler::StateChange::fullReload);
+}
+
 StateHandler::StateHandler()
     : valueTree(stateTypeId)
 {
@@ -76,7 +133,7 @@ void StateHandler::setState(const juce::ValueTree& newState)
     ensureSettingsTree();
     ensureDataTree();
     addTreeListeners();
-    notifyListeners();
+    notifyListeners(makeStateChange(StateHandler::StateChange::fullReload));
 }
 
 juce::XmlElement* StateHandler::createXml() const
@@ -435,9 +492,9 @@ bool StateHandler::moveSlice(const int fromIndex, const int toIndex)
     return true;
 }
 
-void StateHandler::notifyListeners()
+void StateHandler::notifyListeners(const StateChange& change)
 {
-    listeners.call([](Listener& listener) { listener.stateChanged(); });
+    listeners.call([&change](Listener& listener) { listener.stateChanged(change); });
 }
 
 void StateHandler::addTreeListeners()
@@ -484,34 +541,36 @@ void StateHandler::setDefaultStateValue(const juce::Identifier& identifier, cons
         settingsTree.setProperty(identifier, value, nullptr);
 }
 
-void StateHandler::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&)
+void StateHandler::valueTreePropertyChanged(juce::ValueTree& tree, const juce::Identifier& property)
 {
-    notifyListeners();
+    notifyListeners(makeStateChangeFromTreeEvent(settingsTree, dataTree, sliceId, selectedSliceId, tree, property));
 }
 
-void StateHandler::valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&)
+void StateHandler::valueTreeChildAdded(juce::ValueTree& parent, juce::ValueTree& child)
 {
-    notifyListeners();
+    notifyListeners(makeStateChangeFromChildEvent(parent, child, sliceId, settingsId, dataId));
 }
 
-void StateHandler::valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int)
+void StateHandler::valueTreeChildRemoved(juce::ValueTree& parent, juce::ValueTree& child, int)
 {
-    notifyListeners();
+    notifyListeners(makeStateChangeFromChildEvent(parent, child, sliceId, settingsId, dataId));
 }
 
-void StateHandler::valueTreeChildOrderChanged(juce::ValueTree&, int, int)
+void StateHandler::valueTreeChildOrderChanged(juce::ValueTree& parent, int, int)
 {
-    notifyListeners();
+    notifyListeners(parent.hasType(dataId)
+                    ? makeStateChange(StateHandler::StateChange::sliceList)
+                    : makeStateChange(StateHandler::StateChange::fullReload));
 }
 
 void StateHandler::valueTreeParentChanged(juce::ValueTree&)
 {
-    notifyListeners();
+    notifyListeners(makeStateChange(StateHandler::StateChange::fullReload));
 }
 
 void StateHandler::valueTreeRedirected(juce::ValueTree&)
 {
-    notifyListeners();
+    notifyListeners(makeStateChange(StateHandler::StateChange::fullReload));
 }
 
 juce::MemoryBlock StateHandler::createAudioDataBlock(const Slice& slice)

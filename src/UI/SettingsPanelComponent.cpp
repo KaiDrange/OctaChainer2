@@ -64,7 +64,7 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     gainInput.addListener(this);
     bpmInput.addListener(this);
 
-    SettingsPanelComponent::stateChanged();
+    SettingsPanelComponent::stateChanged({ StateHandler::StateChange::fullReload });
 }
 
 SettingsPanelComponent::~SettingsPanelComponent()
@@ -223,8 +223,11 @@ void SettingsPanelComponent::layoutMegabreakExportSection()
                                     megabreakRow.getY(), megabreakWidth, StyleSheet::comboboxHeight);
 }
 
-void SettingsPanelComponent::stateChanged()
+void SettingsPanelComponent::stateChanged(const StateHandler::StateChange& change)
 {
+    if (! change.has(StateHandler::StateChange::settings) && ! change.has(StateHandler::StateChange::fullReload))
+        return;
+
     stateHandler.refreshRadioButtons(stateHandler.bitDepthId, { &bitDepth16Bit, &bitDepth24Bit });
     stateHandler.refreshRadioButtons(stateHandler.channelsId, { &channelMono, &channelStereo });
     stateHandler.refreshRadioButtons(stateHandler.samplerateId, { &sampleRate44k, &sampleRate48k });

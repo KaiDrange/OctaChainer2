@@ -21,8 +21,7 @@ public:
     void addListener(Listener* listener);
     void removeListener(Listener* listenerToRemove);
     ~AudioPanelComponent() override;
-    void stateChanged() override;
-
+    void stateChanged(const StateHandler::StateChange& change) override;
 
     void actionListenerCallback(const juce::String& message) override;
 

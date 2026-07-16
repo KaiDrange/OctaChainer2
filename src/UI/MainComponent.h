@@ -54,7 +54,7 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
-    void stateChanged() override;
+    void stateChanged(const StateHandler::StateChange& change) override;
     void transportButtonPressed(TransportButtonComponent::TransportEvent event) override;
 
 private:
