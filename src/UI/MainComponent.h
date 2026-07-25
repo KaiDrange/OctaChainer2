@@ -67,6 +67,7 @@ public:
     void stateChanged(const StateHandler::StateChange& change) override;
     void transportButtonPressed(TransportButtonComponent::TransportEvent event) override;
     void waveformSegmentClicked(int segmentIndex, int sliceIndex) override;
+    void waveformSliceRangeChanged(int startSample, int endSample) override;
     std::shared_ptr<const AudioClip> getChainAudioClip() const { return chain.getAudioClip(); }
 
 private:

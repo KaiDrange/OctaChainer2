@@ -48,6 +48,10 @@ public:
     static constexpr uint32 waveformColour = 0xFF3E4448;
     static constexpr uint32 waveformAltColour = 0xFF4A4736;
     static constexpr uint32 selectedWaveformColour = 0xFFFFFFFF;
+    static constexpr uint32 sliceWaveformMutedColour = 0xFF8A8F89;
+    static constexpr uint32 sliceWaveformSelectionColour = 0x336D8376;
+    static constexpr uint32 sliceWaveformMarkerColour = 0xFF2E322F;
+    static constexpr uint32 sliceWaveformMarkerHandleColour = 0xFFF7F2E9;
 
     static constexpr uint32 controlBackgroundColour = 0xFFF7F2E9;
     static constexpr uint32 controlBackgroundFocusedColour = 0xFFFFFFFF;
@@ -151,6 +155,26 @@ public:
     static juce::Colour getSelectedWaveformBackgroundColour()
     {
         return juce::Colour(selectedWaveformBackgroundColour);
+    }
+
+    static juce::Colour getSliceWaveformMutedColour()
+    {
+        return juce::Colour(sliceWaveformMutedColour);
+    }
+
+    static juce::Colour getSliceWaveformSelectionColour()
+    {
+        return juce::Colour(sliceWaveformSelectionColour);
+    }
+
+    static juce::Colour getSliceWaveformMarkerColour()
+    {
+        return juce::Colour(sliceWaveformMarkerColour);
+    }
+
+    static juce::Colour getSliceWaveformMarkerHandleColour()
+    {
+        return juce::Colour(sliceWaveformMarkerHandleColour);
     }
 
     StyleSheet();

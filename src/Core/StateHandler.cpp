@@ -383,6 +383,60 @@ bool StateHandler::loadSelectedSliceAudio(juce::AudioBuffer<float>& destination,
     return true;
 }
 
+bool StateHandler::loadSelectedSlicePlaybackAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const
+{
+    const auto sliceTree = getSelectedSliceTree();
+    if (! sliceTree.isValid())
+        return false;
+
+    const auto numChannels = static_cast<int>(sliceTree.getProperty(sliceChannelsId, 0));
+    sampleRate = static_cast<double>(sliceTree.getProperty(sliceSamplerateId, 0.0));
+    const auto numSamples = static_cast<juce::int64>(sliceTree.getProperty(sliceNumSamplesId, 0));
+    const auto* audioDataValue = sliceTree.getPropertyPointer(sliceAudioDataId);
+
+    if (numChannels <= 0
+        || sampleRate <= 0.0
+        || numSamples <= 0
+        || numSamples > static_cast<juce::int64>(std::numeric_limits<int>::max())
+        || audioDataValue == nullptr)
+    {
+        return false;
+    }
+
+    const auto* audioDataBlock = audioDataValue->getBinaryData();
+    if (audioDataBlock == nullptr)
+        return false;
+
+    const auto rangeStart = juce::jlimit<juce::int64>(0, numSamples,
+                                                      sliceTree.getProperty(sliceStartSampleId, 0));
+    auto rangeEnd = juce::jlimit(rangeStart, numSamples,
+                                 static_cast<juce::int64>(sliceTree.getProperty(sliceEndSampleId, numSamples)));
+    if (rangeEnd <= rangeStart)
+        rangeEnd = juce::jmin<juce::int64>(numSamples, rangeStart + 1);
+
+    const auto rangeLength = rangeEnd - rangeStart;
+    if (rangeLength <= 0)
+        return false;
+
+    const auto samplesPerChannel = static_cast<size_t>(numSamples);
+    const auto expectedBytes = static_cast<size_t>(numChannels) * samplesPerChannel * sizeof(float);
+    if (audioDataBlock->getSize() < expectedBytes)
+        return false;
+
+    const auto rangeLengthAsInt = static_cast<int>(rangeLength);
+    const auto* samples = static_cast<const float*>(audioDataBlock->getData());
+
+    destination.setSize(numChannels, rangeLengthAsInt, false, false, false);
+
+    for (int channel = 0; channel < numChannels; ++channel)
+    {
+        const auto* source = samples + static_cast<size_t>(channel) * samplesPerChannel + static_cast<size_t>(rangeStart);
+        destination.copyFrom(channel, 0, source, rangeLengthAsInt);
+    }
+
+    return true;
+}
+
 int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager)
 {
     ensureDataTree();
@@ -454,6 +508,39 @@ bool StateHandler::selectSlice(const int index, juce::UndoManager* undoManager)
         return false;
 
     dataTree.setProperty(selectedSliceId, selectedIndex, undoManager);
+    return true;
+}
+
+bool StateHandler::setSelectedSliceRange(const int startSample, const int endSample, juce::UndoManager* undoManager)
+{
+    ensureDataTree();
+
+    auto sliceTree = getSelectedSliceTree();
+    if (! sliceTree.isValid())
+        return false;
+
+    const auto totalSamples = static_cast<juce::int64>(sliceTree.getProperty(sliceNumSamplesId, 0));
+    if (totalSamples <= 0)
+        return false;
+
+    auto clampedStart = juce::jlimit<juce::int64>(0, totalSamples, startSample);
+    auto clampedEnd = juce::jlimit<juce::int64>(0, totalSamples, endSample);
+
+    if (clampedEnd <= clampedStart)
+    {
+        if (clampedStart >= totalSamples)
+            clampedStart = juce::jmax<juce::int64>(0, totalSamples - 1);
+
+        clampedEnd = juce::jmin<juce::int64>(totalSamples, clampedStart + 1);
+    }
+
+    const auto currentStart = static_cast<juce::int64>(sliceTree.getProperty(sliceStartSampleId, 0));
+    const auto currentEnd = static_cast<juce::int64>(sliceTree.getProperty(sliceEndSampleId, totalSamples));
+    if (currentStart == clampedStart && currentEnd == clampedEnd)
+        return false;
+
+    sliceTree.setProperty(sliceStartSampleId, clampedStart, undoManager);
+    sliceTree.setProperty(sliceEndSampleId, clampedEnd, undoManager);
     return true;
 }
 

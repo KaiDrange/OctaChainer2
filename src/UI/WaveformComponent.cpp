@@ -1,5 +1,7 @@
 #include "WaveformComponent.h"
 
+#include <cmath>
+
 WaveformComponent::WaveformComponent(const Dimension& height, const Dimension& width,
                                      const juce::String& title)
     : PanelComponent(height, width, title)
@@ -40,10 +42,51 @@ void WaveformComponent::setAudioData(const juce::AudioBuffer<float>& audioData, 
     waveformSegments = segments;
     waveformSampleRate = sampleRate;
     selectedSegmentIndex = selectedSegmentIndexToUse;
+    sliceStartSample = 0;
+    sliceEndSample = audioData.getNumSamples();
+    sliceRangeEnabled = false;
+    activeSliceRangeHandle = SliceRangeHandle::none;
+    playHeadOverlay.setSliceRange(0.0, 1.0);
     processing = false;
     processingMessage.clear();
     playHeadOverlay.setVisible(true);
     repaint();
+}
+
+void WaveformComponent::setSliceRange(const int startSample, const int endSample)
+{
+    const auto totalSamples = waveformSourceBuffer.getNumSamples();
+    if (totalSamples <= 0)
+    {
+        sliceRangeEnabled = false;
+        sliceStartSample = 0;
+        sliceEndSample = 0;
+        activeSliceRangeHandle = SliceRangeHandle::none;
+        repaint();
+        return;
+    }
+
+    auto newStart = juce::jlimit(0, totalSamples, startSample);
+    auto newEnd = juce::jlimit(0, totalSamples, endSample);
+
+    if (newEnd <= newStart)
+    {
+        newStart = juce::jlimit(0, totalSamples - 1, newStart);
+        newEnd = juce::jmin(totalSamples, newStart + 1);
+    }
+
+    const bool changed = ! sliceRangeEnabled
+                         || sliceStartSample != newStart
+                         || sliceEndSample != newEnd;
+
+    sliceRangeEnabled = true;
+    sliceStartSample = newStart;
+    sliceEndSample = newEnd;
+    playHeadOverlay.setSliceRange(static_cast<double>(sliceStartSample) / static_cast<double>(totalSamples),
+                                  static_cast<double>(sliceEndSample) / static_cast<double>(totalSamples));
+
+    if (changed)
+        repaint();
 }
 
 void WaveformComponent::clearAudioData()
@@ -52,6 +95,11 @@ void WaveformComponent::clearAudioData()
     waveformSegments.clear();
     waveformSampleRate = 0.0;
     selectedSegmentIndex = -1;
+    sliceStartSample = 0;
+    sliceEndSample = 0;
+    sliceRangeEnabled = false;
+    activeSliceRangeHandle = SliceRangeHandle::none;
+    playHeadOverlay.setSliceRange(0.0, 1.0);
     processing = false;
     processingMessage.clear();
     playHeadOverlay.setVisible(false);
@@ -69,6 +117,11 @@ void WaveformComponent::setProcessingState(const bool isProcessing, juce::String
         waveformSegments.clear();
         waveformSampleRate = 0.0;
         selectedSegmentIndex = -1;
+        sliceStartSample = 0;
+        sliceEndSample = 0;
+        sliceRangeEnabled = false;
+        activeSliceRangeHandle = SliceRangeHandle::none;
+        playHeadOverlay.setSliceRange(0.0, 1.0);
         playHeadOverlay.setVisible(false);
     }
 
@@ -122,6 +175,17 @@ void WaveformComponent::mouseDown(const juce::MouseEvent& event)
     if (processing)
         return;
 
+    if (sliceRangeEnabled)
+    {
+        const auto handle = getSliceRangeHandleAtPoint(event.getPosition());
+        if (handle != static_cast<int>(SliceRangeHandle::none))
+        {
+            activeSliceRangeHandle = static_cast<SliceRangeHandle>(handle);
+            updateSliceRangeFromMouse(event.getPosition());
+            return;
+        }
+    }
+
     const auto segmentIndex = getSegmentIndexAtPoint(event.getPosition());
     if (segmentIndex < 0 || ! juce::isPositiveAndBelow(segmentIndex, static_cast<int>(waveformSegments.size())))
         return;
@@ -133,6 +197,28 @@ void WaveformComponent::mouseDown(const juce::MouseEvent& event)
     sendWaveformSegmentClicked(segmentIndex, sliceIndex);
 }
 
+void WaveformComponent::mouseDrag(const juce::MouseEvent& event)
+{
+    if (processing || activeSliceRangeHandle == SliceRangeHandle::none)
+        return;
+
+    updateSliceRangeFromMouse(event.getPosition());
+}
+
+void WaveformComponent::mouseUp(const juce::MouseEvent&)
+{
+    if (processing)
+    {
+        activeSliceRangeHandle = SliceRangeHandle::none;
+        return;
+    }
+
+    if (activeSliceRangeHandle != SliceRangeHandle::none && sliceRangeEnabled)
+        sendWaveformSliceRangeChanged(sliceStartSample, sliceEndSample);
+
+    activeSliceRangeHandle = SliceRangeHandle::none;
+}
+
 void WaveformComponent::drawWaveform(juce::Graphics& g) const
 {
     if (waveformSourceBuffer.getNumChannels() <= 0 || waveformSourceBuffer.getNumSamples() <= 0)
@@ -141,6 +227,12 @@ void WaveformComponent::drawWaveform(juce::Graphics& g) const
     const auto waveformArea = innerBounds.reduced(4);
     if (waveformArea.isEmpty())
         return;
+
+    if (sliceRangeEnabled)
+    {
+        drawSliceRangeWaveform(g, waveformArea);
+        return;
+    }
 
     if (waveformSegments.size() <= 1 || waveformSampleRate <= 0.0)
     {
@@ -198,6 +290,68 @@ void WaveformComponent::drawSegmentWaveform(juce::Graphics& g, const juce::Recta
 
     g.setColour(waveformColour);
     drawBufferWaveform(g, segmentArea, segmentStart, clampedSampleCount, waveformColour);
+}
+
+void WaveformComponent::drawSliceRangeWaveform(juce::Graphics& g, const juce::Rectangle<int>& waveformArea) const
+{
+    const auto totalSamples = waveformSourceBuffer.getNumSamples();
+    const auto numChannels = waveformSourceBuffer.getNumChannels();
+    if (totalSamples <= 0 || numChannels <= 0)
+        return;
+
+    const auto clampedStart = juce::jlimit(0, totalSamples, sliceStartSample);
+    const auto clampedEnd = juce::jlimit(clampedStart, totalSamples, sliceEndSample);
+    const auto selectionLength = clampedEnd - clampedStart;
+    if (selectionLength <= 0)
+        return;
+
+    drawChannelCenterlines(g, waveformArea);
+
+    const auto selectionStartX = sampleToX(clampedStart, waveformArea);
+    const auto selectionEndX = sampleToX(clampedEnd, waveformArea);
+    const auto selectionArea = waveformArea.withX(selectionStartX)
+                                            .withWidth(juce::jmax(1, selectionEndX - selectionStartX));
+
+    drawBufferWaveform(g, waveformArea, 0, totalSamples, StyleSheet::getSliceWaveformMutedColour());
+    g.setColour(StyleSheet::getSliceWaveformSelectionColour());
+    g.fillRect(selectionArea);
+    drawBufferWaveform(g, selectionArea, clampedStart, selectionLength, StyleSheet::getSelectedWaveformColour());
+
+    drawSliceRangeMarkers(g, waveformArea);
+}
+
+void WaveformComponent::drawSliceRangeMarkers(juce::Graphics& g, const juce::Rectangle<int>& waveformArea) const
+{
+    const auto totalSamples = waveformSourceBuffer.getNumSamples();
+    if (totalSamples <= 0 || waveformArea.isEmpty())
+        return;
+
+    const auto startX = sampleToX(sliceStartSample, waveformArea);
+    const auto endX = sampleToX(sliceEndSample, waveformArea);
+    const auto markerColour = StyleSheet::getSliceWaveformMarkerColour();
+    const auto handleColour = StyleSheet::getSliceWaveformMarkerHandleColour();
+    constexpr auto handleWidth = 8;
+    const auto handleHeight = juce::jmin(18, juce::jmax(10, waveformArea.getHeight() / 2));
+    const auto topY = waveformArea.getY();
+    const auto bottomY = waveformArea.getBottom();
+
+    auto drawMarker = [&](const int x, const bool isStartMarker)
+    {
+        g.setColour(markerColour);
+        g.drawVerticalLine(x, static_cast<float>(topY), static_cast<float>(bottomY));
+
+        const auto handleRect = juce::Rectangle<int>(x - handleWidth / 2,
+                                                     isStartMarker ? topY : bottomY - handleHeight,
+                                                     handleWidth,
+                                                     handleHeight);
+        g.setColour(handleColour);
+        g.fillRoundedRectangle(handleRect.toFloat(), 2.0f);
+        g.setColour(markerColour);
+        g.drawRoundedRectangle(handleRect.toFloat(), 2.0f, 1.0f);
+    };
+
+    drawMarker(startX, true);
+    drawMarker(endX, false);
 }
 
 void WaveformComponent::drawBufferWaveform(juce::Graphics& g, const juce::Rectangle<int>& waveformArea,
@@ -261,6 +415,42 @@ void WaveformComponent::drawBufferWaveform(juce::Graphics& g, const juce::Rectan
     }
 }
 
+void WaveformComponent::updateSliceRangeFromMouse(const juce::Point<int>& position)
+{
+    if (activeSliceRangeHandle == SliceRangeHandle::none)
+        return;
+
+    const auto waveformArea = innerBounds.reduced(4);
+    if (waveformArea.isEmpty())
+        return;
+
+    const auto totalSamples = waveformSourceBuffer.getNumSamples();
+    if (totalSamples <= 0)
+        return;
+
+    const auto newSample = xToSample(position.x, waveformArea);
+    if (activeSliceRangeHandle == SliceRangeHandle::start)
+    {
+        const auto maxStart = juce::jmax(0, sliceEndSample - 1);
+        const auto clampedStart = juce::jlimit(0, maxStart, newSample);
+        if (clampedStart == sliceStartSample)
+            return;
+
+        sliceStartSample = clampedStart;
+        repaint();
+    }
+    else if (activeSliceRangeHandle == SliceRangeHandle::end)
+    {
+        const auto minEnd = juce::jmin(totalSamples, sliceStartSample + 1);
+        const auto clampedEnd = juce::jlimit(minEnd, totalSamples, newSample);
+        if (clampedEnd == sliceEndSample)
+            return;
+
+        sliceEndSample = clampedEnd;
+        repaint();
+    }
+}
+
 void WaveformComponent::drawChannelCenterlines(juce::Graphics& g, const juce::Rectangle<int>& waveformArea) const
 {
     const auto numChannels = waveformSourceBuffer.getNumChannels();
@@ -280,6 +470,25 @@ void WaveformComponent::drawChannelCenterlines(juce::Graphics& g, const juce::Re
         const auto centreY = channelTop + (channelBottom - channelTop) / 2;
         g.drawHorizontalLine(centreY, static_cast<float>(waveformArea.getX()), static_cast<float>(waveformArea.getRight()));
     }
+}
+
+int WaveformComponent::sampleToX(const int sample, const juce::Rectangle<int>& waveformArea) const
+{
+    const auto totalSamples = juce::jmax(1, waveformSourceBuffer.getNumSamples());
+    return waveformArea.getX() + juce::roundToInt((static_cast<double>(juce::jlimit(0, totalSamples, sample))
+                                                   / static_cast<double>(totalSamples))
+                                                  * static_cast<double>(waveformArea.getWidth()));
+}
+
+int WaveformComponent::xToSample(const int x, const juce::Rectangle<int>& waveformArea) const
+{
+    const auto totalSamples = juce::jmax(1, waveformSourceBuffer.getNumSamples());
+    const auto clampedX = juce::jlimit(waveformArea.getX(), waveformArea.getRight(), x);
+    const auto relativeX = clampedX - waveformArea.getX();
+    return juce::jlimit(0, totalSamples,
+                        juce::roundToInt((static_cast<double>(relativeX)
+                                          / static_cast<double>(juce::jmax(1, waveformArea.getWidth())))
+                                         * static_cast<double>(totalSamples)));
 }
 
 int WaveformComponent::getSegmentIndexAtPoint(const juce::Point<int> position) const
@@ -319,6 +528,36 @@ int WaveformComponent::getSegmentIndexAtPoint(const juce::Point<int> position) c
     return -1;
 }
 
+int WaveformComponent::getSliceRangeHandleAtPoint(const juce::Point<int> position) const
+{
+    if (! sliceRangeEnabled || waveformSourceBuffer.getNumSamples() <= 0)
+        return static_cast<int>(SliceRangeHandle::none);
+
+    const auto waveformArea = innerBounds.reduced(4);
+    if (! waveformArea.contains(position))
+        return static_cast<int>(SliceRangeHandle::none);
+
+    const auto startX = sampleToX(sliceStartSample, waveformArea);
+    const auto endX = sampleToX(sliceEndSample, waveformArea);
+    const auto hitDistance = 6;
+
+    if (std::abs(position.x - startX) <= hitDistance)
+        return static_cast<int>(SliceRangeHandle::start);
+
+    if (std::abs(position.x - endX) <= hitDistance)
+        return static_cast<int>(SliceRangeHandle::end);
+
+    return static_cast<int>(SliceRangeHandle::none);
+}
+
+void WaveformComponent::sendWaveformSliceRangeChanged(const int startSample, const int endSample)
+{
+    listeners.call([startSample, endSample](Listener& listener)
+    {
+        listener.waveformSliceRangeChanged(startSample, endSample);
+    });
+}
+
 void WaveformComponent::sendWaveformSegmentClicked(const int segmentIndex, const int sliceIndex)
 {
     listeners.call([segmentIndex, sliceIndex](Listener& listener)
@@ -343,13 +582,30 @@ void WaveformComponent::PlayHeadOverlayComponent::setPlayHeadPositionFactor(doub
     repaint();
 }
 
+void WaveformComponent::PlayHeadOverlayComponent::setSliceRange(const double newSliceStartFactor,
+                                                                const double newSliceEndFactor)
+{
+    const auto clampedStart = juce::jlimit(0.0, 1.0, newSliceStartFactor);
+    const auto clampedEnd = juce::jlimit(clampedStart, 1.0, newSliceEndFactor);
+    if (clampedStart == sliceStartFactor && clampedEnd == sliceEndFactor)
+        return;
+
+    sliceStartFactor = clampedStart;
+    sliceEndFactor = clampedEnd;
+    repaint();
+}
+
 void WaveformComponent::PlayHeadOverlayComponent::paint(juce::Graphics& g)
 {
     const auto overlayArea = getLocalBounds();
     if (overlayArea.isEmpty())
         return;
 
-    const auto playHeadX = static_cast<int>(overlayArea.getX() + playHeadPositionFactor * overlayArea.getWidth());
+    const auto rangeWidth = juce::jmax(0.0, sliceEndFactor - sliceStartFactor);
+    const auto mappedFactor = rangeWidth > 0.0
+        ? sliceStartFactor + playHeadPositionFactor * rangeWidth
+        : playHeadPositionFactor;
+    const auto playHeadX = static_cast<int>(overlayArea.getX() + mappedFactor * overlayArea.getWidth());
     g.setColour(juce::Colour(StyleSheet::playHeadColour));
     g.drawVerticalLine(playHeadX, static_cast<float>(overlayArea.getY()), static_cast<float>(overlayArea.getBottom()));
 }

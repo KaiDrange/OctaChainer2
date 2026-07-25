@@ -88,6 +88,7 @@ public:
     juce::ValueTree getSliceTree(int index) const;
     juce::ValueTree getSelectedSliceTree() const;
     bool loadSelectedSliceAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const;
+    bool loadSelectedSlicePlaybackAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const;
 
     int addSlice(const Slice& slice, juce::UndoManager* undoManager = nullptr);
     int addBlankSlice(int64 lengthInSamples, juce::UndoManager* undoManager = nullptr);
@@ -95,6 +96,7 @@ public:
     void removeAllSlices();
 
     bool selectSlice(int index, juce::UndoManager* undoManager = nullptr);
+    bool setSelectedSliceRange(int startSample, int endSample, juce::UndoManager* undoManager = nullptr);
     int getSelectedSliceIndex() const;
     bool moveSlice(int fromIndex, int toIndex);
 

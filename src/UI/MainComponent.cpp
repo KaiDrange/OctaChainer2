@@ -29,6 +29,7 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngin
     stateHandler.addListener(this);
     audioPlaybackEngine.addActionListener(&audioPanelComponent);
     audioPanelComponent.addListener(this);
+    sliceWaveformComponent.addListener(this);
     chainWaveformComponent.addListener(this);
     updateSliceWaveform();
     chainRenderThread = std::thread([this]
@@ -47,6 +48,7 @@ MainComponent::~MainComponent()
     stopTimer();
     stateHandler.removeListener(this);
     audioPanelComponent.removeListener(this);
+    sliceWaveformComponent.removeListener(this);
     chainWaveformComponent.removeListener(this);
     setLookAndFeel(nullptr);
 }
@@ -87,7 +89,9 @@ void MainComponent::resized()
 
 void MainComponent::stateChanged(const StateHandler::StateChange& change)
 {
-    if (change.has(StateHandler::StateChange::selectedSlice) || change.has(StateHandler::StateChange::fullReload))
+    if (change.has(StateHandler::StateChange::sliceList)
+        || change.has(StateHandler::StateChange::selectedSlice)
+        || change.has(StateHandler::StateChange::fullReload))
         updateSliceWaveform();
 
     if (change.has(StateHandler::StateChange::sliceList)
@@ -126,15 +130,43 @@ void MainComponent::waveformSegmentClicked(const int segmentIndex, const int sli
     stateHandler.selectSlice(sliceIndex);
 }
 
+void MainComponent::waveformSliceRangeChanged(const int startSample, const int endSample)
+{
+    stateHandler.setSelectedSliceRange(startSample, endSample);
+}
+
 void MainComponent::updateSliceWaveform()
 {
     juce::AudioBuffer<float> audioData;
     double sampleRate = 0.0;
+    const auto sliceTree = stateHandler.getSelectedSliceTree();
 
     if (stateHandler.loadSelectedSliceAudio(audioData, sampleRate))
+    {
         sliceWaveformComponent.setAudioData(audioData, sampleRate);
+
+        if (sliceTree.isValid())
+        {
+            const auto totalSamples = audioData.getNumSamples();
+            const auto startSample = juce::jlimit(0, totalSamples,
+                                                 static_cast<int>(sliceTree.getProperty(StateHandler::sliceStartSampleId, 0)));
+            auto endSample = juce::jlimit(0, totalSamples,
+                                          static_cast<int>(sliceTree.getProperty(StateHandler::sliceEndSampleId, totalSamples)));
+
+            if (endSample <= startSample)
+                endSample = juce::jmin(totalSamples, startSample + 1);
+
+            sliceWaveformComponent.setSliceRange(startSample, endSample);
+        }
+        else
+        {
+            sliceWaveformComponent.setSliceRange(0, audioData.getNumSamples());
+        }
+    }
     else
+    {
         sliceWaveformComponent.clearAudioData();
+    }
 }
 
 void MainComponent::updateChainWaveform()
