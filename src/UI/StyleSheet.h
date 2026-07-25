@@ -42,8 +42,8 @@ public:
     static constexpr uint32 sliceListRowSelectedColour = 0xFF59635B;
     static constexpr uint32 sliceListDividerColour = 0xFF827B72;
     static constexpr uint32 sliceListDragIndicatorColour = 0xFFD0CBC0;
-    static constexpr uint32 waveformBackgroundColour = 0x305A6D63;
-    static constexpr uint32 waveformAltBackgroundColour = 0x30665B4C;
+    static constexpr uint32 waveformBackgroundColour = 0x3A5A6D63;
+    static constexpr uint32 waveformAltBackgroundColour = 0x3A665B4C;
     static constexpr uint32 selectedWaveformBackgroundColour = 0x3F355C61;
     static constexpr uint32 waveformColour = 0xFF3E4448;
     static constexpr uint32 waveformAltColour = 0xFF4A4736;

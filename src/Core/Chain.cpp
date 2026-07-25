@@ -136,7 +136,7 @@ bool Chain::resampleSliceToTargetRate(const juce::AudioBuffer<float>& source, co
 
 void Chain::rebuild(const StateHandler& stateHandler, const double targetSampleRate)
 {
-    rebuild(stateHandler.getState().createCopy(), targetSampleRate, [] { return false; });
+    rebuild(stateHandler.getState(), targetSampleRate, [] { return false; });
 }
 
 bool Chain::rebuild(const juce::ValueTree& stateTree, const double targetSampleRate,

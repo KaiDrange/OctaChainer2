@@ -10,6 +10,17 @@ WaveformComponent::WaveformComponent(const Dimension& height, const Dimension& w
 
 WaveformComponent::~WaveformComponent() = default;
 
+void WaveformComponent::addListener(Listener* listener)
+{
+    listeners.add(listener);
+}
+
+void WaveformComponent::removeListener(Listener* listenerToRemove)
+{
+    jassert(listeners.contains(listenerToRemove));
+    listeners.remove(listenerToRemove);
+}
+
 void WaveformComponent::setAudioData(const juce::AudioBuffer<float>& audioData, const double sampleRate)
 {
     setAudioData(audioData, sampleRate, {}, -1);
@@ -104,6 +115,22 @@ void WaveformComponent::resized()
 {
     PanelComponent::resized();
     playHeadOverlay.setBounds(innerBounds.reduced(4));
+}
+
+void WaveformComponent::mouseDown(const juce::MouseEvent& event)
+{
+    if (processing)
+        return;
+
+    const auto segmentIndex = getSegmentIndexAtPoint(event.getPosition());
+    if (segmentIndex < 0 || ! juce::isPositiveAndBelow(segmentIndex, static_cast<int>(waveformSegments.size())))
+        return;
+
+    const auto sliceIndex = waveformSegments[static_cast<size_t>(segmentIndex)].sliceIndex;
+    if (sliceIndex < 0)
+        return;
+
+    sendWaveformSegmentClicked(segmentIndex, sliceIndex);
 }
 
 void WaveformComponent::drawWaveform(juce::Graphics& g) const
@@ -253,6 +280,51 @@ void WaveformComponent::drawChannelCenterlines(juce::Graphics& g, const juce::Re
         const auto centreY = channelTop + (channelBottom - channelTop) / 2;
         g.drawHorizontalLine(centreY, static_cast<float>(waveformArea.getX()), static_cast<float>(waveformArea.getRight()));
     }
+}
+
+int WaveformComponent::getSegmentIndexAtPoint(const juce::Point<int> position) const
+{
+    if (waveformSegments.empty() || waveformSourceBuffer.getNumSamples() <= 0)
+        return -1;
+
+    const auto waveformArea = innerBounds.reduced(4);
+    if (! waveformArea.contains(position))
+        return -1;
+
+    for (size_t index = 0; index < waveformSegments.size(); ++index)
+    {
+        const auto& segment = waveformSegments[index];
+        if (segment.sampleCount <= 0)
+            continue;
+
+        const auto totalSamples = juce::jmax(1, waveformSourceBuffer.getNumSamples());
+        const auto segmentStart = juce::jlimit(0, totalSamples, segment.startSample);
+        const auto segmentEnd = juce::jlimit(segmentStart, totalSamples, segment.startSample + segment.sampleCount);
+        if (segmentEnd <= segmentStart)
+            continue;
+
+        const auto startX = waveformArea.getX() + juce::roundToInt((static_cast<double>(segmentStart)
+                                                                    / static_cast<double>(totalSamples))
+                                                                   * static_cast<double>(waveformArea.getWidth()));
+        const auto endX = (index == waveformSegments.size() - 1)
+            ? waveformArea.getRight()
+            : waveformArea.getX() + juce::roundToInt((static_cast<double>(segmentEnd)
+                                                      / static_cast<double>(totalSamples))
+                                                     * static_cast<double>(waveformArea.getWidth()));
+
+        if (position.x >= startX && position.x < endX)
+            return static_cast<int>(index);
+    }
+
+    return -1;
+}
+
+void WaveformComponent::sendWaveformSegmentClicked(const int segmentIndex, const int sliceIndex)
+{
+    listeners.call([segmentIndex, sliceIndex](Listener& listener)
+    {
+        listener.waveformSegmentClicked(segmentIndex, sliceIndex);
+    });
 }
 
 WaveformComponent::PlayHeadOverlayComponent::PlayHeadOverlayComponent()

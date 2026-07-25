@@ -9,6 +9,13 @@
 class WaveformComponent : public PanelComponent
 {
 public:
+    class Listener
+    {
+    public:
+        virtual ~Listener() = default;
+        virtual void waveformSegmentClicked(int segmentIndex, int sliceIndex) = 0;
+    };
+
     WaveformComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                       const juce::String& title);
     ~WaveformComponent() override;
@@ -20,9 +27,12 @@ public:
     void setProcessingState(bool isProcessing, juce::String message = "Processing...");
     void setSelectedSegmentIndex(int newSelectedSegmentIndex);
     void setPlayHeadPositionFactor(double newPlayHeadPositionFactor);
+    void addListener(Listener* listener);
+    void removeListener(Listener* listenerToRemove);
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    void mouseDown(const juce::MouseEvent& event) override;
 
 private:
     class PlayHeadOverlayComponent : public juce::Component
@@ -43,6 +53,8 @@ private:
     void drawBufferWaveform(juce::Graphics& g, const juce::Rectangle<int>& waveformArea, int startSample,
                             int sampleCount, juce::Colour waveformColour) const;
     void drawChannelCenterlines(juce::Graphics& g, const juce::Rectangle<int>& waveformArea) const;
+    int getSegmentIndexAtPoint(juce::Point<int> position) const;
+    void sendWaveformSegmentClicked(int segmentIndex, int sliceIndex);
 
     PlayHeadOverlayComponent playHeadOverlay;
     juce::AudioBuffer<float> waveformSourceBuffer;
@@ -51,4 +63,5 @@ private:
     int selectedSegmentIndex = -1;
     bool processing = false;
     juce::String processingMessage;
+    juce::ListenerList<Listener> listeners;
 };

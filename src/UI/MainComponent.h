@@ -21,7 +21,8 @@ class MainComponent : public juce::Component,
                       public juce::DragAndDropContainer,
                       public juce::Timer,
                       StateHandler::Listener,
-                      AudioPanelComponent::Listener
+                      AudioPanelComponent::Listener,
+                      WaveformComponent::Listener
 {
 public:
     static constexpr int defaultWidth = 1536;
@@ -65,6 +66,7 @@ public:
     void resized() override;
     void stateChanged(const StateHandler::StateChange& change) override;
     void transportButtonPressed(TransportButtonComponent::TransportEvent event) override;
+    void waveformSegmentClicked(int segmentIndex, int sliceIndex) override;
     std::shared_ptr<const AudioClip> getChainAudioClip() const { return chain.getAudioClip(); }
 
 private:

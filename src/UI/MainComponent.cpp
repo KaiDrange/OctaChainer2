@@ -29,6 +29,7 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngin
     stateHandler.addListener(this);
     audioPlaybackEngine.addActionListener(&audioPanelComponent);
     audioPanelComponent.addListener(this);
+    chainWaveformComponent.addListener(this);
     updateSliceWaveform();
     chainRenderThread = std::thread([this]
     {
@@ -46,6 +47,7 @@ MainComponent::~MainComponent()
     stopTimer();
     stateHandler.removeListener(this);
     audioPanelComponent.removeListener(this);
+    chainWaveformComponent.removeListener(this);
     setLookAndFeel(nullptr);
 }
 
@@ -114,6 +116,16 @@ void MainComponent::transportButtonPressed(const TransportButtonComponent::Trans
     sendTransportEvent(event);
 }
 
+void MainComponent::waveformSegmentClicked(const int segmentIndex, const int sliceIndex)
+{
+    juce::ignoreUnused(segmentIndex);
+
+    if (sliceIndex < 0)
+        return;
+
+    stateHandler.selectSlice(sliceIndex);
+}
+
 void MainComponent::updateSliceWaveform()
 {
     juce::AudioBuffer<float> audioData;
@@ -161,7 +173,7 @@ void MainComponent::requestChainRender()
     {
         const auto requestId = chainRenderLatestRequestId.fetch_add(1, std::memory_order_acq_rel) + 1;
         const std::scoped_lock lock(chainRenderMutex);
-        chainRenderPendingState = stateHandler.getState().createCopy();
+        chainRenderPendingState = stateHandler.getState();
         chainRenderPendingSampleRate = targetSampleRate;
         chainRenderPendingRequestId = requestId;
         chainRenderHasPending = true;
