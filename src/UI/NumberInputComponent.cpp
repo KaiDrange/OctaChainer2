@@ -1,4 +1,5 @@
 #include <JuceHeader.h>
+#include <cmath>
 #include "NumberInputComponent.h"
 #include "StyleSheet.h"
 
@@ -109,12 +110,12 @@ void NumberInputComponent::setValue(const juce::var& value) {
 
 void NumberInputComponent::setValueInternal(const double number, const bool notifyListeners)
 {
-    const auto normalised = juce::jlimit(minValue, maxValue, snapToStep(number));
+    const auto normalised = roundToStepPrecision(juce::jlimit(minValue, maxValue, snapToStep(number)));
     const auto clampedValue = normalised == static_cast<double>(juce::roundToInt(normalised))
         ? juce::var(juce::roundToInt(normalised))
         : juce::var(normalised);
 
-    input.setText(clampedValue.toString(), juce::dontSendNotification);
+    input.setText(formatValue(static_cast<double>(clampedValue)), juce::dontSendNotification);
     updateStepButtonStates();
 
     if (notifyListeners)
@@ -128,6 +129,42 @@ double NumberInputComponent::snapToStep(const double number) const
 
     const auto snappedSteps = juce::roundToInt((number - minValue) / stepSize);
     return minValue + static_cast<double>(snappedSteps) * stepSize;
+}
+
+int NumberInputComponent::getDecimalPlaces() const
+{
+    if (stepSize <= 0.0)
+        return 0;
+
+    auto scaledStep = std::abs(stepSize);
+    int decimalPlaces = 0;
+
+    while (decimalPlaces < 6 && std::abs(scaledStep - std::round(scaledStep)) > 1.0e-9)
+    {
+        scaledStep *= 10.0;
+        ++decimalPlaces;
+    }
+
+    return decimalPlaces;
+}
+
+double NumberInputComponent::roundToStepPrecision(const double number) const
+{
+    const auto decimalPlaces = getDecimalPlaces();
+    if (decimalPlaces <= 0)
+        return std::round(number);
+
+    const auto scale = std::pow(10.0, static_cast<double>(decimalPlaces));
+    return std::round(number * scale) / scale;
+}
+
+juce::String NumberInputComponent::formatValue(const double number) const
+{
+    const auto decimalPlaces = getDecimalPlaces();
+    if (decimalPlaces <= 0)
+        return juce::String(juce::roundToInt(number));
+
+    return juce::String(number, decimalPlaces);
 }
 
 void NumberInputComponent::adjustValueByStep(const int direction)

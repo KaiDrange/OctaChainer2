@@ -26,8 +26,8 @@ public:
         uint32_t flags = none;
         juce::Identifier property;
 
-        bool has(const Flag flag) const { return (flags & flag) != 0; }
-        bool isSetting(const juce::Identifier& id) const
+        [[nodiscard]] bool has(const Flag flag) const { return (flags & flag) != 0; }
+        [[nodiscard]] bool isSetting(const juce::Identifier& id) const
         {
             return has(settings) && property == id;
         }

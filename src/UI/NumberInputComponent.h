@@ -28,6 +28,9 @@ private:
     static bool isValidNumberText(const juce::String& text);
     void setValueInternal(double number, bool notifyListeners);
     double snapToStep(double number) const;
+    int getDecimalPlaces() const;
+    double roundToStepPrecision(double number) const;
+    juce::String formatValue(double number) const;
     juce::var getValidatedValue() const;
     void adjustValueByStep(int direction);
     void updateStepButtonStates();

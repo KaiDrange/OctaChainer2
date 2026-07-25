@@ -116,9 +116,9 @@ struct NumberValue
     double stepSize;
 };
 
-static const inline NumberValue gainValue = { 0.0f, 1.0f, 0.5f, 0.1f };
-static const inline NumberValue bpmValue = { 30, 300, 120, 0.25f };
-static const inline NumberValue chainMaxLengthValue = { 1, 120, 64, 1 };
+static const inline NumberValue gainValue = { -24.0, 24.0, 0.0, 0.1 };
+static const inline NumberValue bpmValue = { 30.0, 300.0, 120.0, 0.25 };
+static const inline NumberValue chainMaxLengthValue = { 1.0, 120.0, 64.0, 1.0 };
 
 
 // Checkboxes in UI
