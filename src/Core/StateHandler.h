@@ -87,8 +87,8 @@ public:
     int getNumSlices() const;
     juce::ValueTree getSliceTree(int index) const;
     juce::ValueTree getSelectedSliceTree() const;
-    bool loadSelectedSliceAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const;
-    bool loadSelectedSlicePlaybackAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const;
+    bool loadFullSelectedSliceAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const;
+    bool loadSelectedSliceRangeAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const;
 
     int addSlice(const Slice& slice, juce::UndoManager* undoManager = nullptr);
     int addBlankSlice(int64 lengthInSamples, juce::UndoManager* undoManager = nullptr);

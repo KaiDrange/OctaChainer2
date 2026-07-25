@@ -338,7 +338,7 @@ juce::ValueTree StateHandler::getSelectedSliceTree() const
     return getSliceTree(getSelectedSliceIndex());
 }
 
-bool StateHandler::loadSelectedSliceAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const
+bool StateHandler::loadFullSelectedSliceAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const
 {
     const auto sliceTree = getSelectedSliceTree();
     if (! sliceTree.isValid())
@@ -383,7 +383,7 @@ bool StateHandler::loadSelectedSliceAudio(juce::AudioBuffer<float>& destination,
     return true;
 }
 
-bool StateHandler::loadSelectedSlicePlaybackAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const
+bool StateHandler::loadSelectedSliceRangeAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const
 {
     const auto sliceTree = getSelectedSliceTree();
     if (! sliceTree.isValid())

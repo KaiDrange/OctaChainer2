@@ -141,7 +141,7 @@ void MainComponent::updateSliceWaveform()
     double sampleRate = 0.0;
     const auto sliceTree = stateHandler.getSelectedSliceTree();
 
-    if (stateHandler.loadSelectedSliceAudio(audioData, sampleRate))
+    if (stateHandler.loadFullSelectedSliceAudio(audioData, sampleRate))
     {
         sliceWaveformComponent.setAudioData(audioData, sampleRate);
 
@@ -293,7 +293,7 @@ void MainComponent::chainRenderThreadLoop()
                 || chainRenderLatestRequestId.load(std::memory_order_acquire) != requestId;
         };
 
-        const auto completed = renderedChain->rebuild(pendingState, targetSampleRate, shouldAbort);
+        const auto completed = renderedChain->create(pendingState, targetSampleRate, shouldAbort);
 
         const juce::Component::SafePointer<MainComponent> safeThis(this);
         if (completed)

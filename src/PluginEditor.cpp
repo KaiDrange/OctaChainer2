@@ -51,7 +51,7 @@ void OctaChainer2AudioProcessorEditor::transportButtonPressed(const TransportBut
         juce::AudioBuffer<float> audioData;
         double sampleRate = 0.0;
 
-        if (audioProcessor.getStateHandler().loadSelectedSlicePlaybackAudio(audioData, sampleRate))
+        if (audioProcessor.getStateHandler().loadSelectedSliceRangeAudio(audioData, sampleRate))
         {
             const auto renderedClip = AudioUtil::renderPlaybackClip(
                 AudioClip(std::move(audioData), sampleRate),

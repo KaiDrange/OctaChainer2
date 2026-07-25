@@ -1,12 +1,10 @@
 #include "Chain.h"
 
-#include <algorithm>
 
 void Chain::clear()
 {
     audioClip.reset();
     segments.clear();
-    bitDepth = 0;
 }
 
 int Chain::getChainStartIndex(const StateHandler& stateHandler, const int chainSliceCount)
@@ -50,11 +48,6 @@ const juce::AudioBuffer<float>& Chain::getAudioData() const noexcept
 double Chain::getSampleRate() const noexcept
 {
     return audioClip != nullptr ? audioClip->getSampleRate() : 0.0;
-}
-
-int Chain::getBitDepth() const noexcept
-{
-    return bitDepth;
 }
 
 const std::vector<Chain::Segment>& Chain::getSegments() const noexcept
@@ -134,19 +127,57 @@ bool Chain::resampleSliceToTargetRate(const juce::AudioBuffer<float>& source, co
     return true;
 }
 
-void Chain::rebuild(const StateHandler& stateHandler, const double targetSampleRate)
+void Chain::normalizeAudioBuffer(juce::AudioBuffer<float>& buffer)
 {
-    rebuild(stateHandler.getState(), targetSampleRate, [] { return false; });
+    const auto numChannels = buffer.getNumChannels();
+    const auto numSamples = buffer.getNumSamples();
+    if (numChannels <= 0 || numSamples <= 0)
+        return;
+
+    float peak = 0.0f;
+    for (int channel = 0; channel < numChannels; ++channel)
+        peak = juce::jmax(peak, buffer.getMagnitude(channel, 0, numSamples));
+
+    if (! std::isfinite(peak) || peak <= 0.0f)
+        return;
+
+    buffer.applyGain(1.0f / peak);
 }
 
-bool Chain::rebuild(const juce::ValueTree& stateTree, const double targetSampleRate,
-                    const std::function<bool()>& shouldAbort)
+void Chain::applyFadeInOut(juce::AudioBuffer<float>& buffer, const double sampleRate, const int fadeInMs, const int fadeOutMs)
+{
+    const auto numChannels = buffer.getNumChannels();
+    const auto numSamples = buffer.getNumSamples();
+    if (numChannels <= 0 || numSamples <= 0 || sampleRate <= 0.0)
+        return;
+
+    const auto minFadeFreeSamples = juce::roundToInt(sampleRate * 0.020);
+    if (numSamples < minFadeFreeSamples)
+        return;
+
+    const auto fadeInSamples = juce::jlimit(0, numSamples, juce::roundToInt(sampleRate * (static_cast<double>(fadeInMs) / 1000.0)));
+    const auto fadeOutSamples = juce::jlimit(0, numSamples, juce::roundToInt(sampleRate * (static_cast<double>(fadeOutMs) / 1000.0)));
+
+    if (fadeInSamples > 0)
+        buffer.applyGainRamp(0, fadeInSamples, 0.0f, 1.0f);
+
+    if (fadeOutSamples > 0)
+    {
+        const auto fadeOutStart = juce::jmax(0, numSamples - fadeOutSamples);
+        buffer.applyGainRamp(fadeOutStart,
+                             numSamples - fadeOutStart,
+                             1.0f,
+                             0.0f);
+    }
+}
+
+bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRate,
+                   const std::function<bool()>& shouldAbort)
 {
     clear();
 
     if (shouldAbort && shouldAbort())
         return false;
-
     const auto dataTree = stateTree.getChildWithName(StateHandler::dataId);
     const auto settingsTree = stateTree.getChildWithName(StateHandler::settingsId);
     if (! dataTree.isValid() || ! settingsTree.isValid())
@@ -175,23 +206,34 @@ bool Chain::rebuild(const juce::ValueTree& stateTree, const double targetSampleR
     std::vector<RenderedSlice> renderedSlices;
     renderedSlices.reserve(static_cast<size_t>(endIndex - startIndex));
 
+    const auto normalizationValue = settingsTree.getProperty(StateHandler::normalizationId, "none").toString();
+    const bool shouldNormalizeSlice = normalizationValue == "slices";
+    const bool shouldNormalizeChain = normalizationValue == "chain";
+    const auto fadeInInMs = settingsTree.getProperty(StateHandler::fadeinId, "none").toString().getIntValue();
+    const auto fadeOutInMs = settingsTree.getProperty(StateHandler::fadeoutId, "none").toString().getIntValue();
+
     for (int sliceIndex = startIndex; sliceIndex < endIndex; ++sliceIndex)
     {
         if (shouldAbort && shouldAbort())
             return false;
 
         const auto sliceTree = dataTree.getChild(sliceIndex);
-        if (! sliceTree.isValid())
+        if (!sliceTree.isValid())
             continue;
 
         juce::AudioBuffer<float> sliceBuffer;
         double sourceSampleRate = 0.0;
-        if (! loadSliceRange(sliceTree, sliceBuffer, sourceSampleRate))
+        if (!loadSliceRange(sliceTree, sliceBuffer, sourceSampleRate))
             continue;
 
         juce::AudioBuffer<float> renderedBuffer;
-        if (! resampleSliceToTargetRate(sliceBuffer, sourceSampleRate, targetSampleRate, renderedBuffer))
+        if (!resampleSliceToTargetRate(sliceBuffer, sourceSampleRate, targetSampleRate, renderedBuffer))
             continue;
+
+        if (shouldNormalizeSlice)
+            normalizeAudioBuffer(renderedBuffer);
+
+        applyFadeInOut(renderedBuffer, targetSampleRate, fadeInInMs, fadeOutInMs);
 
         const auto renderedSampleCount = renderedBuffer.getNumSamples();
         if (renderedSampleCount <= 0)
@@ -219,7 +261,7 @@ bool Chain::rebuild(const juce::ValueTree& stateTree, const double targetSampleR
         const auto& renderedSlice = renderedSlices[i].audioData;
         const auto sourceChannels = renderedSlice.getNumChannels();
         const auto sourceSamples = renderedSlices[i].sampleCount;
-        segments.push_back({ static_cast<int>(startIndex + static_cast<int>(i)),
+        segments.push_back({ startIndex + static_cast<int>(i),
                              renderedSlices[i].startSample,
                              sourceSamples });
 
@@ -229,6 +271,9 @@ bool Chain::rebuild(const juce::ValueTree& stateTree, const double targetSampleR
             output.copyFrom(channel, renderedSlices[i].startSample, renderedSlice, sourceChannel, 0, sourceSamples);
         }
     }
+
+    if (shouldNormalizeChain)
+        normalizeAudioBuffer(output);
 
     audioClip = std::make_shared<AudioClip>(std::move(output), targetSampleRate);
     return true;

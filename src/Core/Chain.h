@@ -17,8 +17,7 @@ public:
         int sampleCount = 0;
     };
 
-    void rebuild(const StateHandler& stateHandler, double targetSampleRate);
-    bool rebuild(const juce::ValueTree& stateTree, double targetSampleRate,
+    bool create(const juce::ValueTree& stateTree, double targetSampleRate,
                  const std::function<bool()>& shouldAbort);
     void clear();
     static int getChainStartIndex(const StateHandler& stateHandler, int chainSliceCount);
@@ -28,7 +27,6 @@ public:
     [[nodiscard]] std::shared_ptr<AudioClip> getAudioClip() const noexcept;
     [[nodiscard]] const juce::AudioBuffer<float>& getAudioData() const noexcept;
     [[nodiscard]] double getSampleRate() const noexcept;
-    [[nodiscard]] int getBitDepth() const noexcept;
     [[nodiscard]] const std::vector<Segment>& getSegments() const noexcept;
 
 private:
@@ -36,8 +34,10 @@ private:
                                juce::AudioBuffer<float>& destination, double& sampleRate);
     static bool resampleSliceToTargetRate(const juce::AudioBuffer<float>& source, double sourceSampleRate,
                                           double targetSampleRate, juce::AudioBuffer<float>& destination);
+    static void normalizeAudioBuffer(juce::AudioBuffer<float>& buffer);
+
+    static void applyFadeInOut(juce::AudioBuffer<float>& buffer, double sampleRate, int fadeInMs, int fadeOutMs);
 
     std::shared_ptr<AudioClip> audioClip;
     std::vector<Segment> segments;
-    int bitDepth = 0;
 };

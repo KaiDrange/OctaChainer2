@@ -89,7 +89,7 @@ void StandaloneAppMainWindow::transportButtonPressed(const TransportButtonCompon
         juce::AudioBuffer<float> audioData;
         double sampleRate = 0.0;
 
-        if (stateHandler.loadSelectedSlicePlaybackAudio(audioData, sampleRate))
+        if (stateHandler.loadSelectedSliceRangeAudio(audioData, sampleRate))
         {
             const auto renderedClip = AudioUtil::renderPlaybackClip(
                     AudioClip(std::move(audioData), sampleRate),
