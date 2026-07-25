@@ -62,6 +62,15 @@ public:
         return static_cast<T>(settingsTree.getProperty(identifier, defaultValue));
     }
 
+    template <typename T>
+    T getStateValue(const juce::Identifier& identifier, T defaultValue) const
+    {
+        if (! settingsTree.isValid() || ! settingsTree.hasProperty(identifier))
+            return defaultValue;
+
+        return static_cast<T>(settingsTree.getProperty(identifier, defaultValue));
+    }
+
     bool setStateValue(const juce::Identifier& identifier, const var& value, juce::UndoManager* undoManager = nullptr);
     bool setStateValueFromItemId(const juce::Identifier& identifier, int itemId);
     std::vector<Option> getOptions(const juce::Identifier& identifier) const;

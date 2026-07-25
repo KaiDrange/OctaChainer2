@@ -25,7 +25,7 @@ SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, 
     btnAddSilence.onClick = [this] { stateHandler.addBlankSlice(22050); };
     stateHandler.addListener(this);
     chainMaxLength.addListener(this);
-    stateChanged({ StateHandler::StateChange::fullReload });
+    SliceListComponent::stateChanged({ StateHandler::StateChange::fullReload });
 }
 
 SliceListComponent::~SliceListComponent()
@@ -58,11 +58,8 @@ int SliceListComponent::getNumRows()
 
 int SliceListComponent::getChainGroupSize() const
 {
-    const auto value = chainMaxLength.getValue();
-    const auto groupSize = value.isVoid() ? static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue)
-                                          : juce::roundToInt(static_cast<double>(value));
-
-    return juce::jmax(1, groupSize);
+    return juce::jmax(1, stateHandler.getStateValue<int>(stateHandler.chainMaxLengthId,
+                                                         static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue)));
 }
 
 juce::Colour SliceListComponent::getRowBackgroundColour(const int rowNumber, const bool rowIsSelected) const
@@ -241,9 +238,17 @@ void SliceListComponent::stateChanged(const StateHandler::StateChange& change)
     const bool refreshSelection = change.has(StateHandler::StateChange::sliceList)
                                   || change.has(StateHandler::StateChange::selectedSlice)
                                   || change.has(StateHandler::StateChange::fullReload);
+    const bool refreshChainLength = change.has(StateHandler::StateChange::settings)
+                                    || change.has(StateHandler::StateChange::fullReload);
 
-    if (! refreshContent && ! refreshSelection)
+    if (! refreshContent && ! refreshSelection && ! refreshChainLength)
         return;
+
+    if (refreshChainLength)
+    {
+        chainMaxLength.setValue(juce::var(stateHandler.getStateValue<int>(stateHandler.chainMaxLengthId,
+                                                                          static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue))));
+    }
 
     if (refreshContent)
         table.updateContent();
@@ -270,7 +275,10 @@ void SliceListComponent::stateChanged(const StateHandler::StateChange& change)
 void SliceListComponent::numberInputChanged(NumberInputComponent* numberInput)
 {
     if (numberInput == &chainMaxLength)
+    {
+        stateHandler.setStateValue(stateHandler.chainMaxLengthId, numberInput->getValue());
         table.repaint();
+    }
 }
 
 void SliceListComponent::configureTable()

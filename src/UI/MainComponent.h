@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 
 #include "../Core/AudioPlaybackEngine.h"
+#include "../Core/Chain.h"
 #include "../Core/StateHandler.h"
 #include "AudioPanelComponent.h"
 #include "SliceListComponent.h"
@@ -61,10 +62,12 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 
     void updateSliceWaveform();
+    void updateChainWaveform();
 
     StyleSheet style;
     StateHandler& stateHandler;
     AudioPlaybackEngine& audioPlaybackEngine;
+    Chain chain;
     SliceListComponent sampleListComponent;
     SettingsPanelComponent settingsPanelComponent;
     WaveformComponent sliceWaveformComponent;

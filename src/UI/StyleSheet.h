@@ -42,6 +42,12 @@ public:
     static constexpr uint32 sliceListRowSelectedColour = 0xFF59635B;
     static constexpr uint32 sliceListDividerColour = 0xFF827B72;
     static constexpr uint32 sliceListDragIndicatorColour = 0xFFD0CBC0;
+    static constexpr uint32 waveformBackgroundColour = 0x305A6D63;
+    static constexpr uint32 waveformAltBackgroundColour = 0x30665B4C;
+    static constexpr uint32 selectedWaveformBackgroundColour = 0x3F355C61;
+    static constexpr uint32 waveformColour = 0xFF3E4448;
+    static constexpr uint32 waveformAltColour = 0xFF4A4736;
+    static constexpr uint32 selectedWaveformColour = 0xFFFFFFFF;
 
     static constexpr uint32 controlBackgroundColour = 0xFFF7F2E9;
     static constexpr uint32 controlBackgroundFocusedColour = 0xFFFFFFFF;
@@ -115,6 +121,36 @@ public:
     static juce::Colour getSliceListDragIndicatorColour()
     {
         return juce::Colour(sliceListDragIndicatorColour);
+    }
+
+    static juce::Colour getWaveformColour()
+    {
+        return juce::Colour(waveformColour);
+    }
+
+    static juce::Colour getWaveformBackgroundColour()
+    {
+        return juce::Colour(waveformBackgroundColour);
+    }
+
+    static juce::Colour getWaveformAltColour()
+    {
+        return juce::Colour(waveformAltColour);
+    }
+
+    static juce::Colour getWaveformAltBackgroundColour()
+    {
+        return juce::Colour(waveformAltBackgroundColour);
+    }
+
+    static juce::Colour getSelectedWaveformColour()
+    {
+        return juce::Colour(selectedWaveformColour);
+    }
+
+    static juce::Colour getSelectedWaveformBackgroundColour()
+    {
+        return juce::Colour(selectedWaveformBackgroundColour);
     }
 
     StyleSheet();

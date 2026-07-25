@@ -96,6 +96,7 @@ void StateHandler::initialiseDefaultState()
     setDefaultStateValue(otFileId, otFileDefault);
     setDefaultStateValue(evenGridId, evenGridDefault);
     setDefaultStateValue(embedMarkersId, embedMarkersDefault);
+    setDefaultStateValue(chainMaxLengthId, chainMaxLengthValue.defaultValue);
     setDefaultOption(megabreakFileCountId);
 
     valueTree.addChild(settingsTree, -1, nullptr);

@@ -4,18 +4,22 @@ WaveformComponent::WaveformComponent(const Dimension& height, const Dimension& w
                                      const juce::String& title)
     : PanelComponent(height, width, title)
 {
-    formatManager.registerBasicFormats();
-    thumbnail.addChangeListener(this);
     addAndMakeVisible(playHeadOverlay);
     playHeadOverlay.setVisible(false);
 }
 
 WaveformComponent::~WaveformComponent()
 {
-    thumbnail.removeChangeListener(this);
 }
 
 void WaveformComponent::setAudioData(const juce::AudioBuffer<float>& audioData, const double sampleRate)
+{
+    setAudioData(audioData, sampleRate, {}, -1);
+}
+
+void WaveformComponent::setAudioData(const juce::AudioBuffer<float>& audioData, const double sampleRate,
+                                     const std::vector<Chain::Segment>& segments,
+                                     const int selectedSegmentIndexToUse)
 {
     if (audioData.getNumChannels() <= 0 || audioData.getNumSamples() <= 0 || sampleRate <= 0.0)
     {
@@ -23,17 +27,20 @@ void WaveformComponent::setAudioData(const juce::AudioBuffer<float>& audioData, 
         return;
     }
 
-    thumbnailSourceBuffer.makeCopyOf(audioData);
-    thumbnail.reset(thumbnailSourceBuffer.getNumChannels(), sampleRate, thumbnailSourceBuffer.getNumSamples());
-    thumbnail.addBlock(0, thumbnailSourceBuffer, 0, thumbnailSourceBuffer.getNumSamples());
+    waveformSourceBuffer.makeCopyOf(audioData);
+    waveformSegments = segments;
+    waveformSampleRate = sampleRate;
+    selectedSegmentIndex = selectedSegmentIndexToUse;
     playHeadOverlay.setVisible(true);
     repaint();
 }
 
 void WaveformComponent::clearAudioData()
 {
-    thumbnail.clear();
-    thumbnailSourceBuffer.setSize(0, 0);
+    waveformSourceBuffer.setSize(0, 0);
+    waveformSegments.clear();
+    waveformSampleRate = 0.0;
+    selectedSegmentIndex = -1;
     playHeadOverlay.setVisible(false);
     repaint();
 }
@@ -55,26 +62,153 @@ void WaveformComponent::resized()
     playHeadOverlay.setBounds(innerBounds.reduced(4));
 }
 
-void WaveformComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
+void WaveformComponent::drawWaveform(juce::Graphics& g) const
 {
-    if (source == &thumbnail)
-        repaint();
-}
-
-void WaveformComponent::drawWaveform(juce::Graphics& g)
-{
-    if (thumbnail.getNumChannels() <= 0 || thumbnail.getTotalLength() <= 0.0)
+    if (waveformSourceBuffer.getNumChannels() <= 0 || waveformSourceBuffer.getNumSamples() <= 0)
         return;
 
     const auto waveformArea = innerBounds.reduced(4);
     if (waveformArea.isEmpty())
         return;
 
-    g.setColour(juce::Colour(StyleSheet::controlBorderColour).withAlpha(0.55f));
-    g.drawHorizontalLine(waveformArea.getCentreY(), static_cast<float>(waveformArea.getX()), static_cast<float>(waveformArea.getRight()));
+    if (waveformSegments.size() <= 1 || waveformSampleRate <= 0.0)
+    {
+        drawChannelCenterlines(g, waveformArea);
+        drawBufferWaveform(g, waveformArea, 0, waveformSourceBuffer.getNumSamples(), StyleSheet::getWaveformColour());
+        return;
+    }
 
-    g.setColour(juce::Colour(StyleSheet::buttonBackgroundColour));
-    thumbnail.drawChannels(g, waveformArea, 0.0, thumbnail.getTotalLength(), 1.0f);
+    for (size_t index = 0; index < waveformSegments.size(); ++index)
+    {
+        const auto& segment = waveformSegments[index];
+        if (segment.sampleCount <= 0)
+            continue;
+
+        const auto isSelectedSegment = segment.sliceIndex == selectedSegmentIndex;
+        drawSegmentWaveform(g, waveformArea, static_cast<int>(index), segment.startSample, segment.sampleCount,
+                            isSelectedSegment);
+    }
+}
+
+void WaveformComponent::drawSegmentWaveform(juce::Graphics& g, const juce::Rectangle<int>& waveformArea,
+                                            const int segmentIndex, const int segmentStartSample,
+                                            const int segmentSampleCount, const bool isSelectedSegment) const
+{
+    const auto totalSamples = juce::jmax(1, waveformSourceBuffer.getNumSamples());
+    const auto segmentStart = juce::jlimit(0, totalSamples, segmentStartSample);
+    const auto segmentEnd = juce::jlimit(segmentStart, totalSamples, segmentStartSample + segmentSampleCount);
+    const auto clampedSampleCount = segmentEnd - segmentStart;
+    if (clampedSampleCount <= 0)
+        return;
+
+    const auto startX = waveformArea.getX() + juce::roundToInt((static_cast<double>(segmentStart)
+                                                                / static_cast<double>(totalSamples))
+                                                               * static_cast<double>(waveformArea.getWidth()));
+    const auto endX = (segmentIndex == static_cast<int>(waveformSegments.size()) - 1)
+        ? waveformArea.getRight()
+        : waveformArea.getX() + juce::roundToInt((static_cast<double>(segmentEnd)
+                                                  / static_cast<double>(totalSamples))
+                                                 * static_cast<double>(waveformArea.getWidth()));
+    const auto segmentWidth = juce::jmax(1, endX - startX);
+    const auto segmentArea = waveformArea.withX(startX).withWidth(segmentWidth);
+
+    const auto waveformColour = isSelectedSegment
+        ? StyleSheet::getSelectedWaveformColour()
+        : (segmentIndex % 2 == 0 ? StyleSheet::getWaveformColour() : StyleSheet::getWaveformAltColour());
+    const auto segmentBackgroundColour = isSelectedSegment
+        ? StyleSheet::getSelectedWaveformBackgroundColour()
+        : (segmentIndex % 2 == 0 ? StyleSheet::getWaveformBackgroundColour()
+                                  : StyleSheet::getWaveformAltBackgroundColour());
+
+    g.setColour(segmentBackgroundColour);
+    g.fillRect(segmentArea);
+
+    drawChannelCenterlines(g, segmentArea);
+
+    g.setColour(waveformColour);
+    drawBufferWaveform(g, segmentArea, segmentStart, clampedSampleCount, waveformColour);
+}
+
+void WaveformComponent::drawBufferWaveform(juce::Graphics& g, const juce::Rectangle<int>& waveformArea,
+                                           const int startSample, const int sampleCount,
+                                           const juce::Colour waveformColour) const
+{
+    const auto totalSamples = waveformSourceBuffer.getNumSamples();
+    const auto numChannels = waveformSourceBuffer.getNumChannels();
+    if (waveformArea.isEmpty() || totalSamples <= 0 || numChannels <= 0 || sampleCount <= 0)
+        return;
+
+    const auto clampedStart = juce::jlimit(0, totalSamples, startSample);
+    const auto clampedEnd = juce::jlimit(clampedStart, totalSamples, startSample + sampleCount);
+    const auto clampedSampleCount = clampedEnd - clampedStart;
+    if (clampedSampleCount <= 0)
+        return;
+
+    g.setColour(waveformColour);
+
+    const auto width = waveformArea.getWidth();
+    if (width <= 0)
+        return;
+
+    for (int channel = 0; channel < numChannels; ++channel)
+    {
+        const auto channelTop = waveformArea.getY() + juce::roundToInt(static_cast<double>(channel)
+                                                                       * waveformArea.getHeight()
+                                                                       / static_cast<double>(numChannels));
+        const auto channelBottom = waveformArea.getY() + juce::roundToInt(static_cast<double>(channel + 1)
+                                                                          * waveformArea.getHeight()
+                                                                          / static_cast<double>(numChannels));
+        const auto channelArea = waveformArea.withY(channelTop).withBottom(channelBottom);
+        if (channelArea.getHeight() <= 0)
+            continue;
+
+        const auto* samples = waveformSourceBuffer.getReadPointer(channel);
+        const auto centreY = static_cast<float>(channelArea.getCentreY());
+        const auto verticalScale = juce::jmax(1.0f, static_cast<float>(channelArea.getHeight()) * 0.5f - 2.0f);
+
+        for (int x = 0; x < width; ++x)
+        {
+            const auto pixelStart = clampedStart + static_cast<int>((static_cast<int64>(x) * clampedSampleCount) / width);
+            auto pixelEnd = clampedStart + static_cast<int>((static_cast<int64>(x + 1) * clampedSampleCount) / width);
+            pixelEnd = juce::jlimit(pixelStart + 1, clampedEnd, pixelEnd);
+
+            auto minSample = samples[pixelStart];
+            auto maxSample = minSample;
+
+            for (int sample = pixelStart + 1; sample < pixelEnd; ++sample)
+            {
+                const auto value = samples[sample];
+                minSample = juce::jmin(minSample, value);
+                maxSample = juce::jmax(maxSample, value);
+            }
+
+            const auto yTop = centreY - juce::jlimit(-1.0f, 1.0f, maxSample) * verticalScale;
+            const auto yBottom = centreY - juce::jlimit(-1.0f, 1.0f, minSample) * verticalScale;
+            const auto drawX = static_cast<float>(waveformArea.getX() + x);
+            g.drawVerticalLine(juce::roundToInt(drawX), yTop, yBottom);
+        }
+    }
+}
+
+void WaveformComponent::drawChannelCenterlines(juce::Graphics& g, const juce::Rectangle<int>& waveformArea) const
+{
+    const auto numChannels = waveformSourceBuffer.getNumChannels();
+    if (waveformArea.isEmpty() || numChannels <= 0)
+        return;
+
+    g.setColour(juce::Colour(StyleSheet::waveformColour).withAlpha(0.55f));
+
+    for (int channel = 0; channel < numChannels; ++channel)
+    {
+        const auto channelTop = waveformArea.getY() + juce::roundToInt(static_cast<double>(channel)
+                                                                       * waveformArea.getHeight()
+                                                                       / static_cast<double>(numChannels));
+        const auto channelBottom = waveformArea.getY() + juce::roundToInt(static_cast<double>(channel + 1)
+                                                                          * waveformArea.getHeight()
+                                                                          / static_cast<double>(numChannels));
+        const auto centreY = channelTop + (channelBottom - channelTop) / 2;
+        g.drawHorizontalLine(centreY, static_cast<float>(waveformArea.getX()), static_cast<float>(waveformArea.getRight()));
+    }
 }
 
 WaveformComponent::PlayHeadOverlayComponent::PlayHeadOverlayComponent()

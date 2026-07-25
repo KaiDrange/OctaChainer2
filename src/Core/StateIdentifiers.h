@@ -23,6 +23,7 @@ const juce::Identifier otFileId = "otFile";
 const juce::Identifier evenGridId = "evenGrid";
 const juce::Identifier embedMarkersId = "embedMarkers";
 const juce::Identifier megabreakFileCountId = "megabreakFileCount";
+const juce::Identifier chainMaxLengthId = "chainMaxLength";
 const juce::Identifier masterVolumeId = "masterVolume";
 
 // Data identifiers

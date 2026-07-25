@@ -2,7 +2,8 @@
 
 MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngine& audioPlaybackEngineToUse)
     : stateHandler(stateHandlerToUse),
-      audioPlaybackEngine(audioPlaybackEngineToUse),
+    audioPlaybackEngine(audioPlaybackEngineToUse),
+      chain(),
       sampleListComponent(PanelComponent::Dimension::percentage(sampleListHeightPercentage, sampleListMinHeight),
                           PanelComponent::Dimension::percentage(sampleListWidthPercentage),
                           stateHandler),
@@ -30,6 +31,7 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngin
     audioPlaybackEngine.addActionListener(&audioPanelComponent);
     audioPanelComponent.addListener(this);
     updateSliceWaveform();
+    updateChainWaveform();
 
     startTimerHz(60);
 }
@@ -82,6 +84,14 @@ void MainComponent::stateChanged(const StateHandler::StateChange& change)
     if (change.has(StateHandler::StateChange::selectedSlice) || change.has(StateHandler::StateChange::fullReload))
         updateSliceWaveform();
 
+    if (change.has(StateHandler::StateChange::sliceList)
+        || change.has(StateHandler::StateChange::selectedSlice)
+        || change.has(StateHandler::StateChange::settings)
+        || change.has(StateHandler::StateChange::fullReload))
+    {
+        updateChainWaveform();
+    }
+
     if ((change.has(StateHandler::StateChange::settings) && change.isSetting(stateHandler.masterVolumeId))
         || change.has(StateHandler::StateChange::fullReload))
     {
@@ -103,6 +113,23 @@ void MainComponent::updateSliceWaveform()
         sliceWaveformComponent.setAudioData(audioData, sampleRate);
     else
         sliceWaveformComponent.clearAudioData();
+}
+
+void MainComponent::updateChainWaveform()
+{
+    chain.rebuild(stateHandler);
+
+    if (chain.isValid())
+    {
+        const auto selectedSliceIndex = stateHandler.getSelectedSliceIndex();
+
+        chainWaveformComponent.setAudioData(chain.getAudioData(),
+                                            chain.getSampleRate(),
+                                            chain.getSegments(),
+                                            selectedSliceIndex);
+    }
+    else
+        chainWaveformComponent.clearAudioData();
 }
 
 void MainComponent::sendTransportEvent(TransportButtonComponent::TransportEvent event)
