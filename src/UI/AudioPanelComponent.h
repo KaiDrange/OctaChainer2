@@ -20,6 +20,7 @@ public:
 
     void addListener(Listener* listener);
     void removeListener(Listener* listenerToRemove);
+    void setChainReady(bool isReady);
     ~AudioPanelComponent() override;
     void stateChanged(const StateHandler::StateChange& change) override;
 
@@ -33,9 +34,13 @@ public:
     TransportButtonComponent btnPlayChain{"Chain"};
 
 private:
+    void updateChainTransportEnabled();
+
     StateHandler& stateHandler;
     juce::Slider masterVolumeSlider;
     juce::Label masterVolumeLabel;
+    bool hasSlices = false;
+    bool chainReady = false;
 
     void sendTransportEvent(TransportButtonComponent::TransportEvent event);
     juce::ListenerList<Listener> listeners;

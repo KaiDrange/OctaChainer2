@@ -18,6 +18,19 @@ int Chain::getChainStartIndex(const StateHandler& stateHandler, const int chainS
     return (selectedSliceIndex / chainSliceCount) * chainSliceCount;
 }
 
+int Chain::getChainStartIndex(const juce::ValueTree& stateTree, const int chainSliceCount)
+{
+    const auto dataTree = stateTree.getChildWithName(StateHandler::dataId);
+    if (! dataTree.isValid())
+        return 0;
+
+    const auto selectedSliceIndex = static_cast<int>(dataTree.getProperty(StateHandler::selectedSliceId, -1));
+    if (selectedSliceIndex < 0)
+        return 0;
+
+    return (selectedSliceIndex / chainSliceCount) * chainSliceCount;
+}
+
 bool Chain::isValid() const noexcept
 {
     return audioClip != nullptr && audioClip->isValid();
@@ -49,13 +62,13 @@ const std::vector<Chain::Segment>& Chain::getSegments() const noexcept
     return segments;
 }
 
-bool Chain::loadSliceRange(const StateHandler& stateHandler, const juce::ValueTree& sliceTree,
+bool Chain::loadSliceRange(const juce::ValueTree& sliceTree,
                            juce::AudioBuffer<float>& destination, double& sampleRate)
 {
-    const auto numChannels = static_cast<int>(sliceTree.getProperty(stateHandler.sliceChannelsId, 0));
-    sampleRate = static_cast<double>(sliceTree.getProperty(stateHandler.sliceSamplerateId, 0.0));
-    const auto numSamples = static_cast<juce::int64>(sliceTree.getProperty(stateHandler.sliceNumSamplesId, 0));
-    const auto* audioDataValue = sliceTree.getPropertyPointer(stateHandler.sliceAudioDataId);
+    const auto numChannels = static_cast<int>(sliceTree.getProperty(StateHandler::sliceChannelsId, 0));
+    sampleRate = static_cast<double>(sliceTree.getProperty(StateHandler::sliceSamplerateId, 0.0));
+    const auto numSamples = static_cast<juce::int64>(sliceTree.getProperty(StateHandler::sliceNumSamplesId, 0));
+    const auto* audioDataValue = sliceTree.getPropertyPointer(StateHandler::sliceAudioDataId);
 
     if (numChannels <= 0 || sampleRate <= 0.0 || numSamples <= 0 || audioDataValue == nullptr)
         return false;
@@ -68,8 +81,8 @@ bool Chain::loadSliceRange(const StateHandler& stateHandler, const juce::ValueTr
     if (audioDataBlock->getSize() < expectedBytes)
         return false;
 
-    const auto rangeStart = juce::jlimit<juce::int64>(0, numSamples, sliceTree.getProperty(stateHandler.sliceStartSampleId, 0));
-    const auto rangeEnd = juce::jlimit(rangeStart, numSamples, static_cast<juce::int64>(sliceTree.getProperty(stateHandler.sliceEndSampleId, numSamples)));
+    const auto rangeStart = juce::jlimit<juce::int64>(0, numSamples, sliceTree.getProperty(StateHandler::sliceStartSampleId, 0));
+    const auto rangeEnd = juce::jlimit(rangeStart, numSamples, static_cast<juce::int64>(sliceTree.getProperty(StateHandler::sliceEndSampleId, numSamples)));
     const auto rangeLength = rangeEnd - rangeStart;
     if (rangeLength <= 0)
         return false;
@@ -123,18 +136,32 @@ bool Chain::resampleSliceToTargetRate(const juce::AudioBuffer<float>& source, co
 
 void Chain::rebuild(const StateHandler& stateHandler, const double targetSampleRate)
 {
+    rebuild(stateHandler.getState().createCopy(), targetSampleRate, [] { return false; });
+}
+
+bool Chain::rebuild(const juce::ValueTree& stateTree, const double targetSampleRate,
+                    const std::function<bool()>& shouldAbort)
+{
     clear();
 
-    const auto numSlices = stateHandler.getNumSlices();
-    if (numSlices <= 0)
-        return;
+    if (shouldAbort && shouldAbort())
+        return false;
 
-    const auto chainGroupSize = juce::jmax(1, stateHandler.getStateValue<int>(stateHandler.chainMaxLengthId,
-                                                                              static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue)));
-    const auto startIndex = getChainStartIndex(stateHandler, chainGroupSize);
+    const auto dataTree = stateTree.getChildWithName(StateHandler::dataId);
+    const auto settingsTree = stateTree.getChildWithName(StateHandler::settingsId);
+    if (! dataTree.isValid() || ! settingsTree.isValid())
+        return false;
+
+    const auto numSlices = dataTree.getNumChildren();
+    if (numSlices <= 0)
+        return false;
+
+    const auto chainGroupSize = juce::jmax(1, static_cast<int>(settingsTree.getProperty(StateHandler::chainMaxLengthId,
+                                                                                      static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue))));
+    const auto startIndex = getChainStartIndex(stateTree, chainGroupSize);
     const auto endIndex = juce::jmin(numSlices, startIndex + chainGroupSize);
     if (startIndex >= endIndex)
-        return;
+        return false;
 
     struct RenderedSlice
     {
@@ -150,13 +177,16 @@ void Chain::rebuild(const StateHandler& stateHandler, const double targetSampleR
 
     for (int sliceIndex = startIndex; sliceIndex < endIndex; ++sliceIndex)
     {
-        const auto sliceTree = stateHandler.getSliceTree(sliceIndex);
+        if (shouldAbort && shouldAbort())
+            return false;
+
+        const auto sliceTree = dataTree.getChild(sliceIndex);
         if (! sliceTree.isValid())
             continue;
 
         juce::AudioBuffer<float> sliceBuffer;
         double sourceSampleRate = 0.0;
-        if (! loadSliceRange(stateHandler, sliceTree, sliceBuffer, sourceSampleRate))
+        if (! loadSliceRange(sliceTree, sliceBuffer, sourceSampleRate))
             continue;
 
         juce::AudioBuffer<float> renderedBuffer;
@@ -176,7 +206,7 @@ void Chain::rebuild(const StateHandler& stateHandler, const double targetSampleR
     if (renderedSlices.empty() || outputChannelCount <= 0 || totalSampleCount <= 0)
     {
         clear();
-        return;
+        return false;
     }
 
     juce::AudioBuffer<float> output;
@@ -201,4 +231,5 @@ void Chain::rebuild(const StateHandler& stateHandler, const double targetSampleR
     }
 
     audioClip = std::make_shared<AudioClip>(std::move(output), targetSampleRate);
+    return true;
 }

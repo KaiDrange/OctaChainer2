@@ -20,7 +20,7 @@ AudioPanelComponent::AudioPanelComponent(const Dimension& height, const Dimensio
 
     masterVolumeSlider.onValueChange = [this]
     {
-        stateHandler.setStateValue(stateHandler.masterVolumeId, juce::Decibels::decibelsToGain(masterVolumeSlider.getValue()));
+        stateHandler.setStateValue(StateHandler::masterVolumeId, juce::Decibels::decibelsToGain(masterVolumeSlider.getValue()));
     };
 
     btnPlaySlice.getButton().onClick = [this]
@@ -43,6 +43,12 @@ AudioPanelComponent::AudioPanelComponent(const Dimension& height, const Dimensio
 AudioPanelComponent::~AudioPanelComponent()
 {
     stateHandler.removeListener(this);
+}
+
+void AudioPanelComponent::setChainReady(const bool isReady)
+{
+    chainReady = isReady;
+    updateChainTransportEnabled();
 }
 
 void AudioPanelComponent::resized()
@@ -86,6 +92,11 @@ void AudioPanelComponent::sendTransportEvent(TransportButtonComponent::Transport
     });
 }
 
+void AudioPanelComponent::updateChainTransportEnabled()
+{
+    btnPlayChain.setEnabled(hasSlices && chainReady);
+}
+
 void AudioPanelComponent::addListener(Listener* listener) {
     listeners.add(listener);
 }
@@ -101,14 +112,15 @@ void AudioPanelComponent::stateChanged(const StateHandler::StateChange& change)
         || change.has(StateHandler::StateChange::selectedSlice)
         || change.has(StateHandler::StateChange::fullReload))
     {
+        hasSlices = stateHandler.getNumSlices() > 0;
         btnPlaySlice.setEnabled(stateHandler.getSelectedSliceIndex() >= 0);
-        btnPlayChain.setEnabled(stateHandler.getNumSlices() > 0);
+        updateChainTransportEnabled();
     }
 
-    if ((change.has(StateHandler::StateChange::settings) && change.isSetting(stateHandler.masterVolumeId))
+    if ((change.has(StateHandler::StateChange::settings) && change.isSetting(StateHandler::masterVolumeId))
         || change.has(StateHandler::StateChange::fullReload))
     {
-        const auto volume = juce::Decibels::gainToDecibels(stateHandler.getStateValue<float>(stateHandler.masterVolumeId, 0.5f));
+        const auto volume = juce::Decibels::gainToDecibels(stateHandler.getStateValue<float>(StateHandler::masterVolumeId, 0.5f));
         if (volume != masterVolumeSlider.getValue())
             masterVolumeSlider.setValue(volume, juce::dontSendNotification);
     }

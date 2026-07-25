@@ -8,9 +8,7 @@ WaveformComponent::WaveformComponent(const Dimension& height, const Dimension& w
     playHeadOverlay.setVisible(false);
 }
 
-WaveformComponent::~WaveformComponent()
-{
-}
+WaveformComponent::~WaveformComponent() = default;
 
 void WaveformComponent::setAudioData(const juce::AudioBuffer<float>& audioData, const double sampleRate)
 {
@@ -31,6 +29,8 @@ void WaveformComponent::setAudioData(const juce::AudioBuffer<float>& audioData, 
     waveformSegments = segments;
     waveformSampleRate = sampleRate;
     selectedSegmentIndex = selectedSegmentIndexToUse;
+    processing = false;
+    processingMessage.clear();
     playHeadOverlay.setVisible(true);
     repaint();
 }
@@ -41,7 +41,35 @@ void WaveformComponent::clearAudioData()
     waveformSegments.clear();
     waveformSampleRate = 0.0;
     selectedSegmentIndex = -1;
+    processing = false;
+    processingMessage.clear();
     playHeadOverlay.setVisible(false);
+    repaint();
+}
+
+void WaveformComponent::setProcessingState(const bool isProcessing, juce::String message)
+{
+    processing = isProcessing;
+    processingMessage = std::move(message);
+
+    if (processing)
+    {
+        waveformSourceBuffer.setSize(0, 0);
+        waveformSegments.clear();
+        waveformSampleRate = 0.0;
+        selectedSegmentIndex = -1;
+        playHeadOverlay.setVisible(false);
+    }
+
+    repaint();
+}
+
+void WaveformComponent::setSelectedSegmentIndex(const int newSelectedSegmentIndex)
+{
+    if (selectedSegmentIndex == newSelectedSegmentIndex)
+        return;
+
+    selectedSegmentIndex = newSelectedSegmentIndex;
     repaint();
 }
 
@@ -53,6 +81,22 @@ void WaveformComponent::setPlayHeadPositionFactor(const double newPlayHeadPositi
 void WaveformComponent::paint(juce::Graphics& g)
 {
     PanelComponent::paint(g);
+
+    if (processing)
+    {
+        const auto area = innerBounds.reduced(4);
+        if (!area.isEmpty())
+        {
+            g.setColour(juce::Colour(StyleSheet::textDefaultColour).withAlpha(0.72f));
+            g.setFont(StyleSheet::getTitleFont());
+            g.drawFittedText(processingMessage.isEmpty() ? "Processing..." : processingMessage,
+                             area,
+                             juce::Justification::centred,
+                             1);
+        }
+        return;
+    }
+
     drawWaveform(g);
 }
 

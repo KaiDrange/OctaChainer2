@@ -2,8 +2,7 @@
 
 MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngine& audioPlaybackEngineToUse)
     : stateHandler(stateHandlerToUse),
-    audioPlaybackEngine(audioPlaybackEngineToUse),
-      chain(),
+      audioPlaybackEngine(audioPlaybackEngineToUse),
       sampleListComponent(PanelComponent::Dimension::percentage(sampleListHeightPercentage, sampleListMinHeight),
                           PanelComponent::Dimension::percentage(sampleListWidthPercentage),
                           stateHandler),
@@ -31,6 +30,10 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngin
     audioPlaybackEngine.addActionListener(&audioPanelComponent);
     audioPanelComponent.addListener(this);
     updateSliceWaveform();
+    chainRenderThread = std::thread([this]
+    {
+        chainRenderThreadLoop();
+    });
     updateChainWaveform();
 
     startTimerHz(60);
@@ -39,6 +42,7 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngin
 
 MainComponent::~MainComponent()
 {
+    stopChainRenderThread();
     stopTimer();
     stateHandler.removeListener(this);
     audioPanelComponent.removeListener(this);
@@ -84,14 +88,18 @@ void MainComponent::stateChanged(const StateHandler::StateChange& change)
     if (change.has(StateHandler::StateChange::selectedSlice) || change.has(StateHandler::StateChange::fullReload))
         updateSliceWaveform();
 
-    const bool shouldUpdateChain = change.has(StateHandler::StateChange::sliceList)
-        || change.has(StateHandler::StateChange::selectedSlice)
+    if (change.has(StateHandler::StateChange::sliceList)
         || (change.has(StateHandler::StateChange::settings) && ! change.isSetting(stateHandler.masterVolumeId))
-        || change.has(StateHandler::StateChange::fullReload);
-
-    if (shouldUpdateChain)
+        || change.has(StateHandler::StateChange::fullReload))
     {
         updateChainWaveform();
+    }
+    else if (change.has(StateHandler::StateChange::selectedSlice))
+    {
+        if (isSelectedSliceInCurrentChain())
+            refreshChainWaveformSelection();
+        else
+            updateChainWaveform();
     }
 
     if ((change.has(StateHandler::StateChange::settings) && change.isSetting(stateHandler.masterVolumeId))
@@ -119,19 +127,161 @@ void MainComponent::updateSliceWaveform()
 
 void MainComponent::updateChainWaveform()
 {
-    chain.rebuild(stateHandler, audioPlaybackEngine.deviceSampleRate);
+    audioPlaybackEngine.stop();
+    requestChainRender();
+}
+
+void MainComponent::refreshChainWaveformSelection()
+{
+    chainWaveformComponent.setSelectedSegmentIndex(stateHandler.getSelectedSliceIndex());
+}
+
+void MainComponent::requestChainRender()
+{
+    const auto targetSampleRate = audioPlaybackEngine.deviceSampleRate;
+    const auto numSlices = stateHandler.getNumSlices();
+
+    if (targetSampleRate <= 0.0 || numSlices <= 0)
+    {
+        chainRenderLatestRequestId.fetch_add(1, std::memory_order_acq_rel);
+        {
+            const std::scoped_lock lock(chainRenderMutex);
+            chainRenderHasPending = false;
+            chainRenderPendingState = {};
+            chainRenderPendingSampleRate = 0.0;
+            chainRenderPendingRequestId = chainRenderLatestRequestId.load(std::memory_order_acquire);
+        }
+
+        chain.clear();
+        chainWaveformComponent.clearAudioData();
+        audioPanelComponent.setChainReady(false);
+        return;
+    }
+
+    {
+        const auto requestId = chainRenderLatestRequestId.fetch_add(1, std::memory_order_acq_rel) + 1;
+        const std::scoped_lock lock(chainRenderMutex);
+        chainRenderPendingState = stateHandler.getState().createCopy();
+        chainRenderPendingSampleRate = targetSampleRate;
+        chainRenderPendingRequestId = requestId;
+        chainRenderHasPending = true;
+    }
+
+    chain.clear();
+    chainWaveformComponent.setProcessingState(true);
+    audioPanelComponent.setChainReady(false);
+    chainRenderCondition.notify_one();
+}
+
+void MainComponent::finishChainRender(const std::uint64_t requestId, const std::shared_ptr<Chain>& renderedChain)
+{
+    if (requestId != chainRenderLatestRequestId.load(std::memory_order_acquire))
+        return;
+
+    if (renderedChain == nullptr || ! renderedChain->isValid())
+    {
+        chain.clear();
+        chainWaveformComponent.clearAudioData();
+        audioPanelComponent.setChainReady(false);
+        return;
+    }
+
+    chain = *renderedChain;
 
     if (chain.isValid())
     {
         const auto selectedSliceIndex = stateHandler.getSelectedSliceIndex();
-
         chainWaveformComponent.setAudioData(chain.getAudioData(),
                                             chain.getSampleRate(),
                                             chain.getSegments(),
                                             selectedSliceIndex);
+        audioPanelComponent.setChainReady(true);
     }
     else
+    {
         chainWaveformComponent.clearAudioData();
+        audioPanelComponent.setChainReady(false);
+    }
+}
+
+bool MainComponent::isSelectedSliceInCurrentChain() const
+{
+    const auto selectedSliceIndex = stateHandler.getSelectedSliceIndex();
+    if (selectedSliceIndex < 0 || ! chain.isValid())
+        return false;
+
+    const auto& segments = chain.getSegments();
+    return std::any_of(segments.begin(), segments.end(),
+                       [selectedSliceIndex](const Chain::Segment& segment)
+                       {
+                           return segment.sliceIndex == selectedSliceIndex;
+                       });
+}
+
+void MainComponent::chainRenderThreadLoop()
+{
+    for (;;)
+    {
+        juce::ValueTree pendingState;
+        double targetSampleRate = 0.0;
+        std::uint64_t requestId = 0;
+
+        {
+            std::unique_lock lock(chainRenderMutex);
+            chainRenderCondition.wait(lock, [this]
+            {
+                return chainRenderExitRequested.load(std::memory_order_acquire) || chainRenderHasPending;
+            });
+
+            if (chainRenderExitRequested.load(std::memory_order_acquire))
+                break;
+
+            pendingState = chainRenderPendingState;
+            targetSampleRate = chainRenderPendingSampleRate;
+            requestId = chainRenderPendingRequestId;
+            chainRenderHasPending = false;
+        }
+
+        auto renderedChain = std::make_shared<Chain>();
+        const auto shouldAbort = [this, requestId]
+        {
+            return chainRenderExitRequested.load(std::memory_order_acquire)
+                || chainRenderLatestRequestId.load(std::memory_order_acquire) != requestId;
+        };
+
+        const auto completed = renderedChain->rebuild(pendingState, targetSampleRate, shouldAbort);
+
+        const juce::Component::SafePointer<MainComponent> safeThis(this);
+        if (completed)
+        {
+            juce::MessageManager::callAsync([safeThis, requestId, renderedChain]() mutable
+            {
+                if (safeThis == nullptr)
+                    return;
+
+                safeThis->finishChainRender(requestId, renderedChain);
+            });
+        }
+        else if (! shouldAbort())
+        {
+            juce::MessageManager::callAsync([safeThis, requestId]() mutable
+            {
+                if (safeThis == nullptr)
+                    return;
+
+                safeThis->finishChainRender(requestId, nullptr);
+            });
+        }
+    }
+}
+
+void MainComponent::stopChainRenderThread()
+{
+    chainRenderExitRequested.store(true, std::memory_order_release);
+    chainRenderCondition.notify_all();
+
+    if (chainRenderThread.joinable())
+        chainRenderThread.join();
 }
 
 void MainComponent::sendTransportEvent(TransportButtonComponent::TransportEvent event)

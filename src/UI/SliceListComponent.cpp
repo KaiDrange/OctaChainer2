@@ -58,7 +58,7 @@ int SliceListComponent::getNumRows()
 
 int SliceListComponent::getChainGroupSize() const
 {
-    return juce::jmax(1, stateHandler.getStateValue<int>(stateHandler.chainMaxLengthId,
+    return juce::jmax(1, stateHandler.getStateValue<int>(StateHandler::chainMaxLengthId,
                                                          static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue)));
 }
 
@@ -125,13 +125,13 @@ void SliceListComponent::paintCell(juce::Graphics& g, const int rowNumber, const
     if (columnId == 1)
         text = juce::String(rowNumber + 1);
     else if (columnId == 2)
-        text = sliceTree.getProperty(stateHandler.sliceNameId).toString();
+        text = sliceTree.getProperty(StateHandler::sliceNameId).toString();
     else if (columnId == 3)
         text = formatAudioFormat(stateHandler, sliceTree);
     else if (columnId == 4)
         text = formatDuration(stateHandler, sliceTree);
     else if (columnId == 5)
-        text = sliceTree.getProperty(stateHandler.sliceSourcePathId).toString();
+        text = sliceTree.getProperty(StateHandler::sliceSourcePathId).toString();
 
     g.setColour(StyleSheet::getSliceListTextColour());
     g.setFont(StyleSheet::getControlFont());
@@ -246,7 +246,7 @@ void SliceListComponent::stateChanged(const StateHandler::StateChange& change)
 
     if (refreshChainLength)
     {
-        chainMaxLength.setValue(juce::var(stateHandler.getStateValue<int>(stateHandler.chainMaxLengthId,
+        chainMaxLength.setValue(juce::var(stateHandler.getStateValue<int>(StateHandler::chainMaxLengthId,
                                                                           static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue))));
     }
 
@@ -276,7 +276,7 @@ void SliceListComponent::numberInputChanged(NumberInputComponent* numberInput)
 {
     if (numberInput == &chainMaxLength)
     {
-        stateHandler.setStateValue(stateHandler.chainMaxLengthId, numberInput->getValue());
+        stateHandler.setStateValue(StateHandler::chainMaxLengthId, numberInput->getValue());
         table.repaint();
     }
 }
@@ -349,8 +349,8 @@ void SliceListComponent::showLoadError(const juce::String& message)
 
 juce::String SliceListComponent::formatDuration(const StateHandler& stateHandler, const juce::ValueTree& sliceTree)
 {
-    const auto sampleRate = static_cast<double>(sliceTree.getProperty(stateHandler.sliceSamplerateId, 0.0));
-    const auto lengthInSamples = static_cast<juce::int64>(sliceTree.getProperty(stateHandler.sliceNumSamplesId, 0));
+    const auto sampleRate = static_cast<double>(sliceTree.getProperty(StateHandler::sliceSamplerateId, 0.0));
+    const auto lengthInSamples = static_cast<juce::int64>(sliceTree.getProperty(StateHandler::sliceNumSamplesId, 0));
 
     if (sampleRate <= 0.0 || lengthInSamples <= 0)
         return {};
@@ -360,9 +360,9 @@ juce::String SliceListComponent::formatDuration(const StateHandler& stateHandler
 
 juce::String SliceListComponent::formatAudioFormat(const StateHandler& stateHandler, const juce::ValueTree& sliceTree)
 {
-    const auto numChannels = static_cast<int>(sliceTree.getProperty(stateHandler.sliceChannelsId, 0));
-    const auto bitrate = static_cast<int>(sliceTree.getProperty(stateHandler.sliceBitrateId, 0));
-    const auto samplerate = static_cast<int>(sliceTree.getProperty(stateHandler.sliceSamplerateId, 0));
+    const auto numChannels = static_cast<int>(sliceTree.getProperty(StateHandler::sliceChannelsId, 0));
+    const auto bitrate = static_cast<int>(sliceTree.getProperty(StateHandler::sliceBitrateId, 0));
+    const auto samplerate = static_cast<int>(sliceTree.getProperty(StateHandler::sliceSamplerateId, 0));
     if (bitrate <= 0 || samplerate <= 0  || numChannels <= 0)
         return {};
 

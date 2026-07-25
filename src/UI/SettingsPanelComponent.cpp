@@ -49,17 +49,17 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     megabreakExportSection.addAndMakeVisible(megabreakFileCountBox);
     megabreakExportSection.addAndMakeVisible(createMegabreakButton);
 
-    configureRadioButtons(stateHandler, stateHandler.bitDepthId, bitDepthGroupId, { &bitDepth16Bit, &bitDepth24Bit });
-    configureRadioButtons(stateHandler, stateHandler.channelsId, channelGroupId, { &channelMono, &channelStereo });
-    configureRadioButtons(stateHandler, stateHandler.samplerateId, sampleRateGroupId, { &sampleRate44k, &sampleRate48k });
+    configureRadioButtons(stateHandler, StateHandler::bitDepthId, bitDepthGroupId, { &bitDepth16Bit, &bitDepth24Bit });
+    configureRadioButtons(stateHandler, StateHandler::channelsId, channelGroupId, { &channelMono, &channelStereo });
+    configureRadioButtons(stateHandler, StateHandler::samplerateId, sampleRateGroupId, { &sampleRate44k, &sampleRate48k });
 
-    timestretchBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.timestretchId, timestretchBox.getSelectedId()); };
-    loopBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.loopModeId, loopBox.getSelectedId()); };
-    trigQuantBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.triqQuantId, trigQuantBox.getSelectedId()); };
-    normalizationBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.normalizationId, normalizationBox.getSelectedId()); };
-    fadeinBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.fadeinId, fadeinBox.getSelectedId()); };
-    fadeoutBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.fadeoutId, fadeoutBox.getSelectedId()); };
-    megabreakFileCountBox.onChange = [this]{ stateHandler.setStateValueFromItemId(stateHandler.megabreakFileCountId, megabreakFileCountBox.getSelectedId()); };
+    timestretchBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::timestretchId, timestretchBox.getSelectedId()); };
+    loopBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::loopModeId, loopBox.getSelectedId()); };
+    trigQuantBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::triqQuantId, trigQuantBox.getSelectedId()); };
+    normalizationBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::normalizationId, normalizationBox.getSelectedId()); };
+    fadeinBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::fadeinId, fadeinBox.getSelectedId()); };
+    fadeoutBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::fadeoutId, fadeoutBox.getSelectedId()); };
+    megabreakFileCountBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::megabreakFileCountId, megabreakFileCountBox.getSelectedId()); };
 
     gainInput.addListener(this);
     bpmInput.addListener(this);
@@ -228,23 +228,23 @@ void SettingsPanelComponent::stateChanged(const StateHandler::StateChange& chang
     if (! change.has(StateHandler::StateChange::settings) && ! change.has(StateHandler::StateChange::fullReload))
         return;
 
-    stateHandler.refreshRadioButtons(stateHandler.bitDepthId, { &bitDepth16Bit, &bitDepth24Bit });
-    stateHandler.refreshRadioButtons(stateHandler.channelsId, { &channelMono, &channelStereo });
-    stateHandler.refreshRadioButtons(stateHandler.samplerateId, { &sampleRate44k, &sampleRate48k });
+    stateHandler.refreshRadioButtons(StateHandler::bitDepthId, { &bitDepth16Bit, &bitDepth24Bit });
+    stateHandler.refreshRadioButtons(StateHandler::channelsId, { &channelMono, &channelStereo });
+    stateHandler.refreshRadioButtons(StateHandler::samplerateId, { &sampleRate44k, &sampleRate48k });
 
-    stateHandler.refreshComboBox(stateHandler.timestretchId, timestretchBox);
-    stateHandler.refreshComboBox(stateHandler.loopModeId, loopBox);
-    stateHandler.refreshComboBox(stateHandler.triqQuantId, trigQuantBox);
-    stateHandler.refreshComboBox(stateHandler.normalizationId, normalizationBox);
-    stateHandler.refreshComboBox(stateHandler.fadeinId, fadeinBox);
-    stateHandler.refreshComboBox(stateHandler.fadeoutId, fadeoutBox);
-    stateHandler.refreshComboBox(stateHandler.megabreakFileCountId, megabreakFileCountBox);
+    stateHandler.refreshComboBox(StateHandler::timestretchId, timestretchBox);
+    stateHandler.refreshComboBox(StateHandler::loopModeId, loopBox);
+    stateHandler.refreshComboBox(StateHandler::triqQuantId, trigQuantBox);
+    stateHandler.refreshComboBox(StateHandler::normalizationId, normalizationBox);
+    stateHandler.refreshComboBox(StateHandler::fadeinId, fadeinBox);
+    stateHandler.refreshComboBox(StateHandler::fadeoutId, fadeoutBox);
+    stateHandler.refreshComboBox(StateHandler::megabreakFileCountId, megabreakFileCountBox);
 
-    gainInput.setValue(juce::var(stateHandler.getStateValue<double>(stateHandler.gainId, StateHandler::gainValue.defaultValue)));
-    bpmInput.setValue(juce::var(stateHandler.getStateValue<double>(stateHandler.bpmId, StateHandler::bpmValue.defaultValue)));
-    exportOtFile.setToggleState(juce::var(stateHandler.getStateValue<bool>(stateHandler.otFileId, StateHandler::otFileDefault)), juce::NotificationType::dontSendNotification);
-    exportEvenGrid.setToggleState(juce::var(stateHandler.getStateValue<bool>(stateHandler.evenGridId, StateHandler::evenGridDefault)), juce::NotificationType::dontSendNotification);
-    exportEmbedMarkers.setToggleState(juce::var(stateHandler.getStateValue<bool>(stateHandler.embedMarkersId, StateHandler::embedMarkersDefault)), juce::NotificationType::dontSendNotification);
+    gainInput.setValue(juce::var(stateHandler.getStateValue<double>(StateHandler::gainId, StateHandler::gainValue.defaultValue)));
+    bpmInput.setValue(juce::var(stateHandler.getStateValue<double>(StateHandler::bpmId, StateHandler::bpmValue.defaultValue)));
+    exportOtFile.setToggleState(juce::var(stateHandler.getStateValue<bool>(StateHandler::otFileId, StateHandler::otFileDefault)), juce::NotificationType::dontSendNotification);
+    exportEvenGrid.setToggleState(juce::var(stateHandler.getStateValue<bool>(StateHandler::evenGridId, StateHandler::evenGridDefault)), juce::NotificationType::dontSendNotification);
+    exportEmbedMarkers.setToggleState(juce::var(stateHandler.getStateValue<bool>(StateHandler::embedMarkersId, StateHandler::embedMarkersDefault)), juce::NotificationType::dontSendNotification);
 }
 
 void SettingsPanelComponent::numberInputChanged(NumberInputComponent* numberInput)
@@ -255,10 +255,10 @@ void SettingsPanelComponent::numberInputChanged(NumberInputComponent* numberInpu
 
     if (numberInput == &gainInput)
     {
-        stateHandler.setStateValue(stateHandler.gainId, value);
+        stateHandler.setStateValue(StateHandler::gainId, value);
         return;
     }
 
     if (numberInput == &bpmInput)
-        stateHandler.setStateValue(stateHandler.bpmId, value);
+        stateHandler.setStateValue(StateHandler::bpmId, value);
 }

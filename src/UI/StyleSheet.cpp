@@ -8,7 +8,7 @@ namespace
         return drawable != nullptr && drawable->getButtonText().startsWithIgnoreCase("Play");
     }
 
-    void drawTransportButtonBackground(juce::Graphics& g, juce::Button& button,
+    void drawTransportButtonBackground(juce::Graphics& g, const juce::Button& button,
                                        const bool shouldDrawButtonAsHighlighted, const bool shouldDrawButtonAsDown)
     {
         auto bounds = button.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
@@ -39,14 +39,14 @@ namespace
             bottom = bottom.brighter(0.08f).interpolatedWith(accent.withAlpha(0.34f), 0.22f);
         }
 
-        juce::ColourGradient gradient(top, bounds.getCentreX(), bounds.getY(),
+        const juce::ColourGradient gradient(top, bounds.getCentreX(), bounds.getY(),
                                       bottom, bounds.getCentreX(), bounds.getBottom(), false);
         g.setGradientFill(gradient);
         g.fillRoundedRectangle(bounds, 10.0f);
 
-        auto inner = bounds.reduced(1.0f);
+        const auto inner = bounds.reduced(1.0f);
         const auto sheenAlpha = shouldDrawButtonAsDown ? 0.08f : (shouldDrawButtonAsHighlighted ? 0.26f : 0.18f);
-        juce::ColourGradient sheen(juce::Colours::white.withAlpha(sheenAlpha),
+        const juce::ColourGradient sheen(juce::Colours::white.withAlpha(sheenAlpha),
                                    inner.getCentreX(), inner.getY(),
                                    juce::Colours::transparentWhite,
                                    inner.getCentreX(), inner.getCentreY(), false);
@@ -54,9 +54,7 @@ namespace
         g.fillRoundedRectangle(inner, 9.0f);
 
         auto border = accent.withAlpha(0.38f);
-        if (shouldDrawButtonAsDown)
-            border = border.brighter(0.18f);
-        else if (shouldDrawButtonAsHighlighted)
+        if (shouldDrawButtonAsDown || shouldDrawButtonAsHighlighted)
             border = border.brighter(0.18f);
 
         g.setColour(border.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.55f));
@@ -393,7 +391,7 @@ void StyleSheet::drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>
         fg = fg.withMultipliedAlpha(0.45f);
     }
 
-    if (fill.getAlpha() > 0.0f)
+    if (fill.getAlpha() > 0)
     {
         g.setColour(fill);
         g.fillRoundedRectangle(r.toFloat(), 4.0f);
@@ -421,9 +419,9 @@ void StyleSheet::drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>
 
     if (hasSubMenu)
     {
-        auto arrowH = 0.6f * getPopupMenuFont().getAscent();
-        auto x = static_cast<float>(r.removeFromRight(static_cast<int>(arrowH)).getX());
-        auto halfH = static_cast<float>(r.getCentreY());
+        const auto arrowH = 0.6f * getPopupMenuFont().getAscent();
+        const auto x = static_cast<float>(r.removeFromRight(static_cast<int>(arrowH)).getX());
+        const auto halfH = static_cast<float>(r.getCentreY());
 
         juce::Path path;
         path.startNewSubPath(x, halfH - arrowH * 0.5f);
@@ -488,7 +486,7 @@ void StyleSheet::drawMenuBarItem(juce::Graphics& g, const int width, const int h
         fill = juce::Colour(buttonBackgroundHoveredColour).withAlpha(0.35f);
     }
 
-    if (fill.isOpaque() || fill.getAlpha() > 0.0f)
+    if (fill.isOpaque() || fill.getAlpha() > 0)
     {
         g.setColour(fill);
         g.fillRoundedRectangle(bounds, 4.0f);

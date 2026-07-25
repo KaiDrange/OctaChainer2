@@ -229,25 +229,25 @@ bool StateHandler::setStateValueFromItemId(const juce::Identifier& identifier, i
 
 std::vector<StateHandler::Option> StateHandler::getOptions(const juce::Identifier& identifier) const
 {
-    if (identifier == this->bitDepthId)
+    if (identifier == bitDepthId)
         return bitDepthOptions;
-    if (identifier == this->channelsId)
+    if (identifier == channelsId)
         return channelOptions;
-    if (identifier == this->samplerateId)
+    if (identifier == samplerateId)
         return samplerateOptions;
-    if (identifier == this->timestretchId)
+    if (identifier == timestretchId)
         return timestretchOptions;
-    if (identifier == this->loopModeId)
+    if (identifier == loopModeId)
         return loopOptions;
-    if (identifier == this->triqQuantId)
+    if (identifier == triqQuantId)
         return trigQuantOptions;
-    if (identifier == this->normalizationId)
+    if (identifier == normalizationId)
         return normalizationOptions;
-    if (identifier == this->fadeinId)
+    if (identifier == fadeinId)
         return fadeinOptions;
-    if (identifier == this->fadeoutId)
+    if (identifier == fadeoutId)
         return fadeoutOptions;
-    if (identifier == this->megabreakFileCountId)
+    if (identifier == megabreakFileCountId)
         return megabreakFileCountOptions;
 
     return {};
@@ -346,7 +346,7 @@ bool StateHandler::loadSelectedSliceAudio(juce::AudioBuffer<float>& destination,
 
     const auto numChannels = static_cast<int>(sliceTree.getProperty(sliceChannelsId, 0));
     sampleRate = static_cast<double>(sliceTree.getProperty(sliceSamplerateId, 0.0));
-    const auto numSamples = static_cast<juce::int64>(sliceTree.getProperty(sliceNumSamplesId, static_cast<juce::int64>(0)));
+    const auto numSamples = static_cast<juce::int64>(sliceTree.getProperty(sliceNumSamplesId, 0));
     const auto* audioDataValue = sliceTree.getPropertyPointer(sliceAudioDataId);
 
     if (numChannels <= 0

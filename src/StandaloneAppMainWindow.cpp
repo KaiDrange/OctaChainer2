@@ -75,8 +75,14 @@ void StandaloneAppMainWindow::transportButtonPressed(const TransportButtonCompon
 {
     if (event == TransportButtonComponent::TransportEvent::PlayChain)
     {
-        if (const auto clip = mainComponent->getChainAudioClip())
+        const auto clip = mainComponent->getChainAudioClip();
+        if (clip != nullptr && clip->isValid())
             audioPlaybackEngine.play(clip);
+        else
+        {
+            DBG("No rendered chain is available for playback");
+            audioPlaybackEngine.stop();
+        }
     }
     else if (event == TransportButtonComponent::TransportEvent::PlaySlice)
     {
@@ -109,7 +115,14 @@ void StandaloneAppMainWindow::audioDeviceAboutToStart(juce::AudioIODevice* devic
     audioPlaybackEngine.deviceChannelCount = device->getActiveOutputChannels().countNumberOfSetBits();
 
     if (mainComponent != nullptr)
-        mainComponent->updateChainWaveform();
+    {
+        const juce::Component::SafePointer<MainComponent> safeMainComponent(mainComponent);
+        juce::MessageManager::callAsync([safeMainComponent]() mutable
+        {
+            if (safeMainComponent != nullptr)
+                safeMainComponent->updateChainWaveform();
+        });
+    }
 }
 
 void StandaloneAppMainWindow::audioDeviceStopped()

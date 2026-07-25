@@ -1,6 +1,12 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <atomic>
+#include <condition_variable>
+#include <cstdint>
+#include <mutex>
+#include <memory>
+#include <thread>
 
 #include "../Core/AudioPlaybackEngine.h"
 #include "../Core/Chain.h"
@@ -52,6 +58,7 @@ public:
     void removeListener(Listener* listenerToRemove);
     void detachPlaybackListener();
     void updateChainWaveform();
+    void refreshChainWaveformSelection();
     void timerCallback() override;
 
     void paint(juce::Graphics& g) override;
@@ -64,6 +71,11 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 
     void updateSliceWaveform();
+    void requestChainRender();
+    void finishChainRender(std::uint64_t requestId, const std::shared_ptr<Chain>& renderedChain);
+    void chainRenderThreadLoop();
+    void stopChainRenderThread();
+    bool isSelectedSliceInCurrentChain() const;
 
     StyleSheet style;
     StateHandler& stateHandler;
@@ -74,6 +86,15 @@ private:
     WaveformComponent sliceWaveformComponent;
     WaveformComponent chainWaveformComponent;
     AudioPanelComponent audioPanelComponent;
+    std::thread chainRenderThread;
+    std::mutex chainRenderMutex;
+    std::condition_variable chainRenderCondition;
+    std::atomic<bool> chainRenderExitRequested{false};
+    bool chainRenderHasPending = false;
+    juce::ValueTree chainRenderPendingState;
+    double chainRenderPendingSampleRate = 0.0;
+    std::uint64_t chainRenderPendingRequestId = 0;
+    std::atomic<std::uint64_t> chainRenderLatestRequestId{0};
 
     void sendTransportEvent(TransportButtonComponent::TransportEvent event);
     juce::ListenerList<Listener> listeners;

@@ -34,7 +34,17 @@ void OctaChainer2AudioProcessorEditor::transportButtonPressed(const TransportBut
 {
     if (event == TransportButtonComponent::TransportEvent::PlayChain)
     {
-        DBG("PlayChain transport is not implemented yet");
+        if (mainComponent == nullptr)
+            return;
+
+        const auto clip = mainComponent->getChainAudioClip();
+        if (clip != nullptr && clip->isValid())
+            audioProcessor.getAudioPlaybackEngine().play(clip);
+        else
+        {
+            DBG("No rendered chain is available for playback");
+            audioProcessor.getAudioPlaybackEngine().stop();
+        }
     }
     else if (event == TransportButtonComponent::TransportEvent::PlaySlice)
     {

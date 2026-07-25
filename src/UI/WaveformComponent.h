@@ -17,6 +17,8 @@ public:
     void setAudioData(const juce::AudioBuffer<float>& audioData, double sampleRate,
                       const std::vector<Chain::Segment>& segments, int selectedSegmentIndex = -1);
     void clearAudioData();
+    void setProcessingState(bool isProcessing, juce::String message = "Processing...");
+    void setSelectedSegmentIndex(int newSelectedSegmentIndex);
     void setPlayHeadPositionFactor(double newPlayHeadPositionFactor);
 
     void paint(juce::Graphics& g) override;
@@ -47,4 +49,6 @@ private:
     std::vector<Chain::Segment> waveformSegments;
     double waveformSampleRate = 0.0;
     int selectedSegmentIndex = -1;
+    bool processing = false;
+    juce::String processingMessage;
 };
