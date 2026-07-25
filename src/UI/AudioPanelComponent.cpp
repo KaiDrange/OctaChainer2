@@ -37,7 +37,7 @@ AudioPanelComponent::AudioPanelComponent(const Dimension& height, const Dimensio
     };
 
     stateHandler.addListener(this);
-    stateChanged({ StateHandler::StateChange::fullReload });
+    AudioPanelComponent::stateChanged({ StateHandler::StateChange::fullReload });
 }
 
 AudioPanelComponent::~AudioPanelComponent()

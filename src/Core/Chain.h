@@ -16,12 +16,12 @@ public:
         int sampleCount = 0;
     };
 
-    void rebuild(const StateHandler& stateHandler);
+    void rebuild(const StateHandler& stateHandler, double targetSampleRate);
     void clear();
     static int getChainStartIndex(const StateHandler& stateHandler, int chainSliceCount);
 
     [[nodiscard]] bool isValid() const noexcept;
-    [[nodiscard]] const AudioClip& getAudioClip() const noexcept;
+    [[nodiscard]] std::shared_ptr<AudioClip> getAudioClip() const noexcept;
     [[nodiscard]] const juce::AudioBuffer<float>& getAudioData() const noexcept;
     [[nodiscard]] double getSampleRate() const noexcept;
     [[nodiscard]] int getBitDepth() const noexcept;

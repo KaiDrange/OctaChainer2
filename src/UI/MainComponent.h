@@ -51,18 +51,19 @@ public:
     void addListener(Listener* listener);
     void removeListener(Listener* listenerToRemove);
     void detachPlaybackListener();
+    void updateChainWaveform();
     void timerCallback() override;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
     void stateChanged(const StateHandler::StateChange& change) override;
     void transportButtonPressed(TransportButtonComponent::TransportEvent event) override;
+    std::shared_ptr<const AudioClip> getChainAudioClip() const { return chain.getAudioClip(); }
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 
     void updateSliceWaveform();
-    void updateChainWaveform();
 
     StyleSheet style;
     StateHandler& stateHandler;

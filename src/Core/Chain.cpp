@@ -23,15 +23,15 @@ bool Chain::isValid() const noexcept
     return audioClip != nullptr && audioClip->isValid();
 }
 
-const AudioClip& Chain::getAudioClip() const noexcept
+std::shared_ptr<AudioClip> Chain::getAudioClip() const noexcept
 {
     static AudioClip emptyClip;
-    return audioClip != nullptr ? *audioClip : emptyClip;
+    return audioClip != nullptr ? audioClip : std::make_shared<AudioClip>(emptyClip);
 }
 
 const juce::AudioBuffer<float>& Chain::getAudioData() const noexcept
 {
-    return getAudioClip().getAudioData();
+    return getAudioClip()->getAudioData();
 }
 
 double Chain::getSampleRate() const noexcept
@@ -121,7 +121,7 @@ bool Chain::resampleSliceToTargetRate(const juce::AudioBuffer<float>& source, co
     return true;
 }
 
-void Chain::rebuild(const StateHandler& stateHandler)
+void Chain::rebuild(const StateHandler& stateHandler, const double targetSampleRate)
 {
     clear();
 
@@ -135,10 +135,6 @@ void Chain::rebuild(const StateHandler& stateHandler)
     const auto endIndex = juce::jmin(numSlices, startIndex + chainGroupSize);
     if (startIndex >= endIndex)
         return;
-
-    bitDepth = stateHandler.getStateValue<int>(stateHandler.bitDepthId, 16);
-    const auto targetSampleRate = static_cast<double>(stateHandler.getStateValue<int>(stateHandler.samplerateId,
-                                                                                    44100));
 
     struct RenderedSlice
     {

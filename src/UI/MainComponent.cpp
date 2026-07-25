@@ -84,10 +84,12 @@ void MainComponent::stateChanged(const StateHandler::StateChange& change)
     if (change.has(StateHandler::StateChange::selectedSlice) || change.has(StateHandler::StateChange::fullReload))
         updateSliceWaveform();
 
-    if (change.has(StateHandler::StateChange::sliceList)
+    const bool shouldUpdateChain = change.has(StateHandler::StateChange::sliceList)
         || change.has(StateHandler::StateChange::selectedSlice)
-        || change.has(StateHandler::StateChange::settings)
-        || change.has(StateHandler::StateChange::fullReload))
+        || (change.has(StateHandler::StateChange::settings) && ! change.isSetting(stateHandler.masterVolumeId))
+        || change.has(StateHandler::StateChange::fullReload);
+
+    if (shouldUpdateChain)
     {
         updateChainWaveform();
     }
@@ -117,7 +119,7 @@ void MainComponent::updateSliceWaveform()
 
 void MainComponent::updateChainWaveform()
 {
-    chain.rebuild(stateHandler);
+    chain.rebuild(stateHandler, audioPlaybackEngine.deviceSampleRate);
 
     if (chain.isValid())
     {

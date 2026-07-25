@@ -75,7 +75,8 @@ void StandaloneAppMainWindow::transportButtonPressed(const TransportButtonCompon
 {
     if (event == TransportButtonComponent::TransportEvent::PlayChain)
     {
-        DBG("PlayChain transport is not implemented yet");
+        if (const auto clip = mainComponent->getChainAudioClip())
+            audioPlaybackEngine.play(clip);
     }
     else if (event == TransportButtonComponent::TransportEvent::PlaySlice)
     {
@@ -106,6 +107,9 @@ void StandaloneAppMainWindow::audioDeviceAboutToStart(juce::AudioIODevice* devic
 {
     audioPlaybackEngine.deviceSampleRate = device->getCurrentSampleRate();
     audioPlaybackEngine.deviceChannelCount = device->getActiveOutputChannels().countNumberOfSetBits();
+
+    if (mainComponent != nullptr)
+        mainComponent->updateChainWaveform();
 }
 
 void StandaloneAppMainWindow::audioDeviceStopped()
