@@ -95,7 +95,7 @@ void MainComponent::stateChanged(const StateHandler::StateChange& change)
         updateSliceWaveform();
 
     if (change.has(StateHandler::StateChange::sliceList)
-        || (change.has(StateHandler::StateChange::settings) && ! change.isSetting(stateHandler.masterVolumeId))
+        || isChainRenderRelevantSetting(change)
         || change.has(StateHandler::StateChange::fullReload))
     {
         updateChainWaveform();
@@ -113,6 +113,18 @@ void MainComponent::stateChanged(const StateHandler::StateChange& change)
     {
         audioPlaybackEngine.gain.store(stateHandler.getStateValue<float>(stateHandler.masterVolumeId, 0.5f));
     }
+}
+
+bool MainComponent::isChainRenderRelevantSetting(const StateHandler::StateChange& change) const
+{
+    if (! change.has(StateHandler::StateChange::settings))
+        return false;
+
+    return change.isSetting(StateHandler::normalizationId)
+        || change.isSetting(StateHandler::channelsId)
+        || change.isSetting(StateHandler::fadeinId)
+        || change.isSetting(StateHandler::fadeoutId)
+        || change.isSetting(StateHandler::evenGridId);
 }
 
 void MainComponent::transportButtonPressed(const TransportButtonComponent::TransportEvent event)

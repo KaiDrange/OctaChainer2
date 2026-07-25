@@ -127,6 +127,47 @@ bool Chain::resampleSliceToTargetRate(const juce::AudioBuffer<float>& source, co
     return true;
 }
 
+bool Chain::renderBufferToTargetChannelCount(const juce::AudioBuffer<float>& source, const int targetChannelCount,
+                                             juce::AudioBuffer<float>& destination)
+{
+    if (source.getNumChannels() <= 0 || source.getNumSamples() <= 0 || targetChannelCount <= 0)
+        return false;
+
+    if (source.getNumChannels() == targetChannelCount)
+    {
+        destination.makeCopyOf(source);
+        return true;
+    }
+
+    destination.setSize(targetChannelCount, source.getNumSamples(), false, false, true);
+    destination.clear();
+
+    if (targetChannelCount == 1)
+    {
+        const auto mixGain = 1.0f / static_cast<float>(source.getNumChannels());
+        for (int channel = 0; channel < source.getNumChannels(); ++channel)
+            destination.addFrom(0, 0, source, channel, 0, source.getNumSamples(), mixGain);
+
+        return true;
+    }
+
+    if (source.getNumChannels() == 1)
+    {
+        for (int channel = 0; channel < targetChannelCount; ++channel)
+            destination.copyFrom(channel, 0, source, 0, 0, source.getNumSamples());
+
+        return true;
+    }
+
+    for (int channel = 0; channel < targetChannelCount; ++channel)
+    {
+        const auto sourceChannel = juce::jmin(channel, source.getNumChannels() - 1);
+        destination.copyFrom(channel, 0, source, sourceChannel, 0, source.getNumSamples());
+    }
+
+    return true;
+}
+
 void Chain::normalizeAudioBuffer(juce::AudioBuffer<float>& buffer)
 {
     const auto numChannels = buffer.getNumChannels();
@@ -142,6 +183,22 @@ void Chain::normalizeAudioBuffer(juce::AudioBuffer<float>& buffer)
         return;
 
     buffer.applyGain(1.0f / peak);
+}
+
+void Chain::padBufferToLength(juce::AudioBuffer<float>& buffer, const int targetSampleCount)
+{
+    const auto numChannels = buffer.getNumChannels();
+    const auto numSamples = buffer.getNumSamples();
+    if (numChannels <= 0 || numSamples <= 0 || targetSampleCount <= numSamples)
+        return;
+
+    juce::AudioBuffer<float> paddedBuffer;
+    paddedBuffer.setSize(numChannels, targetSampleCount, false, false, true);
+    paddedBuffer.clear();
+    for (int channel = 0; channel < numChannels; ++channel)
+        paddedBuffer.copyFrom(channel, 0, buffer, channel, 0, numSamples);
+
+    buffer = std::move(paddedBuffer);
 }
 
 void Chain::applyFadeInOut(juce::AudioBuffer<float>& buffer, const double sampleRate, const int fadeInMs, const int fadeOutMs)
@@ -201,7 +258,6 @@ bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRa
         int sampleCount = 0;
     };
 
-    int outputChannelCount = 0;
     int totalSampleCount = 0;
     std::vector<RenderedSlice> renderedSlices;
     renderedSlices.reserve(static_cast<size_t>(endIndex - startIndex));
@@ -209,6 +265,8 @@ bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRa
     const auto normalizationValue = settingsTree.getProperty(StateHandler::normalizationId, "none").toString();
     const bool shouldNormalizeSlice = normalizationValue == "slices";
     const bool shouldNormalizeChain = normalizationValue == "chain";
+    const int outputChannelCount = settingsTree.getProperty(StateHandler::channelsId, "mono").toString() == "stereo" ? 2 : 1;
+    const bool shouldPadSlices = settingsTree.getProperty(StateHandler::evenGridId, StateHandler::evenGridDefault);
     const auto fadeInInMs = settingsTree.getProperty(StateHandler::fadeinId, "none").toString().getIntValue();
     const auto fadeOutInMs = settingsTree.getProperty(StateHandler::fadeoutId, "none").toString().getIntValue();
 
@@ -230,25 +288,53 @@ bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRa
         if (!resampleSliceToTargetRate(sliceBuffer, sourceSampleRate, targetSampleRate, renderedBuffer))
             continue;
 
+        juce::AudioBuffer<float> channelMatchedBuffer;
+        if (!renderBufferToTargetChannelCount(renderedBuffer, outputChannelCount, channelMatchedBuffer))
+            continue;
+
         if (shouldNormalizeSlice)
-            normalizeAudioBuffer(renderedBuffer);
+            normalizeAudioBuffer(channelMatchedBuffer);
 
-        applyFadeInOut(renderedBuffer, targetSampleRate, fadeInInMs, fadeOutInMs);
+        applyFadeInOut(channelMatchedBuffer, targetSampleRate, fadeInInMs, fadeOutInMs);
 
-        const auto renderedSampleCount = renderedBuffer.getNumSamples();
+        const auto renderedSampleCount = channelMatchedBuffer.getNumSamples();
         if (renderedSampleCount <= 0)
             continue;
 
         const auto startSample = totalSampleCount;
         totalSampleCount += renderedSampleCount;
-        outputChannelCount = juce::jmax(outputChannelCount, renderedBuffer.getNumChannels());
-        renderedSlices.push_back({ std::move(renderedBuffer), startSample, renderedSampleCount });
+        renderedSlices.push_back({ std::move(channelMatchedBuffer), startSample, renderedSampleCount });
     }
 
     if (renderedSlices.empty() || outputChannelCount <= 0 || totalSampleCount <= 0)
     {
         clear();
         return false;
+    }
+
+    int largestSliceSampleCount = 0;
+    if (shouldPadSlices)
+    {
+        for (const auto& renderedSlice : renderedSlices)
+            largestSliceSampleCount = juce::jmax(largestSliceSampleCount, renderedSlice.sampleCount);
+    }
+
+    if (shouldPadSlices && largestSliceSampleCount <= 0)
+    {
+        clear();
+        return false;
+    }
+
+    if (shouldPadSlices)
+    {
+        totalSampleCount = 0;
+        for (auto& renderedSlice : renderedSlices)
+        {
+            padBufferToLength(renderedSlice.audioData, largestSliceSampleCount);
+            renderedSlice.sampleCount = renderedSlice.audioData.getNumSamples();
+            renderedSlice.startSample = totalSampleCount;
+            totalSampleCount += renderedSlice.sampleCount;
+        }
     }
 
     juce::AudioBuffer<float> output;
@@ -259,7 +345,6 @@ bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRa
     for (size_t i = 0; i < renderedSlices.size(); ++i)
     {
         const auto& renderedSlice = renderedSlices[i].audioData;
-        const auto sourceChannels = renderedSlice.getNumChannels();
         const auto sourceSamples = renderedSlices[i].sampleCount;
         segments.push_back({ startIndex + static_cast<int>(i),
                              renderedSlices[i].startSample,
@@ -267,8 +352,7 @@ bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRa
 
         for (int channel = 0; channel < outputChannelCount; ++channel)
         {
-            const auto sourceChannel = juce::jlimit(0, sourceChannels - 1, channel);
-            output.copyFrom(channel, renderedSlices[i].startSample, renderedSlice, sourceChannel, 0, sourceSamples);
+            output.copyFrom(channel, renderedSlices[i].startSample, renderedSlice, channel, 0, sourceSamples);
         }
     }
 

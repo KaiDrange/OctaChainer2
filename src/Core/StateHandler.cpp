@@ -85,6 +85,8 @@ void StateHandler::initialiseDefaultState()
     };
 
     setDefaultOption(bitDepthId);
+    setDefaultOption(channelsId);
+    setDefaultOption(samplerateId);
     setDefaultOption(timestretchId);
     setDefaultOption(loopModeId);
     setDefaultOption(triqQuantId);
@@ -600,9 +602,15 @@ void StateHandler::ensureSettingsTree()
     settingsTree = valueTree.getChildWithName(settingsId);
 
     if (settingsTree.isValid())
+    {
+        setDefaultStateValue(channelsId, channelOptions.front().value);
+        setDefaultStateValue(samplerateId, samplerateOptions.front().value);
         return;
+    }
 
     settingsTree = juce::ValueTree(settingsId);
+    setDefaultStateValue(channelsId, channelOptions.front().value);
+    setDefaultStateValue(samplerateId, samplerateOptions.front().value);
     valueTree.addChild(settingsTree, -1, nullptr);
 }
 

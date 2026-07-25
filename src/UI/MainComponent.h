@@ -79,6 +79,7 @@ private:
     void chainRenderThreadLoop();
     void stopChainRenderThread();
     bool isSelectedSliceInCurrentChain() const;
+    bool isChainRenderRelevantSetting(const StateHandler::StateChange& change) const;
 
     StyleSheet style;
     StateHandler& stateHandler;

@@ -59,6 +59,7 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     normalizationBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::normalizationId, normalizationBox.getSelectedId()); };
     fadeinBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::fadeinId, fadeinBox.getSelectedId()); };
     fadeoutBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::fadeoutId, fadeoutBox.getSelectedId()); };
+    exportEvenGrid.onClick = [this]{ stateHandler.setStateValue(StateHandler::evenGridId, exportEvenGrid.getToggleState()); };
     megabreakFileCountBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::megabreakFileCountId, megabreakFileCountBox.getSelectedId()); };
 
     gainInput.addListener(this);

@@ -34,7 +34,10 @@ private:
                                juce::AudioBuffer<float>& destination, double& sampleRate);
     static bool resampleSliceToTargetRate(const juce::AudioBuffer<float>& source, double sourceSampleRate,
                                           double targetSampleRate, juce::AudioBuffer<float>& destination);
+    static bool renderBufferToTargetChannelCount(const juce::AudioBuffer<float>& source, int targetChannelCount,
+                                                 juce::AudioBuffer<float>& destination);
     static void normalizeAudioBuffer(juce::AudioBuffer<float>& buffer);
+    static void padBufferToLength(juce::AudioBuffer<float>& buffer, int targetSampleCount);
 
     static void applyFadeInOut(juce::AudioBuffer<float>& buffer, double sampleRate, int fadeInMs, int fadeOutMs);
 
