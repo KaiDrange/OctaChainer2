@@ -49,11 +49,22 @@ void AudioPlaybackEngine::ProcessBlock(juce::AudioBuffer<float>& buffer)
         const int clipChannelCount = currentSample.getNumChannels();
         const float currentGain = juce::jmin(gain.load(std::memory_order_acquire), 1.0f);
 
-        for (int ch = 0; ch < deviceChannelCount; ++ch)
+        if (deviceChannelCount == 1 && clipChannelCount > 1)
         {
-            const int sourceChannel = juce::jmin(ch, clipChannelCount - 1);
-            buffer.copyFrom(ch, 0, currentSample, sourceChannel, currentIndex, samplesToProcess);
-            buffer.applyGain(ch, 0, samplesToProcess, currentGain);
+            const float mixGain = 1.0f / static_cast<float>(clipChannelCount);
+            for (int sourceChannel = 0; sourceChannel < clipChannelCount; ++sourceChannel)
+                buffer.addFrom(0, 0, currentSample, sourceChannel, currentIndex, samplesToProcess, mixGain);
+
+            buffer.applyGain(0, 0, samplesToProcess, currentGain);
+        }
+        else
+        {
+            for (int ch = 0; ch < deviceChannelCount; ++ch)
+            {
+                const int sourceChannel = juce::jmin(ch, clipChannelCount - 1);
+                buffer.copyFrom(ch, 0, currentSample, sourceChannel, currentIndex, samplesToProcess);
+                buffer.applyGain(ch, 0, samplesToProcess, currentGain);
+            }
         }
         currentIndex += samplesToProcess;
         writeIndex.store(currentIndex, std::memory_order_release);
