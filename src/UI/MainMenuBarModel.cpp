@@ -2,9 +2,11 @@
 
 #include <utility>
 
-MainMenuBarModel::MainMenuBarModel(Action onQuit, Action onProjectSave, Action onProjectLoad, Action onAudioSettings, Action onHelp)
+MainMenuBarModel::MainMenuBarModel(Action onQuit, Action onProjectSave, Action onProjectLoad,
+                                   Action onAudioSettings, Action onDefaultFolders, Action onHelp)
     : onQuit(std::move(onQuit)),
       onAudioSettings(std::move(onAudioSettings)),
+      onDefaultSettings(std::move(onDefaultFolders)),
       onHelp(std::move(onHelp)),
       onProjectSave(std::move(onProjectSave)),
       onProjectLoad(std::move(onProjectLoad))
@@ -30,6 +32,8 @@ juce::PopupMenu MainMenuBarModel::getMenuForIndex(int topLevelMenuIndex, const j
     else if(menuName == "Options")
     {
         menu.addItem(20, "Audio settings");
+        menu.addSeparator();
+        menu.addItem(21, "Set application defaults");
     }
     else if (menuName == "Help")
     {
@@ -58,6 +62,10 @@ void MainMenuBarModel::menuItemSelected(const int menuItemID, int topLevelMenuIn
     else if (menuItemID == 20 && onAudioSettings)
     {
         onAudioSettings();
+    }
+    else if (menuItemID == 21 && onDefaultSettings)
+    {
+        onDefaultSettings();
     }
     else if (menuItemID == 30 && onHelp)
     {

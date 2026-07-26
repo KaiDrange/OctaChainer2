@@ -1,6 +1,7 @@
 #include "StandaloneAppMainWindow.h"
 
 #include "Core/AudioUtil.h"
+#include "UI/DefaultSettingsDialogComponent.h"
 #include "UI/MainComponent.h"
 
 StandaloneAppMainWindow::StandaloneAppMainWindow(const juce::String& name)
@@ -11,7 +12,8 @@ StandaloneAppMainWindow::StandaloneAppMainWindow(const juce::String& name)
           [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); },
           [this] { saveProject(); },
           [this] { loadProject(); },
-          [this] { showAudioSettings(); }
+          [this] { showAudioSettings(); },
+          [this] { showDefaultSettings(); }
       )
 {
     setLookAndFeel(&style);
@@ -50,6 +52,8 @@ void StandaloneAppMainWindow::initialise()
     DBG(error);
 
     loadAudioSettings();
+    loadDefaultSettings();
+    loadCurrentSettingsDefaults();
     audioDeviceManager.addAudioCallback(this);
 
     setUsingNativeTitleBar(true);
@@ -169,6 +173,39 @@ void StandaloneAppMainWindow::showAudioSettings()
     options.launchAsync();
 }
 
+void StandaloneAppMainWindow::showDefaultSettings()
+{
+    auto defaults = std::make_unique<DefaultSettingsDialogComponent>(
+        stateHandler.getStateValue(StateHandler::defaultAudioFolderId,
+                                   juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()),
+        stateHandler.getStateValue(StateHandler::defaultExportFolderId,
+                                   juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()),
+        stateHandler.getStateValue(StateHandler::defaultProjectFolderId,
+                                   juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()),
+        [this](const juce::String& defaultAudioFolder, const juce::String& defaultExportFolder,
+               const juce::String& defaultProjectFolder)
+        {
+            stateHandler.setStateValue(StateHandler::defaultAudioFolderId, defaultAudioFolder);
+            stateHandler.setStateValue(StateHandler::defaultExportFolderId, defaultExportFolder);
+            stateHandler.setStateValue(StateHandler::defaultProjectFolderId, defaultProjectFolder);
+        },
+        [this]
+        {
+            saveCurrentSettingsAsDefaults();
+        });
+
+    juce::DialogWindow::LaunchOptions options;
+    options.content.setOwned(defaults.release());
+    options.dialogTitle = "Application default settings";
+    options.dialogBackgroundColour = juce::Colour(StyleSheet::dialogBackgroundColour);
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = false;
+    options.componentToCentreAround = this;
+
+    options.launchAsync();
+}
+
 void StandaloneAppMainWindow::saveAudioSettings() const
 {
     const std::unique_ptr<juce::XmlElement> xml(audioDeviceManager.createStateXml());
@@ -191,6 +228,69 @@ void StandaloneAppMainWindow::saveAudioSettings() const
     }
 }
 
+void StandaloneAppMainWindow::saveDefaultSettings() const
+{
+    const juce::File settingsDirectory = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+        .getChildFile(ProjectInfo::projectName);
+
+    if (! settingsDirectory.createDirectory())
+    {
+        DBG("Failed to create default folder settings directory");
+        return;
+    }
+
+    juce::XmlElement xml("DefaultFolders");
+    xml.setAttribute("audioFolder", stateHandler.getStateValue(
+        StateHandler::defaultAudioFolderId,
+        juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()));
+    xml.setAttribute("exportFolder", stateHandler.getStateValue(
+        StateHandler::defaultExportFolderId,
+        juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()));
+    xml.setAttribute("projectFolder", stateHandler.getStateValue(
+        StateHandler::defaultProjectFolderId,
+        juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()));
+
+    const juce::File settingsFile = settingsDirectory.getChildFile("DefaultFolders.xml");
+    if (! xml.writeTo(settingsFile))
+        DBG("Failed to write default folder settings");
+}
+
+void StandaloneAppMainWindow::saveCurrentSettingsAsDefaults() const
+{
+    const juce::File settingsDirectory = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+        .getChildFile(ProjectInfo::projectName);
+
+    if (! settingsDirectory.createDirectory())
+    {
+        DBG("Failed to create default settings directory");
+        return;
+    }
+
+    juce::XmlElement xml("DefaultSettings");
+    xml.setAttribute("bitDepth", stateHandler.getCurrentOption(StateHandler::bitDepthId).itemId);
+    xml.setAttribute("channels", stateHandler.getCurrentOption(StateHandler::channelsId).itemId);
+    xml.setAttribute("samplerate", stateHandler.getCurrentOption(StateHandler::samplerateId).itemId);
+    xml.setAttribute("timestretch", stateHandler.getCurrentOption(StateHandler::timestretchId).itemId);
+    xml.setAttribute("loopMode", stateHandler.getCurrentOption(StateHandler::loopModeId).itemId);
+    xml.setAttribute("triqQuant", stateHandler.getCurrentOption(StateHandler::triqQuantId).itemId);
+    xml.setAttribute("gain", stateHandler.getStateValue<double>(StateHandler::gainId, StateHandler::gainValue.defaultValue));
+    xml.setAttribute("bpm", stateHandler.getStateValue<double>(StateHandler::bpmId, StateHandler::bpmValue.defaultValue));
+    xml.setAttribute("normalization", stateHandler.getCurrentOption(StateHandler::normalizationId).itemId);
+    xml.setAttribute("fadein", stateHandler.getCurrentOption(StateHandler::fadeinId).itemId);
+    xml.setAttribute("fadeout", stateHandler.getCurrentOption(StateHandler::fadeoutId).itemId);
+    xml.setAttribute("otFile", stateHandler.getStateValue<bool>(StateHandler::otFileId, StateHandler::otFileDefault));
+    xml.setAttribute("evenGrid", stateHandler.getStateValue<bool>(StateHandler::evenGridId, StateHandler::evenGridDefault));
+    xml.setAttribute("embedMarkers", stateHandler.getStateValue<bool>(StateHandler::embedMarkersId, StateHandler::embedMarkersDefault));
+    xml.setAttribute("megabreakFileCount", stateHandler.getCurrentOption(StateHandler::megabreakFileCountId).itemId);
+    xml.setAttribute("chainMaxLength", stateHandler.getStateValue<int>(StateHandler::chainMaxLengthId,
+                                                                       static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue)));
+    xml.setAttribute("masterVolume", stateHandler.getStateValue<float>(StateHandler::masterVolumeId, 0.5f));
+
+    const juce::File settingsFile = settingsDirectory.getChildFile("DefaultSettings.xml");
+    if (! xml.writeTo(settingsFile))
+        DBG("Failed to write default settings");
+}
+
 void StandaloneAppMainWindow::loadAudioSettings()
 {
     const juce::File settingsFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
@@ -211,9 +311,91 @@ void StandaloneAppMainWindow::loadAudioSettings()
     audioDeviceManager.initialiseWithDefaultDevices(0, 2);
 }
 
+void StandaloneAppMainWindow::loadDefaultSettings()
+{
+    const juce::File settingsFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                                    .getChildFile(ProjectInfo::projectName)
+                                    .getChildFile("DefaultFolders.xml");
+
+    if (! settingsFile.existsAsFile())
+        return;
+
+    const std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(settingsFile));
+    if (xml == nullptr || ! xml->hasTagName("DefaultFolders"))
+        return;
+
+    const auto audioFolder = xml->getStringAttribute("audioFolder");
+    const auto exportFolder = xml->getStringAttribute("exportFolder");
+    const auto projectFolder = xml->getStringAttribute("projectFolder");
+
+    if (audioFolder.isNotEmpty())
+        stateHandler.setStateValue(StateHandler::defaultAudioFolderId, audioFolder);
+
+    if (exportFolder.isNotEmpty())
+        stateHandler.setStateValue(StateHandler::defaultExportFolderId, exportFolder);
+
+    if (projectFolder.isNotEmpty())
+        stateHandler.setStateValue(StateHandler::defaultProjectFolderId, projectFolder);
+}
+
+void StandaloneAppMainWindow::loadCurrentSettingsDefaults()
+{
+    const juce::File settingsFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                                    .getChildFile(ProjectInfo::projectName)
+                                    .getChildFile("DefaultSettings.xml");
+
+    if (! settingsFile.existsAsFile())
+        return;
+
+    const std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(settingsFile));
+    if (xml == nullptr || ! xml->hasTagName("DefaultSettings"))
+        return;
+
+    const auto applyItemId = [this, xmlPtr = xml.get()](const juce::Identifier& id, const char* attributeName)
+    {
+        if (xmlPtr->hasAttribute(attributeName))
+            stateHandler.setStateValueFromItemId(id, xmlPtr->getIntAttribute(attributeName));
+    };
+
+    applyItemId(StateHandler::bitDepthId, "bitDepth");
+    applyItemId(StateHandler::channelsId, "channels");
+    applyItemId(StateHandler::samplerateId, "samplerate");
+    applyItemId(StateHandler::timestretchId, "timestretch");
+    applyItemId(StateHandler::loopModeId, "loopMode");
+    applyItemId(StateHandler::triqQuantId, "triqQuant");
+    applyItemId(StateHandler::normalizationId, "normalization");
+    applyItemId(StateHandler::fadeinId, "fadein");
+    applyItemId(StateHandler::fadeoutId, "fadeout");
+    applyItemId(StateHandler::megabreakFileCountId, "megabreakFileCount");
+
+    if (xml->hasAttribute("gain"))
+        stateHandler.setStateValue(StateHandler::gainId, xml->getDoubleAttribute("gain"));
+
+    if (xml->hasAttribute("bpm"))
+        stateHandler.setStateValue(StateHandler::bpmId, xml->getDoubleAttribute("bpm"));
+
+    if (xml->hasAttribute("chainMaxLength"))
+        stateHandler.setStateValue(StateHandler::chainMaxLengthId, xml->getIntAttribute("chainMaxLength"));
+
+    if (xml->hasAttribute("masterVolume"))
+        stateHandler.setStateValue(StateHandler::masterVolumeId, static_cast<float>(xml->getDoubleAttribute("masterVolume")));
+
+    if (xml->hasAttribute("otFile"))
+        stateHandler.setStateValue(StateHandler::otFileId, xml->getBoolAttribute("otFile"));
+
+    if (xml->hasAttribute("evenGrid"))
+        stateHandler.setStateValue(StateHandler::evenGridId, xml->getBoolAttribute("evenGrid"));
+
+    if (xml->hasAttribute("embedMarkers"))
+        stateHandler.setStateValue(StateHandler::embedMarkersId, xml->getBoolAttribute("embedMarkers"));
+}
+
 void StandaloneAppMainWindow::saveProject()
 {
-    fileChooser = std::make_unique<juce::FileChooser>("Save current project", juce::File(), "*.xml");
+    const juce::File initialFolder(stateHandler.getStateValue(
+        StateHandler::defaultProjectFolderId,
+        juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()));
+    fileChooser = std::make_unique<juce::FileChooser>("Save current project", initialFolder, "*.xml");
     constexpr auto browserFlags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
         juce::FileBrowserComponent::warnAboutOverwriting;
     fileChooser->launchAsync(browserFlags, [this](const juce::FileChooser& chooser)
@@ -238,7 +420,10 @@ void StandaloneAppMainWindow::saveProject()
 
 void StandaloneAppMainWindow::loadProject()
 {
-    fileChooser = std::make_unique<juce::FileChooser>("Select a project file to load", juce::File(), "*.xml");
+    const juce::File initialFolder(stateHandler.getStateValue(
+        StateHandler::defaultProjectFolderId,
+        juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()));
+    fileChooser = std::make_unique<juce::FileChooser>("Select a project file to load", initialFolder, "*.xml");
     constexpr auto browserFlags = juce::FileBrowserComponent::openMode;
     fileChooser->launchAsync(browserFlags, [this](const juce::FileChooser& chooser)
     {
@@ -249,6 +434,7 @@ void StandaloneAppMainWindow::loadProject()
             {
                 const juce::ValueTree newTree = juce::ValueTree::fromXml(*xml);
                 stateHandler.setState(newTree);
+                loadDefaultSettings();
             }
         }
     });

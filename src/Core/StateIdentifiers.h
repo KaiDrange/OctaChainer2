@@ -25,6 +25,9 @@ static inline const juce::Identifier embedMarkersId = "embedMarkers";
 static inline const juce::Identifier megabreakFileCountId = "megabreakFileCount";
 static inline const juce::Identifier chainMaxLengthId = "chainMaxLength";
 static inline const juce::Identifier masterVolumeId = "masterVolume";
+static inline const juce::Identifier defaultAudioFolderId = "defaultAudioFolder";
+static inline const juce::Identifier defaultExportFolderId = "defaultExportFolder";
+static inline const juce::Identifier defaultProjectFolderId = "defaultProjectFolder";
 
 // Data identifiers
 static inline const juce::Identifier dataId = "data";

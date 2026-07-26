@@ -33,6 +33,7 @@ void OctaChainer2StandaloneApplication::shutdown()
 void OctaChainer2StandaloneApplication::systemRequestedQuit()
 {
     mainWindow->saveAudioSettings();
+    mainWindow->saveDefaultSettings();
     quit();
 }
 

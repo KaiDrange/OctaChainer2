@@ -1,5 +1,3 @@
-#include <limits>
-#include <algorithm>
 #include "StateHandler.h"
 #include "Slice.h"
 
@@ -99,6 +97,9 @@ void StateHandler::initialiseDefaultState()
     setDefaultStateValue(evenGridId, evenGridDefault);
     setDefaultStateValue(embedMarkersId, embedMarkersDefault);
     setDefaultStateValue(chainMaxLengthId, chainMaxLengthValue.defaultValue);
+    setDefaultStateValue(defaultAudioFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
+    setDefaultStateValue(defaultExportFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
+    setDefaultStateValue(defaultProjectFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
     setDefaultOption(megabreakFileCountId);
 
     valueTree.addChild(settingsTree, -1, nullptr);
@@ -116,6 +117,22 @@ void StateHandler::addListener(Listener* listenerToAdd)
 void StateHandler::removeListener(Listener* listenerToRemove)
 {
     listeners.remove(listenerToRemove);
+}
+
+juce::String StateHandler::getStateValue(const juce::Identifier& identifier, juce::String defaultValue)
+{
+    if (! settingsTree.isValid() || ! settingsTree.hasProperty(identifier))
+        return defaultValue;
+
+    return settingsTree.getProperty(identifier, defaultValue).toString();
+}
+
+juce::String StateHandler::getStateValue(const juce::Identifier& identifier, juce::String defaultValue) const
+{
+    if (! settingsTree.isValid() || ! settingsTree.hasProperty(identifier))
+        return defaultValue;
+
+    return settingsTree.getProperty(identifier, defaultValue).toString();
 }
 
 const juce::ValueTree& StateHandler::getState() const noexcept
@@ -607,12 +624,18 @@ void StateHandler::ensureSettingsTree()
     {
         setDefaultStateValue(channelsId, channelOptions.front().value);
         setDefaultStateValue(samplerateId, samplerateOptions.front().value);
+        setDefaultStateValue(defaultAudioFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
+        setDefaultStateValue(defaultExportFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
+        setDefaultStateValue(defaultProjectFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
         return;
     }
 
     settingsTree = juce::ValueTree(settingsId);
     setDefaultStateValue(channelsId, channelOptions.front().value);
     setDefaultStateValue(samplerateId, samplerateOptions.front().value);
+    setDefaultStateValue(defaultAudioFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
+    setDefaultStateValue(defaultExportFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
+    setDefaultStateValue(defaultProjectFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
     valueTree.addChild(settingsTree, -1, nullptr);
 }
 

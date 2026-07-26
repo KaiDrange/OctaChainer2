@@ -443,8 +443,9 @@ void SliceListComponent::configureTable()
 
 void SliceListComponent::showAddFileChooser()
 {
+    const auto initialFolder = getDefaultAudioFolder(stateHandler);
     fileChooser = std::make_unique<juce::FileChooser>("Add audio file",
-                                                       juce::File(),
+                                                       initialFolder,
                                                        audioFileLoader.getSupportedFilePatterns());
 
     constexpr auto browserFlags = juce::FileBrowserComponent::openMode
@@ -610,4 +611,16 @@ juce::String SliceListComponent::formatAudioFormat(const juce::ValueTree& sliceT
 
 
     return channelsString + ", " + juce::String(samplerate/1000) + "kHz/" + juce::String(bitrate) + "bit";
+}
+
+juce::File SliceListComponent::getDefaultAudioFolder(const StateHandler& stateHandler)
+{
+    auto folder = juce::File(stateHandler.getStateValue(
+        StateHandler::defaultAudioFolderId,
+        juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()));
+
+    if (! folder.isDirectory())
+        folder = juce::File::getSpecialLocation(juce::File::userHomeDirectory);
+
+    return folder;
 }

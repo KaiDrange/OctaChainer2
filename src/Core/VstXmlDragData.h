@@ -35,5 +35,4 @@ private:
     static void collectElementsWithFilePath(const juce::XmlElement& element, std::vector<const juce::XmlElement*>& matches);
     static std::unique_ptr<juce::XmlElement> parseXmlPayload(juce::String text);
     static VstXmlDragData::AudioRegion audioRegionFromElement(const juce::XmlElement& element);
-
 };

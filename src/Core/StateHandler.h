@@ -53,7 +53,10 @@ public:
 
     Option getCurrentOption(const juce::Identifier& identifier) const;
     static var getOptionValue(const Option& option);
-    template <typename T>
+    juce::String getStateValue(const juce::Identifier& identifier, juce::String defaultValue);
+    juce::String getStateValue(const juce::Identifier& identifier, juce::String defaultValue) const;
+
+    template <typename T, std::enable_if_t<!std::is_same_v<T, juce::String>, int> = 0>
     T getStateValue(const juce::Identifier& identifier, T defaultValue)
     {
         if (! settingsTree.isValid() || ! settingsTree.hasProperty(identifier))
@@ -62,7 +65,7 @@ public:
         return static_cast<T>(settingsTree.getProperty(identifier, defaultValue));
     }
 
-    template <typename T>
+    template <typename T, std::enable_if_t<!std::is_same_v<T, juce::String>, int> = 0>
     T getStateValue(const juce::Identifier& identifier, T defaultValue) const
     {
         if (! settingsTree.isValid() || ! settingsTree.hasProperty(identifier))

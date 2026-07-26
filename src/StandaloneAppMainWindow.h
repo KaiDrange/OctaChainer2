@@ -26,12 +26,17 @@ public:
                                           int numSamples, const juce::AudioIODeviceCallbackContext& context) override;
 
     void showAudioSettings();
+    void showDefaultSettings();
     void saveAudioSettings() const;
+    void saveDefaultSettings() const;
+    void saveCurrentSettingsAsDefaults() const;
 
     void saveProject();
     void loadProject();
 private:
     void loadAudioSettings();
+    void loadDefaultSettings();
+    void loadCurrentSettingsDefaults();
 
     MainComponent* mainComponent = nullptr;
     StyleSheet style;

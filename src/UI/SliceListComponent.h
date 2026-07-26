@@ -84,6 +84,7 @@ private:
     static void showLoadError(const juce::String& message);
     static juce::String formatDuration(const juce::ValueTree& sliceTree);
     static juce::String formatAudioFormat(const juce::ValueTree& sliceTree);
+    static juce::File getDefaultAudioFolder(const StateHandler& stateHandler);
 
     StateHandler& stateHandler;
     AudioFileLoader audioFileLoader;
