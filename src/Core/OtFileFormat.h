@@ -8,6 +8,7 @@ class OtFileFormat
 public:
 
     static constexpr std::size_t otFileSize = 832;
+    static constexpr std::size_t maxSliceCount = 64;
 
     enum Loop_t
     {

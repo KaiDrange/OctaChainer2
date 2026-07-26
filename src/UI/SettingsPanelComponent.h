@@ -35,6 +35,8 @@ public:
     void numberInputChanged(NumberInputComponent* numberInput) override;
 
 private:
+    static bool isOtCompatibleExport(const StateHandler& stateHandler, const bool hasSlices);
+    static bool isMegabreakCompatibleExport(const StateHandler& stateHandler, const bool hasSlices);
     void layoutTopSections();
     void layoutOtAttributesSection();
     void layoutChainExportSection();
@@ -78,7 +80,7 @@ private:
     juce::ToggleButton exportOtFile{"OT file"};
     juce::ToggleButton exportEvenGrid{"Even grid"};
     juce::ToggleButton exportEmbedMarkers{"Embed markers"};
-    juce::TextButton createButton{"Save chain"};
+    juce::TextButton createButton{"Save chain(s)"};
     juce::TextButton createMegabreakButton{"Save megabreak"};
     bool hasSlices = false;
 

@@ -1,8 +1,5 @@
 #include "SettingsPanelComponent.h"
-
-#include <algorithm>
-#include <initializer_list>
-
+#include "../Core/OtFileFormat.h"
 
 SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                                                StateHandler& stateHandlerToUse,
@@ -62,6 +59,7 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     normalizationBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::normalizationId, normalizationBox.getSelectedId()); };
     fadeinBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::fadeinId, fadeinBox.getSelectedId()); };
     fadeoutBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::fadeoutId, fadeoutBox.getSelectedId()); };
+    exportOtFile.onClick = [this]{ stateHandler.setStateValue(StateHandler::otFileId, exportOtFile.getToggleState()); };
     exportEvenGrid.onClick = [this]{ stateHandler.setStateValue(StateHandler::evenGridId, exportEvenGrid.getToggleState()); };
     megabreakFileCountBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::megabreakFileCountId, megabreakFileCountBox.getSelectedId()); };
     createButton.onClick = [this]{ sendChainExportRequested(); };
@@ -241,20 +239,28 @@ void SettingsPanelComponent::layoutMegabreakExportSection()
 
 void SettingsPanelComponent::updateExportButtonState()
 {
-    createButton.setEnabled(hasSlices);
-    createMegabreakButton.setEnabled(hasSlices);
+    const auto otCompatibleExport = isOtCompatibleExport(stateHandler, hasSlices);
+    const auto megabreakCompatibleExport = isMegabreakCompatibleExport(stateHandler, hasSlices);
+    createButton.setEnabled(hasSlices && (! exportOtFile.getToggleState() || otCompatibleExport));
+    createMegabreakButton.setEnabled(megabreakCompatibleExport);
 }
 
 void SettingsPanelComponent::stateChanged(const StateHandler::StateChange& change)
 {
+    bool shouldUpdateExportButtons = false;
+
     if (change.has(StateHandler::StateChange::sliceList) || change.has(StateHandler::StateChange::fullReload))
     {
         hasSlices = stateHandler.getNumSlices() > 0;
-        updateExportButtonState();
+        shouldUpdateExportButtons = true;
     }
 
     if (! change.has(StateHandler::StateChange::settings) && ! change.has(StateHandler::StateChange::fullReload))
+    {
+        if (shouldUpdateExportButtons)
+            updateExportButtonState();
         return;
+    }
 
     stateHandler.refreshRadioButtons(StateHandler::bitDepthId, { &bitDepth16Bit, &bitDepth24Bit });
     stateHandler.refreshRadioButtons(StateHandler::channelsId, { &channelMono, &channelStereo });
@@ -273,6 +279,8 @@ void SettingsPanelComponent::stateChanged(const StateHandler::StateChange& chang
     exportOtFile.setToggleState(juce::var(stateHandler.getStateValue<bool>(StateHandler::otFileId, StateHandler::otFileDefault)), juce::NotificationType::dontSendNotification);
     exportEvenGrid.setToggleState(juce::var(stateHandler.getStateValue<bool>(StateHandler::evenGridId, StateHandler::evenGridDefault)), juce::NotificationType::dontSendNotification);
     exportEmbedMarkers.setToggleState(juce::var(stateHandler.getStateValue<bool>(StateHandler::embedMarkersId, StateHandler::embedMarkersDefault)), juce::NotificationType::dontSendNotification);
+
+    updateExportButtonState();
 }
 
 void SettingsPanelComponent::numberInputChanged(NumberInputComponent* numberInput)
@@ -289,6 +297,23 @@ void SettingsPanelComponent::numberInputChanged(NumberInputComponent* numberInpu
 
     if (numberInput == &bpmInput)
         stateHandler.setStateValue(StateHandler::bpmId, value);
+}
+
+bool SettingsPanelComponent::isOtCompatibleExport(const StateHandler& stateHandler, const bool hasSlices)
+{
+    if (!hasSlices)
+        return false;
+
+    const auto maxSlicesPerChain = juce::jmax(1, stateHandler.getStateValue<int>(
+        StateHandler::chainMaxLengthId,
+        static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue)));
+    return maxSlicesPerChain <= static_cast<int>(OtFileFormat::maxSliceCount);
+}
+
+bool SettingsPanelComponent::isMegabreakCompatibleExport(const StateHandler& stateHandler, const bool hasSlices)
+{
+    const auto sliceCount = stateHandler.getNumSlices();
+    return isOtCompatibleExport(stateHandler, hasSlices) && sliceCount <= static_cast<int>(OtFileFormat::maxSliceCount);
 }
 
 void SettingsPanelComponent::sendChainExportRequested()

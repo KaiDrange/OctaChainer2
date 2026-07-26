@@ -76,12 +76,12 @@ std::array<std::uint8_t, OtFileFormat::otFileSize> OtWriter::buildPayload(const 
     writeU32BE(writePos, 0);
 
     const auto sliceCount = (slices.size() > 1)
-                                ? (slices.size() < 64 ? slices.size() : static_cast<std::size_t>(64))
-                                : static_cast<std::size_t>(0);
+                                ? juce::jmin(slices.size(), OtFileFormat::maxSliceCount)
+                                : 0u;
 
-    for (std::size_t i = 0; i < 64; ++i)
+    for (std::size_t i = 0; i < OtFileFormat::maxSliceCount; ++i)
     {
-        const OtFileFormat::Slice slice = i < sliceCount ? slices[i] : OtFileFormat::Slice{};
+        const OtFileFormat::Slice slice = i < static_cast<std::size_t>(sliceCount) ? slices[i] : OtFileFormat::Slice{};
         writeU32BE(writePos, slice.startPoint);
         writeU32BE(writePos, slice.endPoint);
         writeU32BE(writePos, slice.loopPoint);
