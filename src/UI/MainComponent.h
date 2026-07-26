@@ -75,11 +75,12 @@ private:
 
     void updateSliceWaveform();
     void requestChainRender();
-    void finishChainRender(std::uint64_t requestId, const std::shared_ptr<Chain>& renderedChain);
+    void finishChainRender(std::uint64_t requestId, const std::shared_ptr<Chain>& renderedChain, juce::String renderError = {});
     void chainRenderThreadLoop();
     void stopChainRenderThread();
     bool isSelectedSliceInCurrentChain() const;
     bool isChainRenderRelevantSetting(const StateHandler::StateChange& change) const;
+    void showChainRenderError(const juce::String& message);
 
     StyleSheet style;
     StateHandler& stateHandler;

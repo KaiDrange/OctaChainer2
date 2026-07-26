@@ -46,7 +46,21 @@ bool AudioFileLoader::loadFile(const juce::File& file, Slice& destination, juce:
 
     if (reader->lengthInSamples > static_cast<juce::int64>(std::numeric_limits<int>::max()))
     {
-        setError(errorMessage, "Audio file is too long to load into memory: " + file.getFileName());
+        setError(errorMessage,
+                 "Audio file is too big to load into memory: " + file.getFileName() + ".");
+        return false;
+    }
+
+    const auto estimatedAudioDataBytes = static_cast<juce::int64>(reader->numChannels)
+                                         * reader->lengthInSamples
+                                         * static_cast<juce::int64>(sizeof(float));
+    if (estimatedAudioDataBytes > maxLoadedAudioDataBytes)
+    {
+        setError(errorMessage,
+                 "Audio file is too large to load safely into the slice list: " + file.getFileName()
+                 + " (" + juce::String(estimatedAudioDataBytes / (1024 * 1024)) +
+                 " MB estimated). Maximum supported size is "
+                 + juce::String(maxLoadedAudioDataBytes / (1024 * 1024)) + "MB.");
         return false;
     }
 

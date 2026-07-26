@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "../Core/AudioClip.h"
 #include "../Core/Chain.h"
 #include "PanelComponent.h"
 
@@ -24,6 +25,8 @@ public:
     void setAudioData(const juce::AudioBuffer<float>& audioData, double sampleRate);
     void setAudioData(const juce::AudioBuffer<float>& audioData, double sampleRate,
                       const std::vector<Chain::Segment>& segments, int selectedSegmentIndex = -1);
+    void setAudioClip(std::shared_ptr<const AudioClip> audioClip, const std::vector<Chain::Segment>& segments,
+                      int selectedSegmentIndex = -1);
     void setSliceRange(int startSample, int endSample);
     void clearAudioData();
     void setProcessingState(bool isProcessing, juce::String message = "Processing...");
@@ -63,6 +66,7 @@ private:
     void drawSliceRangeWaveform(juce::Graphics& g, const juce::Rectangle<int>& waveformArea) const;
     void drawSliceRangeMarkers(juce::Graphics& g, const juce::Rectangle<int>& waveformArea) const;
     void updateSliceRangeFromMouse(const juce::Point<int>& position);
+    const juce::AudioBuffer<float>* getSourceBuffer() const;
     int sampleToX(int sample, const juce::Rectangle<int>& waveformArea) const;
     int xToSample(int x, const juce::Rectangle<int>& waveformArea) const;
     int getSegmentIndexAtPoint(juce::Point<int> position) const;
@@ -88,4 +92,5 @@ private:
         end
     };
     SliceRangeHandle activeSliceRangeHandle = SliceRangeHandle::none;
+    std::shared_ptr<const AudioClip> waveformAudioClip;
 };

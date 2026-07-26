@@ -18,7 +18,8 @@ public:
     };
 
     bool create(const juce::ValueTree& stateTree, double targetSampleRate,
-                 const std::function<bool()>& shouldAbort);
+                 const std::function<bool()>& shouldAbort,
+                 juce::String* errorMessage = nullptr);
     void clear();
     static int getChainStartIndex(const StateHandler& stateHandler, int chainSliceCount);
     static int getChainStartIndex(const juce::ValueTree& stateTree, int chainSliceCount);
@@ -38,6 +39,8 @@ private:
                                                  juce::AudioBuffer<float>& destination);
     static void normalizeAudioBuffer(juce::AudioBuffer<float>& buffer);
     static void padBufferToLength(juce::AudioBuffer<float>& buffer, int targetSampleCount);
+    static juce::int64 estimateRenderedSampleCount(juce::int64 sourceSampleCount, double sourceSampleRate,
+                                                   double targetSampleRate);
 
     static void applyFadeInOut(juce::AudioBuffer<float>& buffer, double sampleRate, int fadeInMs, int fadeOutMs);
 

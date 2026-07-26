@@ -127,9 +127,9 @@ void SliceListComponent::paintCell(juce::Graphics& g, const int rowNumber, const
     else if (columnId == 2)
         text = sliceTree.getProperty(StateHandler::sliceNameId).toString();
     else if (columnId == 3)
-        text = formatAudioFormat(stateHandler, sliceTree);
+        text = formatAudioFormat(sliceTree);
     else if (columnId == 4)
-        text = formatDuration(stateHandler, sliceTree);
+        text = formatDuration(sliceTree);
     else if (columnId == 5)
         text = sliceTree.getProperty(StateHandler::sliceSourcePathId).toString();
 
@@ -179,6 +179,110 @@ int SliceListComponent::getDragInsertionIndex(const juce::DragAndDropTarget::Sou
 bool SliceListComponent::isInterestedInDragSource(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails)
 {
     return isRowDragFromThisTable(dragSourceDetails);
+}
+
+bool SliceListComponent::hasSupportedAudioFiles(const juce::StringArray& files) const
+{
+    for (const auto& filePath : files)
+    {
+        const juce::File file(filePath);
+        if (file.existsAsFile() && isSupportedAudioFile(file))
+            return true;
+
+        if (file.isDirectory())
+            return true;
+    }
+
+    return false;
+}
+
+bool SliceListComponent::isInterestedInFileDrag(const juce::StringArray& files)
+{
+    return hasSupportedAudioFiles(files);
+}
+
+void SliceListComponent::fileDragEnter(const juce::StringArray& files, int, int)
+{
+    juce::ignoreUnused(files);
+}
+
+void SliceListComponent::fileDragMove(const juce::StringArray& files, int, int)
+{
+    juce::ignoreUnused(files);
+}
+
+void SliceListComponent::fileDragExit(const juce::StringArray& files)
+{
+    juce::ignoreUnused(files);
+}
+
+void SliceListComponent::filesDropped(const juce::StringArray& files, int, int)
+{
+    juce::Array<juce::File> droppedFiles;
+    auto remainingSlots = maxSliceCount - stateHandler.getNumSlices();
+
+    if (remainingSlots <= 0)
+    {
+        showLoadError("The slice list already contains the maximum of 1000 slices.");
+        return;
+    }
+
+    for (const auto& filePath : files)
+    {
+        collectDroppedFiles(juce::File(filePath), droppedFiles, remainingSlots);
+
+        if (remainingSlots <= 0)
+            break;
+    }
+
+    if (! droppedFiles.isEmpty())
+        loadFiles(droppedFiles);
+}
+
+bool SliceListComponent::isSupportedAudioFile(const juce::File& file) const
+{
+    const auto supportedPatterns = audioFileLoader.getSupportedFilePatterns();
+    juce::StringArray wildcardPatterns;
+    wildcardPatterns.addTokens(supportedPatterns, ";", "");
+    wildcardPatterns.trim();
+    wildcardPatterns.removeEmptyStrings();
+
+    const auto fileName = file.getFileName();
+    for (const auto& pattern : wildcardPatterns)
+    {
+        if (fileName.matchesWildcard(pattern, true))
+            return true;
+    }
+
+    return false;
+}
+
+void SliceListComponent::collectDroppedFiles(const juce::File& file, juce::Array<juce::File>& droppedFiles,
+                                             int& remainingSlots) const
+{
+    if (remainingSlots <= 0 || ! file.exists())
+        return;
+
+    if (file.isDirectory())
+    {
+        const auto supportedPatterns = audioFileLoader.getSupportedFilePatterns();
+        for (const auto& entry : juce::RangedDirectoryIterator(file, true, supportedPatterns, juce::File::findFiles))
+        {
+            if (remainingSlots <= 0)
+                break;
+
+            droppedFiles.addIfNotAlreadyThere(entry.getFile());
+            --remainingSlots;
+        }
+
+        return;
+    }
+
+    if (isSupportedAudioFile(file))
+    {
+        droppedFiles.addIfNotAlreadyThere(file);
+        --remainingSlots;
+    }
 }
 
 void SliceListComponent::itemDragEnter(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails)
@@ -324,20 +428,54 @@ void SliceListComponent::showAddFileChooser()
 
 void SliceListComponent::loadFiles(const juce::Array<juce::File>& files)
 {
+    auto remainingSlots = maxSliceCount - stateHandler.getNumSlices();
+    int failedFiles = 0;
+    juce::String firstErrorMessage;
+    int lastLoadedRow = -1;
+
     for (const auto& file : files)
     {
+        if (remainingSlots <= 0)
+            break;
+
         juce::String errorMessage;
         const auto slice = audioFileLoader.loadFile(file, &errorMessage);
 
         if (slice == nullptr)
         {
-            showLoadError(errorMessage);
+            ++failedFiles;
+            if (firstErrorMessage.isEmpty())
+                firstErrorMessage = errorMessage;
             continue;
         }
 
-        const auto row = stateHandler.addSlice(*slice);
-        table.selectRow(row);
+        lastLoadedRow = stateHandler.addSlice(*slice, nullptr, false);
+        --remainingSlots;
     }
+
+    if (lastLoadedRow >= 0)
+        stateHandler.selectSlice(lastLoadedRow);
+
+    juce::String summaryMessage;
+    if (failedFiles > 0)
+    {
+        if (failedFiles == 1)
+            summaryMessage = firstErrorMessage;
+        else
+            summaryMessage = juce::String(failedFiles) + " files could not be loaded."
+                             + (firstErrorMessage.isNotEmpty() ? " First error: " + firstErrorMessage : juce::String());
+    }
+
+    if (remainingSlots <= 0 && files.size() > 0)
+    {
+        if (summaryMessage.isNotEmpty())
+            summaryMessage += " ";
+
+        summaryMessage += "The maximum slice count of 1000 has been reached.";
+    }
+
+    if (summaryMessage.isNotEmpty())
+        showLoadError(summaryMessage);
 }
 
 void SliceListComponent::showLoadError(const juce::String& message)
@@ -347,7 +485,7 @@ void SliceListComponent::showLoadError(const juce::String& message)
                                            message.isNotEmpty() ? message : "The selected file could not be loaded.");
 }
 
-juce::String SliceListComponent::formatDuration(const StateHandler& stateHandler, const juce::ValueTree& sliceTree)
+juce::String SliceListComponent::formatDuration(const juce::ValueTree& sliceTree)
 {
     const auto sampleRate = static_cast<double>(sliceTree.getProperty(StateHandler::sliceSamplerateId, 0.0));
     const auto lengthInSamples = static_cast<juce::int64>(sliceTree.getProperty(StateHandler::sliceNumSamplesId, 0));
@@ -358,7 +496,7 @@ juce::String SliceListComponent::formatDuration(const StateHandler& stateHandler
     return juce::String(static_cast<double>(lengthInSamples) / sampleRate, 2) + "s";
 }
 
-juce::String SliceListComponent::formatAudioFormat(const StateHandler& stateHandler, const juce::ValueTree& sliceTree)
+juce::String SliceListComponent::formatAudioFormat(const juce::ValueTree& sliceTree)
 {
     const auto numChannels = static_cast<int>(sliceTree.getProperty(StateHandler::sliceChannelsId, 0));
     const auto bitrate = static_cast<int>(sliceTree.getProperty(StateHandler::sliceBitrateId, 0));

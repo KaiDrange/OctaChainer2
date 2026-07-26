@@ -439,7 +439,7 @@ bool StateHandler::loadSelectedSliceRangeAudio(juce::AudioBuffer<float>& destina
     return true;
 }
 
-int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager)
+int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager, const bool selectNewSlice)
 {
     ensureDataTree();
 
@@ -457,7 +457,9 @@ int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager)
 
     const auto newIndex = dataTree.getNumChildren();
     dataTree.addChild(sliceTree, -1, undoManager);
-    dataTree.setProperty(selectedSliceId, newIndex, undoManager);
+
+    if (selectNewSlice)
+        dataTree.setProperty(selectedSliceId, newIndex, undoManager);
 
     return newIndex;
 }

@@ -8,6 +8,8 @@
 class AudioFileLoader
 {
 public:
+    static constexpr juce::int64 maxLoadedAudioDataBytes = 16ll * 1024ll * 1024ll;
+
     AudioFileLoader();
 
     std::unique_ptr<Slice> loadFile(const juce::File& file, juce::String* errorMessage = nullptr);

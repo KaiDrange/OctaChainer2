@@ -10,6 +10,7 @@
 class SliceListComponent : public PanelComponent,
                            public juce::TableListBoxModel,
                            public juce::DragAndDropTarget,
+                           public juce::FileDragAndDropTarget,
                            StateHandler::Listener,
                            NumberInputComponent::Listener
 {
@@ -35,7 +36,15 @@ public:
     void itemDragExit(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) override;
     void itemDropped(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) override;
 
+    bool isInterestedInFileDrag(const juce::StringArray& files) override;
+    void fileDragEnter(const juce::StringArray& files, int x, int y) override;
+    void fileDragMove(const juce::StringArray& files, int x, int y) override;
+    void fileDragExit(const juce::StringArray& files) override;
+    void filesDropped(const juce::StringArray& files, int x, int y) override;
+
 private:
+    static constexpr int maxSliceCount = 1000;
+
     struct Column
     {
         int id;
@@ -57,13 +66,16 @@ private:
     int getChainGroupSize() const;
     int getDragInsertionIndex(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) const;
     bool isRowDragFromThisTable(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) const;
+    bool hasSupportedAudioFiles(const juce::StringArray& files) const;
+    bool isSupportedAudioFile(const juce::File& file) const;
+    void collectDroppedFiles(const juce::File& file, juce::Array<juce::File>& droppedFiles, int& remainingSlots) const;
     juce::Colour getRowBackgroundColour(int rowNumber, bool rowIsSelected) const;
     void clearDragIndicator();
     void showAddFileChooser();
     void loadFiles(const juce::Array<juce::File>& files);
     static void showLoadError(const juce::String& message);
-    static juce::String formatDuration(const StateHandler& stateHandler, const juce::ValueTree& sliceTree);
-    static juce::String formatAudioFormat(const StateHandler& stateHandler, const juce::ValueTree& sliceTree);
+    static juce::String formatDuration(const juce::ValueTree& sliceTree);
+    static juce::String formatAudioFormat(const juce::ValueTree& sliceTree);
 
     StateHandler& stateHandler;
     AudioFileLoader audioFileLoader;

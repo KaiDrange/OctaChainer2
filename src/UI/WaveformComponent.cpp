@@ -1,7 +1,5 @@
 #include "WaveformComponent.h"
 
-#include <cmath>
-
 WaveformComponent::WaveformComponent(const Dimension& height, const Dimension& width,
                                      const juce::String& title)
     : PanelComponent(height, width, title)
@@ -38,6 +36,7 @@ void WaveformComponent::setAudioData(const juce::AudioBuffer<float>& audioData, 
         return;
     }
 
+    waveformAudioClip.reset();
     waveformSourceBuffer.makeCopyOf(audioData);
     waveformSegments = segments;
     waveformSampleRate = sampleRate;
@@ -53,9 +52,36 @@ void WaveformComponent::setAudioData(const juce::AudioBuffer<float>& audioData, 
     repaint();
 }
 
+void WaveformComponent::setAudioClip(std::shared_ptr<const AudioClip> audioClip,
+                                     const std::vector<Chain::Segment>& segments,
+                                     const int selectedSegmentIndexToUse)
+{
+    if (audioClip == nullptr || ! audioClip->isValid())
+    {
+        clearAudioData();
+        return;
+    }
+
+    waveformAudioClip = std::move(audioClip);
+    waveformSourceBuffer.setSize(0, 0);
+    waveformSegments = segments;
+    waveformSampleRate = waveformAudioClip->getSampleRate();
+    selectedSegmentIndex = selectedSegmentIndexToUse;
+    sliceStartSample = 0;
+    sliceEndSample = waveformAudioClip->getAudioData().getNumSamples();
+    sliceRangeEnabled = false;
+    activeSliceRangeHandle = SliceRangeHandle::none;
+    playHeadOverlay.setSliceRange(0.0, 1.0);
+    processing = false;
+    processingMessage.clear();
+    playHeadOverlay.setVisible(true);
+    repaint();
+}
+
 void WaveformComponent::setSliceRange(const int startSample, const int endSample)
 {
-    const auto totalSamples = waveformSourceBuffer.getNumSamples();
+    const auto* sourceBuffer = getSourceBuffer();
+    const auto totalSamples = sourceBuffer != nullptr ? sourceBuffer->getNumSamples() : 0;
     if (totalSamples <= 0)
     {
         sliceRangeEnabled = false;
@@ -91,6 +117,7 @@ void WaveformComponent::setSliceRange(const int startSample, const int endSample
 
 void WaveformComponent::clearAudioData()
 {
+    waveformAudioClip.reset();
     waveformSourceBuffer.setSize(0, 0);
     waveformSegments.clear();
     waveformSampleRate = 0.0;
@@ -113,6 +140,7 @@ void WaveformComponent::setProcessingState(const bool isProcessing, juce::String
 
     if (processing)
     {
+        waveformAudioClip.reset();
         waveformSourceBuffer.setSize(0, 0);
         waveformSegments.clear();
         waveformSampleRate = 0.0;
@@ -221,7 +249,8 @@ void WaveformComponent::mouseUp(const juce::MouseEvent&)
 
 void WaveformComponent::drawWaveform(juce::Graphics& g) const
 {
-    if (waveformSourceBuffer.getNumChannels() <= 0 || waveformSourceBuffer.getNumSamples() <= 0)
+    const auto* sourceBuffer = getSourceBuffer();
+    if (sourceBuffer == nullptr || sourceBuffer->getNumChannels() <= 0 || sourceBuffer->getNumSamples() <= 0)
         return;
 
     const auto waveformArea = innerBounds.reduced(4);
@@ -237,7 +266,7 @@ void WaveformComponent::drawWaveform(juce::Graphics& g) const
     if (waveformSegments.size() <= 1 || waveformSampleRate <= 0.0)
     {
         drawChannelCenterlines(g, waveformArea);
-        drawBufferWaveform(g, waveformArea, 0, waveformSourceBuffer.getNumSamples(), StyleSheet::getWaveformColour());
+        drawBufferWaveform(g, waveformArea, 0, sourceBuffer->getNumSamples(), StyleSheet::getWaveformColour());
         return;
     }
 
@@ -257,7 +286,8 @@ void WaveformComponent::drawSegmentWaveform(juce::Graphics& g, const juce::Recta
                                             const int segmentIndex, const int segmentStartSample,
                                             const int segmentSampleCount, const bool isSelectedSegment) const
 {
-    const auto totalSamples = juce::jmax(1, waveformSourceBuffer.getNumSamples());
+    const auto* sourceBuffer = getSourceBuffer();
+    const auto totalSamples = juce::jmax(1, sourceBuffer != nullptr ? sourceBuffer->getNumSamples() : 0);
     const auto segmentStart = juce::jlimit(0, totalSamples, segmentStartSample);
     const auto segmentEnd = juce::jlimit(segmentStart, totalSamples, segmentStartSample + segmentSampleCount);
     const auto clampedSampleCount = segmentEnd - segmentStart;
@@ -294,8 +324,9 @@ void WaveformComponent::drawSegmentWaveform(juce::Graphics& g, const juce::Recta
 
 void WaveformComponent::drawSliceRangeWaveform(juce::Graphics& g, const juce::Rectangle<int>& waveformArea) const
 {
-    const auto totalSamples = waveformSourceBuffer.getNumSamples();
-    const auto numChannels = waveformSourceBuffer.getNumChannels();
+    const auto* sourceBuffer = getSourceBuffer();
+    const auto totalSamples = sourceBuffer != nullptr ? sourceBuffer->getNumSamples() : 0;
+    const auto numChannels = sourceBuffer != nullptr ? sourceBuffer->getNumChannels() : 0;
     if (totalSamples <= 0 || numChannels <= 0)
         return;
 
@@ -322,7 +353,8 @@ void WaveformComponent::drawSliceRangeWaveform(juce::Graphics& g, const juce::Re
 
 void WaveformComponent::drawSliceRangeMarkers(juce::Graphics& g, const juce::Rectangle<int>& waveformArea) const
 {
-    const auto totalSamples = waveformSourceBuffer.getNumSamples();
+    const auto* sourceBuffer = getSourceBuffer();
+    const auto totalSamples = sourceBuffer != nullptr ? sourceBuffer->getNumSamples() : 0;
     if (totalSamples <= 0 || waveformArea.isEmpty())
         return;
 
@@ -358,8 +390,9 @@ void WaveformComponent::drawBufferWaveform(juce::Graphics& g, const juce::Rectan
                                            const int startSample, const int sampleCount,
                                            const juce::Colour waveformColour) const
 {
-    const auto totalSamples = waveformSourceBuffer.getNumSamples();
-    const auto numChannels = waveformSourceBuffer.getNumChannels();
+    const auto* sourceBuffer = getSourceBuffer();
+    const auto totalSamples = sourceBuffer != nullptr ? sourceBuffer->getNumSamples() : 0;
+    const auto numChannels = sourceBuffer != nullptr ? sourceBuffer->getNumChannels() : 0;
     if (waveformArea.isEmpty() || totalSamples <= 0 || numChannels <= 0 || sampleCount <= 0)
         return;
 
@@ -387,7 +420,7 @@ void WaveformComponent::drawBufferWaveform(juce::Graphics& g, const juce::Rectan
         if (channelArea.getHeight() <= 0)
             continue;
 
-        const auto* samples = waveformSourceBuffer.getReadPointer(channel);
+        const auto* samples = sourceBuffer->getReadPointer(channel);
         const auto centreY = static_cast<float>(channelArea.getCentreY());
         const auto verticalScale = juce::jmax(1.0f, static_cast<float>(channelArea.getHeight()) * 0.5f - 2.0f);
 
@@ -424,7 +457,8 @@ void WaveformComponent::updateSliceRangeFromMouse(const juce::Point<int>& positi
     if (waveformArea.isEmpty())
         return;
 
-    const auto totalSamples = waveformSourceBuffer.getNumSamples();
+    const auto* sourceBuffer = getSourceBuffer();
+    const auto totalSamples = sourceBuffer != nullptr ? sourceBuffer->getNumSamples() : 0;
     if (totalSamples <= 0)
         return;
 
@@ -453,7 +487,8 @@ void WaveformComponent::updateSliceRangeFromMouse(const juce::Point<int>& positi
 
 void WaveformComponent::drawChannelCenterlines(juce::Graphics& g, const juce::Rectangle<int>& waveformArea) const
 {
-    const auto numChannels = waveformSourceBuffer.getNumChannels();
+    const auto* sourceBuffer = getSourceBuffer();
+    const auto numChannels = sourceBuffer != nullptr ? sourceBuffer->getNumChannels() : 0;
     if (waveformArea.isEmpty() || numChannels <= 0)
         return;
 
@@ -474,7 +509,8 @@ void WaveformComponent::drawChannelCenterlines(juce::Graphics& g, const juce::Re
 
 int WaveformComponent::sampleToX(const int sample, const juce::Rectangle<int>& waveformArea) const
 {
-    const auto totalSamples = juce::jmax(1, waveformSourceBuffer.getNumSamples());
+    const auto* sourceBuffer = getSourceBuffer();
+    const auto totalSamples = juce::jmax(1, sourceBuffer != nullptr ? sourceBuffer->getNumSamples() : 0);
     return waveformArea.getX() + juce::roundToInt((static_cast<double>(juce::jlimit(0, totalSamples, sample))
                                                    / static_cast<double>(totalSamples))
                                                   * static_cast<double>(waveformArea.getWidth()));
@@ -482,7 +518,8 @@ int WaveformComponent::sampleToX(const int sample, const juce::Rectangle<int>& w
 
 int WaveformComponent::xToSample(const int x, const juce::Rectangle<int>& waveformArea) const
 {
-    const auto totalSamples = juce::jmax(1, waveformSourceBuffer.getNumSamples());
+    const auto* sourceBuffer = getSourceBuffer();
+    const auto totalSamples = juce::jmax(1, sourceBuffer != nullptr ? sourceBuffer->getNumSamples() : 0);
     const auto clampedX = juce::jlimit(waveformArea.getX(), waveformArea.getRight(), x);
     const auto relativeX = clampedX - waveformArea.getX();
     return juce::jlimit(0, totalSamples,
@@ -491,9 +528,21 @@ int WaveformComponent::xToSample(const int x, const juce::Rectangle<int>& wavefo
                                          * static_cast<double>(totalSamples)));
 }
 
+const juce::AudioBuffer<float>* WaveformComponent::getSourceBuffer() const
+{
+    if (waveformAudioClip != nullptr)
+        return &waveformAudioClip->getAudioData();
+
+    if (waveformSourceBuffer.getNumChannels() > 0 && waveformSourceBuffer.getNumSamples() > 0)
+        return &waveformSourceBuffer;
+
+    return nullptr;
+}
+
 int WaveformComponent::getSegmentIndexAtPoint(const juce::Point<int> position) const
 {
-    if (waveformSegments.empty() || waveformSourceBuffer.getNumSamples() <= 0)
+    const auto* sourceBuffer = getSourceBuffer();
+    if (waveformSegments.empty() || sourceBuffer == nullptr || sourceBuffer->getNumSamples() <= 0)
         return -1;
 
     const auto waveformArea = innerBounds.reduced(4);
@@ -506,7 +555,7 @@ int WaveformComponent::getSegmentIndexAtPoint(const juce::Point<int> position) c
         if (segment.sampleCount <= 0)
             continue;
 
-        const auto totalSamples = juce::jmax(1, waveformSourceBuffer.getNumSamples());
+        const auto totalSamples = juce::jmax(1, sourceBuffer->getNumSamples());
         const auto segmentStart = juce::jlimit(0, totalSamples, segment.startSample);
         const auto segmentEnd = juce::jlimit(segmentStart, totalSamples, segment.startSample + segment.sampleCount);
         if (segmentEnd <= segmentStart)
@@ -530,7 +579,8 @@ int WaveformComponent::getSegmentIndexAtPoint(const juce::Point<int> position) c
 
 int WaveformComponent::getSliceRangeHandleAtPoint(const juce::Point<int> position) const
 {
-    if (! sliceRangeEnabled || waveformSourceBuffer.getNumSamples() <= 0)
+    const auto* sourceBuffer = getSourceBuffer();
+    if (! sliceRangeEnabled || sourceBuffer == nullptr || sourceBuffer->getNumSamples() <= 0)
         return static_cast<int>(SliceRangeHandle::none);
 
     const auto waveformArea = innerBounds.reduced(4);

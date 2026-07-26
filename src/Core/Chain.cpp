@@ -1,3 +1,5 @@
+#include <limits>
+
 #include "Chain.h"
 
 
@@ -229,9 +231,13 @@ void Chain::applyFadeInOut(juce::AudioBuffer<float>& buffer, const double sample
 }
 
 bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRate,
-                   const std::function<bool()>& shouldAbort)
+                   const std::function<bool()>& shouldAbort,
+                   juce::String* errorMessage)
 {
     clear();
+
+    if (errorMessage != nullptr)
+        errorMessage->clear();
 
     if (shouldAbort && shouldAbort())
         return false;
@@ -251,16 +257,19 @@ bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRa
     if (startIndex >= endIndex)
         return false;
 
-    struct RenderedSlice
+    struct RenderPlan
     {
-        juce::AudioBuffer<float> audioData;
-        int startSample = 0;
+        int sliceIndex = 0;
         int sampleCount = 0;
     };
 
-    int totalSampleCount = 0;
-    std::vector<RenderedSlice> renderedSlices;
-    renderedSlices.reserve(static_cast<size_t>(endIndex - startIndex));
+    constexpr juce::int64 maxRenderedChainWorkingSetBytes = 512ll * 1024ll * 1024ll;
+
+    juce::int64 totalSourceBytes = 0;
+    juce::int64 totalSampleCount = 0;
+    int largestSliceSampleCount = 0;
+    std::vector<RenderPlan> renderPlan;
+    renderPlan.reserve(static_cast<size_t>(endIndex - startIndex));
 
     const auto normalizationValue = settingsTree.getProperty(StateHandler::normalizationId, "none").toString();
     const bool shouldNormalizeSlice = normalizationValue == "slices";
@@ -279,17 +288,91 @@ bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRa
         if (!sliceTree.isValid())
             continue;
 
+        const auto numChannels = static_cast<int>(sliceTree.getProperty(StateHandler::sliceChannelsId, 0));
+        const auto sourceSampleRate = static_cast<double>(sliceTree.getProperty(StateHandler::sliceSamplerateId, 0.0));
+        const auto numSamples = static_cast<juce::int64>(sliceTree.getProperty(StateHandler::sliceNumSamplesId, 0));
+        if (numChannels <= 0 || sourceSampleRate <= 0.0 || numSamples <= 0)
+            continue;
+
+        const auto* audioDataValue = sliceTree.getPropertyPointer(StateHandler::sliceAudioDataId);
+        if (audioDataValue == nullptr || audioDataValue->getBinaryData() == nullptr)
+            continue;
+
+        const auto sourceBytes = static_cast<juce::int64>(numChannels)
+                                * numSamples
+                                * static_cast<juce::int64>(sizeof(float));
+        if (sourceBytes <= 0)
+            continue;
+
+        const auto renderedSampleCount = estimateRenderedSampleCount(numSamples, sourceSampleRate, targetSampleRate);
+        if (renderedSampleCount <= 0)
+            continue;
+
+        totalSourceBytes += sourceBytes;
+        totalSampleCount += renderedSampleCount;
+        largestSliceSampleCount = juce::jmax(largestSliceSampleCount, static_cast<int>(juce::jmin(renderedSampleCount,
+                                                                                                 static_cast<juce::int64>(std::numeric_limits<int>::max()))));
+        renderPlan.push_back({ sliceIndex, static_cast<int>(juce::jmin(renderedSampleCount,
+                                                                        static_cast<juce::int64>(std::numeric_limits<int>::max()))) });
+    }
+
+    if (renderPlan.empty() || outputChannelCount <= 0 || totalSampleCount <= 0)
+    {
+        clear();
+        return false;
+    }
+
+    if (shouldPadSlices)
+    {
+        totalSampleCount = static_cast<juce::int64>(largestSliceSampleCount) * static_cast<juce::int64>(renderPlan.size());
+    }
+
+    if (totalSampleCount <= 0 || totalSampleCount > static_cast<juce::int64>(std::numeric_limits<int>::max()))
+    {
+        clear();
+        if (errorMessage != nullptr)
+            *errorMessage = "The rendered chain is too large to build in memory.";
+        return false;
+    }
+
+    const auto estimatedOutputBytes = totalSampleCount
+                                      * static_cast<juce::int64>(outputChannelCount)
+                                      * static_cast<juce::int64>(sizeof(float));
+    if (estimatedOutputBytes + totalSourceBytes > maxRenderedChainWorkingSetBytes)
+    {
+        clear();
+        if (errorMessage != nullptr)
+            *errorMessage = "The selected chain would use too much memory to render safely.";
+        return false;
+    }
+
+    juce::AudioBuffer<float> output;
+    output.setSize(outputChannelCount, static_cast<int>(totalSampleCount), false, false, true);
+    output.clear();
+
+    segments.reserve(renderPlan.size());
+    juce::int64 currentStartSample = 0;
+
+    for (size_t i = 0; i < renderPlan.size(); ++i)
+    {
+        if (shouldAbort && shouldAbort())
+            return false;
+
+        const auto sliceTree = dataTree.getChild(renderPlan[i].sliceIndex);
+        if (! sliceTree.isValid())
+            continue;
+
         juce::AudioBuffer<float> sliceBuffer;
         double sourceSampleRate = 0.0;
-        if (!loadSliceRange(sliceTree, sliceBuffer, sourceSampleRate))
+        if (! loadSliceRange(sliceTree, sliceBuffer, sourceSampleRate))
             continue;
 
         juce::AudioBuffer<float> renderedBuffer;
-        if (!resampleSliceToTargetRate(sliceBuffer, sourceSampleRate, targetSampleRate, renderedBuffer))
+        if (! resampleSliceToTargetRate(sliceBuffer, sourceSampleRate, targetSampleRate, renderedBuffer))
             continue;
 
         juce::AudioBuffer<float> channelMatchedBuffer;
-        if (!renderBufferToTargetChannelCount(renderedBuffer, outputChannelCount, channelMatchedBuffer))
+        if (! renderBufferToTargetChannelCount(renderedBuffer, outputChannelCount, channelMatchedBuffer))
             continue;
 
         if (shouldNormalizeSlice)
@@ -301,59 +384,25 @@ bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRa
         if (renderedSampleCount <= 0)
             continue;
 
-        const auto startSample = totalSampleCount;
-        totalSampleCount += renderedSampleCount;
-        renderedSlices.push_back({ std::move(channelMatchedBuffer), startSample, renderedSampleCount });
-    }
+        if (shouldPadSlices)
+            padBufferToLength(channelMatchedBuffer, largestSliceSampleCount);
 
-    if (renderedSlices.empty() || outputChannelCount <= 0 || totalSampleCount <= 0)
-    {
-        clear();
-        return false;
-    }
+        const auto startSample = shouldPadSlices
+            ? static_cast<int>(static_cast<juce::int64>(i) * largestSliceSampleCount)
+            : static_cast<int>(currentStartSample);
+        const auto sampleCount = shouldPadSlices ? largestSliceSampleCount : renderedSampleCount;
 
-    int largestSliceSampleCount = 0;
-    if (shouldPadSlices)
-    {
-        for (const auto& renderedSlice : renderedSlices)
-            largestSliceSampleCount = juce::jmax(largestSliceSampleCount, renderedSlice.sampleCount);
-    }
-
-    if (shouldPadSlices && largestSliceSampleCount <= 0)
-    {
-        clear();
-        return false;
-    }
-
-    if (shouldPadSlices)
-    {
-        totalSampleCount = 0;
-        for (auto& renderedSlice : renderedSlices)
-        {
-            padBufferToLength(renderedSlice.audioData, largestSliceSampleCount);
-            renderedSlice.sampleCount = renderedSlice.audioData.getNumSamples();
-            renderedSlice.startSample = totalSampleCount;
-            totalSampleCount += renderedSlice.sampleCount;
-        }
-    }
-
-    juce::AudioBuffer<float> output;
-    output.setSize(outputChannelCount, totalSampleCount, false, false, true);
-    output.clear();
-
-    segments.reserve(renderedSlices.size());
-    for (size_t i = 0; i < renderedSlices.size(); ++i)
-    {
-        const auto& renderedSlice = renderedSlices[i].audioData;
-        const auto sourceSamples = renderedSlices[i].sampleCount;
-        segments.push_back({ startIndex + static_cast<int>(i),
-                             renderedSlices[i].startSample,
-                             sourceSamples });
+        segments.push_back({ renderPlan[i].sliceIndex,
+                             startSample,
+                             sampleCount });
 
         for (int channel = 0; channel < outputChannelCount; ++channel)
         {
-            output.copyFrom(channel, renderedSlices[i].startSample, renderedSlice, channel, 0, sourceSamples);
+            output.copyFrom(channel, startSample, channelMatchedBuffer, channel, 0, sampleCount);
         }
+
+        if (! shouldPadSlices)
+            currentStartSample += renderedSampleCount;
     }
 
     if (shouldNormalizeChain)
@@ -361,4 +410,18 @@ bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRa
 
     audioClip = std::make_shared<AudioClip>(std::move(output), targetSampleRate);
     return true;
+}
+
+juce::int64 Chain::estimateRenderedSampleCount(const juce::int64 sourceSampleCount, const double sourceSampleRate,
+                                               const double targetSampleRate)
+{
+    if (sourceSampleCount <= 0 || sourceSampleRate <= 0.0 || targetSampleRate <= 0.0)
+        return 0;
+
+    if (sourceSampleRate == targetSampleRate)
+        return sourceSampleCount;
+
+    return juce::jmax<juce::int64>(1, std::llround(static_cast<double>(sourceSampleCount)
+                                                                             * targetSampleRate
+                                                                             / sourceSampleRate));
 }

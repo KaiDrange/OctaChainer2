@@ -229,7 +229,8 @@ void MainComponent::requestChainRender()
     chainRenderCondition.notify_one();
 }
 
-void MainComponent::finishChainRender(const std::uint64_t requestId, const std::shared_ptr<Chain>& renderedChain)
+void MainComponent::finishChainRender(const std::uint64_t requestId, const std::shared_ptr<Chain>& renderedChain,
+                                      juce::String renderError)
 {
     if (requestId != chainRenderLatestRequestId.load(std::memory_order_acquire))
         return;
@@ -239,6 +240,10 @@ void MainComponent::finishChainRender(const std::uint64_t requestId, const std::
         chain.clear();
         chainWaveformComponent.clearAudioData();
         audioPanelComponent.setChainReady(false);
+
+        if (renderError.isNotEmpty())
+            showChainRenderError(renderError);
+
         return;
     }
 
@@ -247,8 +252,7 @@ void MainComponent::finishChainRender(const std::uint64_t requestId, const std::
     if (chain.isValid())
     {
         const auto selectedSliceIndex = stateHandler.getSelectedSliceIndex();
-        chainWaveformComponent.setAudioData(chain.getAudioData(),
-                                            chain.getSampleRate(),
+        chainWaveformComponent.setAudioClip(chain.getAudioClip(),
                                             chain.getSegments(),
                                             selectedSliceIndex);
         audioPanelComponent.setChainReady(true);
@@ -258,6 +262,13 @@ void MainComponent::finishChainRender(const std::uint64_t requestId, const std::
         chainWaveformComponent.clearAudioData();
         audioPanelComponent.setChainReady(false);
     }
+}
+
+void MainComponent::showChainRenderError(const juce::String& message)
+{
+    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                                           "Could not render chain",
+                                           message);
 }
 
 bool MainComponent::isSelectedSliceInCurrentChain() const
@@ -305,27 +316,28 @@ void MainComponent::chainRenderThreadLoop()
                 || chainRenderLatestRequestId.load(std::memory_order_acquire) != requestId;
         };
 
-        const auto completed = renderedChain->create(pendingState, targetSampleRate, shouldAbort);
+        juce::String renderError;
+        const auto completed = renderedChain->create(pendingState, targetSampleRate, shouldAbort, &renderError);
 
         const juce::Component::SafePointer<MainComponent> safeThis(this);
         if (completed)
         {
-            juce::MessageManager::callAsync([safeThis, requestId, renderedChain]() mutable
+            juce::MessageManager::callAsync([safeThis, requestId, renderedChain, renderError = std::move(renderError)]() mutable
             {
                 if (safeThis == nullptr)
                     return;
 
-                safeThis->finishChainRender(requestId, renderedChain);
+                safeThis->finishChainRender(requestId, renderedChain, renderError);
             });
         }
         else if (! shouldAbort())
         {
-            juce::MessageManager::callAsync([safeThis, requestId]() mutable
+            juce::MessageManager::callAsync([safeThis, requestId, renderError = std::move(renderError)]() mutable
             {
                 if (safeThis == nullptr)
                     return;
 
-                safeThis->finishChainRender(requestId, nullptr);
+                safeThis->finishChainRender(requestId, nullptr, renderError);
             });
         }
     }
