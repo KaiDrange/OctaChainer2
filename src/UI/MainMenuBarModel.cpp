@@ -2,14 +2,15 @@
 
 #include <utility>
 
-MainMenuBarModel::MainMenuBarModel(Action onQuit, Action onProjectSave, Action onProjectLoad,
+MainMenuBarModel::MainMenuBarModel(Action onQuit, Action onProjectSave, Action onProjectLoad, Action onOtImport,
                                    Action onAudioSettings, Action onDefaultFolders, Action onHelp)
     : onQuit(std::move(onQuit)),
       onAudioSettings(std::move(onAudioSettings)),
       onDefaultSettings(std::move(onDefaultFolders)),
       onHelp(std::move(onHelp)),
       onProjectSave(std::move(onProjectSave)),
-      onProjectLoad(std::move(onProjectLoad))
+      onProjectLoad(std::move(onProjectLoad)),
+      onOtImport(std::move(onOtImport))
 {
 }
 
@@ -27,6 +28,7 @@ juce::PopupMenu MainMenuBarModel::getMenuForIndex(int topLevelMenuIndex, const j
     {
         menu.addItem(2, "Save project");
         menu.addItem(3, "Load project");
+        menu.addItem(4, "Import OT file");
         menu.addItem(1, "Quit");
     }
     else if(menuName == "Options")
@@ -58,6 +60,10 @@ void MainMenuBarModel::menuItemSelected(const int menuItemID, int topLevelMenuIn
     else if (menuItemID == 3 && onProjectLoad) // Load project
     {
         onProjectLoad();
+    }
+    else if (menuItemID == 4 && onOtImport)
+    {
+        onOtImport();
     }
     else if (menuItemID == 20 && onAudioSettings)
     {

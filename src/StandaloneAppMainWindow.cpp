@@ -12,6 +12,7 @@ StandaloneAppMainWindow::StandaloneAppMainWindow(const juce::String& name)
           [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); },
           [this] { saveProject(); },
           [this] { loadProject(); },
+          [this] { importOtFile(); },
           [this] { showAudioSettings(); },
           [this] { showDefaultSettings(); }
       )
@@ -437,5 +438,28 @@ void StandaloneAppMainWindow::loadProject()
                 loadDefaultSettings();
             }
         }
+    });
+}
+
+void StandaloneAppMainWindow::importOtFile()
+{
+    const auto initialFolder = stateHandler.getStateValue(
+        StateHandler::defaultExportFolderId,
+        juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
+    fileChooser = std::make_unique<juce::FileChooser>("Import OT file", juce::File(initialFolder), "*.ot");
+    constexpr auto browserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+    const juce::Component::SafePointer<StandaloneAppMainWindow> safeThis(this);
+    fileChooser->launchAsync(browserFlags, [safeThis](const juce::FileChooser& chooser)
+    {
+        if (safeThis == nullptr)
+            return;
+
+        const auto otFile = chooser.getResult();
+        if (otFile == juce::File{})
+            return;
+
+        if (safeThis->mainComponent != nullptr)
+            safeThis->mainComponent->importOtFile(otFile);
     });
 }

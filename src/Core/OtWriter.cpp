@@ -28,16 +28,7 @@ bool OtWriter::write(const std::uint32_t totalSamples) const
         return false;
 
     const auto payload = buildPayload(totalSamples);
-    juce::FileOutputStream stream(outputFile);
-
-    if (! stream.openedOk())
-        return false;
-
-    if (! stream.write(payload.data(), payload.size()))
-        return false;
-
-    stream.flush();
-    return true;
+    return outputFile.replaceWithData(payload.data(), payload.size());
 }
 
 void OtWriter::addSlice(const std::uint32_t start, const std::uint32_t end)
@@ -76,7 +67,7 @@ std::array<std::uint8_t, OtFileFormat::otFileSize> OtWriter::buildPayload(const 
     writeU32BE(writePos, 0);
 
     const auto sliceCount = (slices.size() > 1)
-                                ? juce::jmin(slices.size(), OtFileFormat::maxSliceCount)
+                                ? static_cast<std::uint32_t>(juce::jmin(slices.size(), OtFileFormat::maxSliceCount))
                                 : 0u;
 
     for (std::size_t i = 0; i < OtFileFormat::maxSliceCount; ++i)
@@ -87,7 +78,7 @@ std::array<std::uint8_t, OtFileFormat::otFileSize> OtWriter::buildPayload(const 
         writeU32BE(writePos, slice.loopPoint);
     }
 
-    writeU32BE(writePos, sliceCount);
+    writeU32BE(writePos, static_cast<std::uint32_t>(sliceCount));
 
     const auto sum = checksum(payload.data());
     writeU16BE(writePos, sum);

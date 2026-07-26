@@ -33,6 +33,7 @@ public:
 
     void saveProject();
     void loadProject();
+    void importOtFile();
 private:
     void loadAudioSettings();
     void loadDefaultSettings();

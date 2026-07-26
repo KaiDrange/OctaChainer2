@@ -8,7 +8,7 @@ class MainMenuBarModel : public juce::MenuBarModel
 public:
     using Action = std::function<void()>;
 
-    MainMenuBarModel(Action onQuit, Action onProjectSave, Action onProjectLoad,
+    MainMenuBarModel(Action onQuit, Action onProjectSave, Action onProjectLoad, Action onOtImport,
                      Action onAudioSettings, Action onDefaultSettings, Action onHelp = {});
     juce::StringArray getMenuBarNames() override;
     juce::PopupMenu getMenuForIndex(int topLevelMenuIndex, const juce::String& menuName) override;
@@ -21,4 +21,5 @@ private:
     Action onHelp;
     Action onProjectSave;
     Action onProjectLoad;
+    Action onOtImport;
 };

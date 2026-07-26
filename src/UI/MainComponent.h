@@ -10,6 +10,7 @@
 
 #include "../Core/AudioPlaybackEngine.h"
 #include "../Core/Chain.h"
+#include "../Core/OtReader.h"
 #include "../Core/StateHandler.h"
 #include "AudioPanelComponent.h"
 #include "SliceListComponent.h"
@@ -20,6 +21,7 @@
 
 class MainComponent : public juce::Component,
                       public juce::DragAndDropContainer,
+                      public juce::FileDragAndDropTarget,
                       public juce::Timer,
                       StateHandler::Listener,
                       AudioPanelComponent::Listener,
@@ -66,11 +68,14 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    bool isInterestedInFileDrag(const juce::StringArray& files) override;
+    void filesDropped(const juce::StringArray& files, int x, int y) override;
     void stateChanged(const StateHandler::StateChange& change) override;
     void transportButtonPressed(TransportButtonComponent::TransportEvent event) override;
     void chainExportRequested() override;
     void waveformSegmentClicked(int segmentIndex, int sliceIndex) override;
     void waveformSliceRangeChanged(int startSample, int endSample) override;
+    void importOtFile(const juce::File& otFile);
     std::shared_ptr<const AudioClip> getChainAudioClip() const { return chain.getAudioClip(); }
 
 private:
@@ -88,6 +93,7 @@ private:
     void stopChainRenderThread();
     bool isSelectedSliceInCurrentChain() const;
     bool isChainRenderRelevantSetting(const StateHandler::StateChange& change) const;
+    bool isOtFilePath(const juce::String& path) const;
     static void showChainRenderError(const juce::String& message);
     static OtFileFormat::Stretch_t getOtStretchSetting(const juce::ValueTree& settingsTree);
     static OtFileFormat::Loop_t getOtLoopSetting(const juce::ValueTree& settingsTree);
@@ -99,6 +105,7 @@ private:
     StyleSheet style;
     StateHandler& stateHandler;
     AudioPlaybackEngine& audioPlaybackEngine;
+    std::shared_ptr<OtReader> otReader;
     Chain chain;
     SliceListComponent sampleListComponent;
     SettingsPanelComponent settingsPanelComponent;

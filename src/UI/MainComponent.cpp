@@ -4,6 +4,7 @@
 MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngine& audioPlaybackEngineToUse)
     : stateHandler(stateHandlerToUse),
       audioPlaybackEngine(audioPlaybackEngineToUse),
+      otReader(std::make_shared<OtReader>()),
       sampleListComponent(PanelComponent::Dimension::percentage(sampleListHeightPercentage, sampleListMinHeight),
                           PanelComponent::Dimension::percentage(sampleListWidthPercentage),
                           stateHandler),
@@ -88,6 +89,40 @@ void MainComponent::resized()
 
     sliceWaveformComponent.setBounds(bottomBand.removeFromTop(sliceHeight));
     chainWaveformComponent.setBounds(bottomBand);
+}
+
+bool MainComponent::isOtFilePath(const juce::String& path) const
+{
+    return juce::File(path).getFileExtension().equalsIgnoreCase(".ot");
+}
+
+bool MainComponent::isInterestedInFileDrag(const juce::StringArray& files)
+{
+    for (int i = 0; i < files.size(); ++i)
+    {
+        if (isOtFilePath(files[i]))
+            return true;
+    }
+
+    return false;
+}
+
+void MainComponent::filesDropped(const juce::StringArray& files, int, int)
+{
+    for (int i = 0; i < files.size(); ++i)
+    {
+        if (isOtFilePath(files[i]))
+        {
+            importOtFile(juce::File(files[i]));
+            break;
+        }
+    }
+}
+
+void MainComponent::importOtFile(const juce::File& otFile)
+{
+    if (otReader != nullptr)
+        otReader->importOtFile(otFile, stateHandler, this);
 }
 
 void MainComponent::stateChanged(const StateHandler::StateChange& change)
@@ -529,7 +564,7 @@ bool MainComponent::writeOtFile(const juce::File& wavFile, const juce::ValueTree
                            getOtStretchSetting(settingsTree),
                            getOtTrigQuantSetting(settingsTree),
                            gain,
-                           tempo);
+                           tempo * 4);
 
     for (const auto& segment : exportChain.getSegments())
         writer.addSlice(static_cast<std::uint32_t>(segment.startSample),
