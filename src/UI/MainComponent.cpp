@@ -1,5 +1,7 @@
 #include "MainComponent.h"
 
+#include "../Core/AudioUtil.h"
+
 MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngine& audioPlaybackEngineToUse)
     : stateHandler(stateHandlerToUse),
       audioPlaybackEngine(audioPlaybackEngineToUse),
@@ -29,6 +31,7 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngin
     stateHandler.addListener(this);
     audioPlaybackEngine.addActionListener(&audioPanelComponent);
     audioPanelComponent.addListener(this);
+    settingsPanelComponent.addListener(this);
     sliceWaveformComponent.addListener(this);
     chainWaveformComponent.addListener(this);
     updateSliceWaveform();
@@ -48,6 +51,7 @@ MainComponent::~MainComponent()
     stopTimer();
     stateHandler.removeListener(this);
     audioPanelComponent.removeListener(this);
+    settingsPanelComponent.removeListener(this);
     sliceWaveformComponent.removeListener(this);
     chainWaveformComponent.removeListener(this);
     setLookAndFeel(nullptr);
@@ -132,6 +136,11 @@ void MainComponent::transportButtonPressed(const TransportButtonComponent::Trans
     sendTransportEvent(event);
 }
 
+void MainComponent::chainExportRequested()
+{
+    saveChainToFile();
+}
+
 void MainComponent::waveformSegmentClicked(const int segmentIndex, const int sliceIndex)
 {
     juce::ignoreUnused(segmentIndex);
@@ -183,8 +192,158 @@ void MainComponent::updateSliceWaveform()
 
 void MainComponent::updateChainWaveform()
 {
-    audioPlaybackEngine.stop();
-    requestChainRender();
+    requestChainRender(true);
+}
+
+void MainComponent::saveChainToFile()
+{
+    const juce::File defaultFolder(stateHandler.getStateValue(
+        StateHandler::defaultExportFolderId,
+        juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()));
+
+    chainExportChooser = std::make_unique<juce::FileChooser>("Save chain as", defaultFolder.getChildFile("chain.wav"), "*.wav");
+    constexpr auto browserFlags = juce::FileBrowserComponent::saveMode
+                                  | juce::FileBrowserComponent::canSelectFiles
+                                  | juce::FileBrowserComponent::warnAboutOverwriting;
+
+    const juce::Component::SafePointer<MainComponent> safeThis(this);
+    chainExportChooser->launchAsync(browserFlags, [safeThis](const juce::FileChooser& chooser)
+    {
+        if (safeThis == nullptr)
+            return;
+
+        auto file = chooser.getResult();
+        if (file == juce::File{})
+            return;
+
+        file = file.withFileExtension(".wav");
+
+        auto stateXml = std::unique_ptr<juce::XmlElement>(safeThis->stateHandler.createXml());
+        const auto targetSampleRate = static_cast<double>(safeThis->stateHandler.getStateValue<int>(
+            StateHandler::samplerateId,
+            44100));
+        const auto bitDepth = safeThis->stateHandler.getStateValue<int>(StateHandler::bitDepthId, 16);
+        const auto playbackClip = safeThis->audioPlaybackEngine.getCurrentClip();
+        const auto chainClip = safeThis->chain.getAudioClip();
+
+        if (playbackClip != nullptr && playbackClip == chainClip)
+            safeThis->audioPlaybackEngine.stop();
+
+        safeThis->cancelChainRender();
+        safeThis->clearPlaybackChain();
+
+        std::thread([safeThis, file, stateXml = std::move(stateXml), targetSampleRate, bitDepth]() mutable
+        {
+            juce::String errorMessage;
+            bool success = false;
+
+            if (safeThis != nullptr)
+            {
+                const auto baseState = stateXml != nullptr ? juce::ValueTree::fromXml(*stateXml) : juce::ValueTree{};
+                const auto settingsTree = baseState.getChildWithName(StateHandler::settingsId);
+                const auto dataTree = baseState.getChildWithName(StateHandler::dataId);
+                const auto numSlices = dataTree.isValid() ? dataTree.getNumChildren() : 0;
+                const auto maxSlicesPerChain = juce::jmax(1, static_cast<int>(settingsTree.getProperty(
+                    StateHandler::chainMaxLengthId,
+                    static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue))));
+                const auto chainCount = juce::jmax(1, (numSlices + maxSlicesPerChain - 1) / maxSlicesPerChain);
+
+                success = true;
+                for (int chainIndex = 0; chainIndex < chainCount; ++chainIndex)
+                {
+                    auto exportState = stateXml != nullptr ? juce::ValueTree::fromXml(*stateXml) : juce::ValueTree{};
+                    auto exportDataTree = exportState.getChildWithName(StateHandler::dataId);
+                    if (exportDataTree.isValid())
+                    {
+                        const auto startSlice = chainIndex * maxSlicesPerChain;
+                        exportDataTree.setProperty(StateHandler::selectedSliceId, startSlice, nullptr);
+                    }
+
+                    const auto exportFile = chainCount > 1
+                        ? file.getSiblingFile(file.getFileNameWithoutExtension() + "_" + juce::String(chainIndex + 1)
+                                              + file.getFileExtension())
+                        : file;
+
+                    if (! MainComponent::exportChainToFile(exportFile, exportState, targetSampleRate, bitDepth, &errorMessage))
+                    {
+                        success = false;
+                        if (chainCount > 1 && errorMessage.isNotEmpty())
+                        {
+                            errorMessage = "Failed to save " + exportFile.getFileName() + ": " + errorMessage;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            juce::MessageManager::callAsync([safeThis, success, errorMessage = std::move(errorMessage)]() mutable
+            {
+                if (! success && safeThis != nullptr)
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                                                           "Could not save chain",
+                                                           errorMessage.isNotEmpty() ? errorMessage : "The chain could not be rendered.");
+                }
+
+                if (safeThis != nullptr)
+                    safeThis->requestChainRender(false);
+            });
+        }).detach();
+    });
+}
+
+bool MainComponent::exportChainToFile(const juce::File& wavFile, const juce::ValueTree& exportState,
+                                      const double targetSampleRate, const int bitDepth,
+                                      juce::String* errorMessage)
+{
+    if (wavFile == juce::File{} || targetSampleRate <= 0.0)
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = "Invalid output file or sample rate.";
+        return false;
+    }
+
+    Chain exportChain;
+    juce::String renderError;
+    const auto completed = exportChain.create(exportState, targetSampleRate, [] { return false; }, &renderError);
+
+    if (! completed || ! exportChain.isValid())
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = renderError.isNotEmpty() ? renderError : "The chain could not be rendered.";
+        return false;
+    }
+
+    juce::String writeError;
+    if (! AudioUtil::writeWavFile(wavFile, exportChain.getAudioData(), targetSampleRate, bitDepth, &writeError))
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = writeError.isNotEmpty() ? writeError : "The WAV file could not be written.";
+        return false;
+    }
+
+    return true;
+}
+
+void MainComponent::clearPlaybackChain()
+{
+    chain.clear();
+    chainWaveformComponent.clearAudioData();
+    audioPanelComponent.setChainReady(false);
+}
+
+void MainComponent::cancelChainRender()
+{
+    chainRenderLatestRequestId.fetch_add(1, std::memory_order_acq_rel);
+    {
+        const std::scoped_lock lock(chainRenderMutex);
+        chainRenderHasPending = false;
+        chainRenderPendingState = {};
+        chainRenderPendingSampleRate = 0.0;
+        chainRenderPendingRequestId = chainRenderLatestRequestId.load(std::memory_order_acquire);
+    }
+
+    chainRenderCondition.notify_all();
 }
 
 void MainComponent::refreshChainWaveformSelection()
@@ -192,25 +351,18 @@ void MainComponent::refreshChainWaveformSelection()
     chainWaveformComponent.setSelectedSegmentIndex(stateHandler.getSelectedSliceIndex());
 }
 
-void MainComponent::requestChainRender()
+void MainComponent::requestChainRender(const bool stopPlayback)
 {
+    if (stopPlayback)
+        audioPlaybackEngine.stop();
+
     const auto targetSampleRate = audioPlaybackEngine.deviceSampleRate;
     const auto numSlices = stateHandler.getNumSlices();
 
     if (targetSampleRate <= 0.0 || numSlices <= 0)
     {
-        chainRenderLatestRequestId.fetch_add(1, std::memory_order_acq_rel);
-        {
-            const std::scoped_lock lock(chainRenderMutex);
-            chainRenderHasPending = false;
-            chainRenderPendingState = {};
-            chainRenderPendingSampleRate = 0.0;
-            chainRenderPendingRequestId = chainRenderLatestRequestId.load(std::memory_order_acquire);
-        }
-
-        chain.clear();
-        chainWaveformComponent.clearAudioData();
-        audioPanelComponent.setChainReady(false);
+        cancelChainRender();
+        clearPlaybackChain();
         return;
     }
 
@@ -223,7 +375,7 @@ void MainComponent::requestChainRender()
         chainRenderHasPending = true;
     }
 
-    chain.clear();
+    clearPlaybackChain();
     chainWaveformComponent.setProcessingState(true);
     audioPanelComponent.setChainReady(false);
     chainRenderCondition.notify_one();

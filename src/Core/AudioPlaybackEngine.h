@@ -14,6 +14,7 @@ public:
     void stop();
     void ProcessBlock(juce::AudioBuffer<float>& buffer);
 
+    [[nodiscard]] std::shared_ptr<const AudioClip> getCurrentClip() const;
     void sendPlaybackStoppedAction() const;
     double getCurrentPlaybackPositionFactor() const;
 

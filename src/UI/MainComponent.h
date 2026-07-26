@@ -22,6 +22,7 @@ class MainComponent : public juce::Component,
                       public juce::Timer,
                       StateHandler::Listener,
                       AudioPanelComponent::Listener,
+                      SettingsPanelComponent::Listener,
                       WaveformComponent::Listener
 {
 public:
@@ -66,6 +67,7 @@ public:
     void resized() override;
     void stateChanged(const StateHandler::StateChange& change) override;
     void transportButtonPressed(TransportButtonComponent::TransportEvent event) override;
+    void chainExportRequested() override;
     void waveformSegmentClicked(int segmentIndex, int sliceIndex) override;
     void waveformSliceRangeChanged(int startSample, int endSample) override;
     std::shared_ptr<const AudioClip> getChainAudioClip() const { return chain.getAudioClip(); }
@@ -74,7 +76,12 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 
     void updateSliceWaveform();
-    void requestChainRender();
+    void cancelChainRender();
+    void requestChainRender(bool stopPlayback);
+    void clearPlaybackChain();
+    void saveChainToFile();
+    static bool exportChainToFile(const juce::File& wavFile, const juce::ValueTree& exportState, double targetSampleRate,
+                                  int bitDepth, juce::String* errorMessage);
     void finishChainRender(std::uint64_t requestId, const std::shared_ptr<Chain>& renderedChain, juce::String renderError = {});
     void chainRenderThreadLoop();
     void stopChainRenderThread();
@@ -100,6 +107,7 @@ private:
     double chainRenderPendingSampleRate = 0.0;
     std::uint64_t chainRenderPendingRequestId = 0;
     std::atomic<std::uint64_t> chainRenderLatestRequestId{0};
+    std::unique_ptr<juce::FileChooser> chainExportChooser;
 
     void sendTransportEvent(TransportButtonComponent::TransportEvent event);
     juce::ListenerList<Listener> listeners;

@@ -74,6 +74,11 @@ void AudioPlaybackEngine::ProcessBlock(juce::AudioBuffer<float>& buffer)
         stop();
 }
 
+std::shared_ptr<const AudioClip> AudioPlaybackEngine::getCurrentClip() const
+{
+    return std::atomic_load_explicit(&currentClip, std::memory_order_acquire);
+}
+
 void AudioPlaybackEngine::sendPlaybackStoppedAction() const
 {
     sendActionMessage(playbackStoppedMessage);
@@ -81,11 +86,11 @@ void AudioPlaybackEngine::sendPlaybackStoppedAction() const
 
 double AudioPlaybackEngine::getCurrentPlaybackPositionFactor() const
 {
-    const auto clip = std::atomic_load_explicit(&currentClip, std::memory_order_acquire);
+    const auto clip = getCurrentClip();
     if (!isPlaying.load(std::memory_order_acquire) || clip == nullptr || !clip->isValid())
         return 0.0;
 
     const double currentPosition = writeIndex.load(std::memory_order_acquire);
-    const double sampleLength = currentClip->getAudioData().getNumSamples();
+    const double sampleLength = clip->getAudioData().getNumSamples();
     return currentPosition / sampleLength;
 }

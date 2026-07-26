@@ -10,11 +10,21 @@
 class SettingsPanelComponent : public PanelComponent, StateHandler::Listener, NumberInputComponent::Listener
 {
 public:
+    class Listener
+    {
+    public:
+        virtual ~Listener() = default;
+        virtual void chainExportRequested() = 0;
+    };
+
     SettingsPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                            StateHandler& stateHandlerToUse,
                            const juce::String& title = "");
     ~SettingsPanelComponent() override;
     void resized() override;
+
+    void addListener(Listener* listener);
+    void removeListener(Listener* listenerToRemove);
 
     static constexpr int topSectionHeight = 80;
     static constexpr int otSectionHeight = 160;
@@ -29,6 +39,7 @@ private:
     void layoutOtAttributesSection();
     void layoutChainExportSection();
     void layoutMegabreakExportSection();
+    void updateExportButtonState();
 
     enum RadioGroupId
     {
@@ -69,10 +80,13 @@ private:
     juce::ToggleButton exportEmbedMarkers{"Embed markers"};
     juce::TextButton createButton{"Save chain"};
     juce::TextButton createMegabreakButton{"Save megabreak"};
+    bool hasSlices = false;
 
     static void configureRadioButtons(StateHandler& stateHandler, const juce::Identifier& identifier,
                                       int groupId, std::initializer_list<juce::ToggleButton*> buttons);
     static void configureRadioButton(juce::ToggleButton& button, int groupId);
+    void sendChainExportRequested();
 
     StateHandler& stateHandler;
+    juce::ListenerList<Listener> listeners;
 };

@@ -49,6 +49,9 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     megabreakExportSection.addAndMakeVisible(megabreakFileCountBox);
     megabreakExportSection.addAndMakeVisible(createMegabreakButton);
 
+    createButton.setEnabled(false);
+    createMegabreakButton.setEnabled(false);
+
     configureRadioButtons(stateHandler, StateHandler::bitDepthId, bitDepthGroupId, { &bitDepth16Bit, &bitDepth24Bit });
     configureRadioButtons(stateHandler, StateHandler::channelsId, channelGroupId, { &channelMono, &channelStereo });
     configureRadioButtons(stateHandler, StateHandler::samplerateId, sampleRateGroupId, { &sampleRate44k, &sampleRate48k });
@@ -61,6 +64,7 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     fadeoutBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::fadeoutId, fadeoutBox.getSelectedId()); };
     exportEvenGrid.onClick = [this]{ stateHandler.setStateValue(StateHandler::evenGridId, exportEvenGrid.getToggleState()); };
     megabreakFileCountBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::megabreakFileCountId, megabreakFileCountBox.getSelectedId()); };
+    createButton.onClick = [this]{ sendChainExportRequested(); };
 
     gainInput.addListener(this);
     bpmInput.addListener(this);
@@ -73,6 +77,17 @@ SettingsPanelComponent::~SettingsPanelComponent()
     gainInput.removeListener(this);
     bpmInput.removeListener(this);
     stateHandler.removeListener(this);
+}
+
+void SettingsPanelComponent::addListener(Listener* listener)
+{
+    listeners.add(listener);
+}
+
+void SettingsPanelComponent::removeListener(Listener* listenerToRemove)
+{
+    jassert(listeners.contains(listenerToRemove));
+    listeners.remove(listenerToRemove);
 }
 
 void SettingsPanelComponent::configureRadioButton(juce::ToggleButton& button, const int groupId)
@@ -224,8 +239,20 @@ void SettingsPanelComponent::layoutMegabreakExportSection()
                                     megabreakRow.getY(), megabreakWidth, StyleSheet::comboboxHeight);
 }
 
+void SettingsPanelComponent::updateExportButtonState()
+{
+    createButton.setEnabled(hasSlices);
+    createMegabreakButton.setEnabled(hasSlices);
+}
+
 void SettingsPanelComponent::stateChanged(const StateHandler::StateChange& change)
 {
+    if (change.has(StateHandler::StateChange::sliceList) || change.has(StateHandler::StateChange::fullReload))
+    {
+        hasSlices = stateHandler.getNumSlices() > 0;
+        updateExportButtonState();
+    }
+
     if (! change.has(StateHandler::StateChange::settings) && ! change.has(StateHandler::StateChange::fullReload))
         return;
 
@@ -262,4 +289,12 @@ void SettingsPanelComponent::numberInputChanged(NumberInputComponent* numberInpu
 
     if (numberInput == &bpmInput)
         stateHandler.setStateValue(StateHandler::bpmId, value);
+}
+
+void SettingsPanelComponent::sendChainExportRequested()
+{
+    listeners.call([](Listener& listener)
+    {
+        listener.chainExportRequested();
+    });
 }

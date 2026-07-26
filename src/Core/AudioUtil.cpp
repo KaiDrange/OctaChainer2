@@ -1,5 +1,57 @@
 #include "AudioUtil.h"
 
+bool AudioUtil::writeWavFile(const juce::File& file, const juce::AudioBuffer<float>& audioData, const double sampleRate,
+                             const int bitDepth, juce::String* errorMessage)
+{
+    if (errorMessage != nullptr)
+        errorMessage->clear();
+
+    if (file == juce::File{})
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = "No output file was selected.";
+        return false;
+    }
+
+    if (sampleRate <= 0.0 || audioData.getNumChannels() <= 0 || audioData.getNumSamples() <= 0)
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = "The rendered audio is invalid.";
+        return false;
+    }
+
+    juce::WavAudioFormat format;
+    std::unique_ptr<juce::OutputStream> stream = file.createOutputStream();
+    if (stream == nullptr)
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = "The output file could not be opened.";
+        return false;
+    }
+
+    const auto options = juce::AudioFormatWriterOptions{}
+                             .withSampleRate(sampleRate)
+                             .withNumChannels(audioData.getNumChannels())
+                             .withBitsPerSample(bitDepth);
+
+    const auto writer = format.createWriterFor(stream, options);
+    if (writer == nullptr)
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = "A WAV writer could not be created for the selected bit depth.";
+        return false;
+    }
+
+    if (! writer->writeFromAudioSampleBuffer(audioData, 0, audioData.getNumSamples()))
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = "The WAV data could not be written.";
+        return false;
+    }
+
+    return true;
+}
+
 // Resamples and sums channels to mono if necessary. Note: if target channel count is greater than source channel count,
 // the output will be the same as the source channel count. It will be cheaper to upmix at the latest stage possible. Either
 // in the audio engine for playback or when writing to a file.
