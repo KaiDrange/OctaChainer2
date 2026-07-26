@@ -16,6 +16,7 @@
 #include "SettingsPanelComponent.h"
 #include "StyleSheet.h"
 #include "WaveformComponent.h"
+#include "../Core/OtWriter.h"
 
 class MainComponent : public juce::Component,
                       public juce::DragAndDropContainer,
@@ -82,12 +83,18 @@ private:
     void saveChainToFile();
     static bool exportChainToFile(const juce::File& wavFile, const juce::ValueTree& exportState, double targetSampleRate,
                                   int bitDepth, juce::String* errorMessage);
-    void finishChainRender(std::uint64_t requestId, const std::shared_ptr<Chain>& renderedChain, juce::String renderError = {});
+    void finishChainRender(std::uint64_t requestId, const std::shared_ptr<Chain>& renderedChain, const juce::String& renderError = {});
     void chainRenderThreadLoop();
     void stopChainRenderThread();
     bool isSelectedSliceInCurrentChain() const;
     bool isChainRenderRelevantSetting(const StateHandler::StateChange& change) const;
-    void showChainRenderError(const juce::String& message);
+    static void showChainRenderError(const juce::String& message);
+    static OtFileFormat::Stretch_t getOtStretchSetting(const juce::ValueTree& settingsTree);
+    static OtFileFormat::Loop_t getOtLoopSetting(const juce::ValueTree& settingsTree);
+    static OtFileFormat::TrigQuant_t getOtTrigQuantSetting(const juce::ValueTree& settingsTree);
+    static bool shouldWriteOtFile(const juce::ValueTree& exportState);
+    static bool writeOtFile(const juce::File& wavFile, const juce::ValueTree& exportState, const Chain& exportChain,
+                 juce::String* errorMessage);
 
     StyleSheet style;
     StateHandler& stateHandler;

@@ -97,7 +97,7 @@ private:
     juce::TextButton btnRemove{"Remove"};
     juce::TextButton btnRemoveAll{"Clear"};
     NumberInputComponent chainMaxLength{
-        "Max slices:", StateHandler::chainMaxLengthValue.min, StateHandler::chainMaxLengthValue.max,
+        "Slices per chain:", StateHandler::chainMaxLengthValue.min, StateHandler::chainMaxLengthValue.max,
         StateHandler::chainMaxLengthValue.defaultValue, StateHandler::chainMaxLengthValue.stepSize, false
     };
 };
