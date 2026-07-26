@@ -14,6 +14,10 @@ public:
 
     std::unique_ptr<Slice> loadFile(const juce::File& file, juce::String* errorMessage = nullptr);
     bool loadFile(const juce::File& file, Slice& destination, juce::String* errorMessage = nullptr);
+    std::unique_ptr<Slice> loadFileRegion(const juce::File& file, juce::Range<juce::int64> sampleRange,
+                                          juce::String* errorMessage = nullptr);
+    bool loadFileRegion(const juce::File& file, juce::Range<juce::int64> sampleRange, Slice& destination,
+                        juce::String* errorMessage = nullptr);
 
     [[nodiscard]] juce::String getSupportedFilePatterns() const;
 

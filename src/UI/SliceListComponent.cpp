@@ -239,6 +239,39 @@ void SliceListComponent::filesDropped(const juce::StringArray& files, int, int)
         loadFiles(droppedFiles);
 }
 
+bool SliceListComponent::isInterestedInTextDrag(const juce::String& text)
+{
+    return VstXmlDragData::looksLikeAudioRegionXml(text);
+}
+
+void SliceListComponent::textDragEnter(const juce::String& text, int, int)
+{
+    juce::ignoreUnused(text);
+}
+
+void SliceListComponent::textDragMove(const juce::String& text, int, int)
+{
+    juce::ignoreUnused(text);
+}
+
+void SliceListComponent::textDragExit(const juce::String& text)
+{
+    juce::ignoreUnused(text);
+}
+
+void SliceListComponent::textDropped(const juce::String& text, int, int)
+{
+    const auto regions = VstXmlDragData::parseAudioRegions(text);
+
+    if (regions.empty())
+    {
+        showLoadError("The dropped VST XML data did not contain any audio regions.");
+        return;
+    }
+
+    loadAudioRegions(regions);
+}
+
 bool SliceListComponent::isSupportedAudioFile(const juce::File& file) const
 {
     const auto supportedPatterns = audioFileLoader.getSupportedFilePatterns();
@@ -467,6 +500,71 @@ void SliceListComponent::loadFiles(const juce::Array<juce::File>& files)
     }
 
     if (remainingSlots <= 0 && files.size() > 0)
+    {
+        if (summaryMessage.isNotEmpty())
+            summaryMessage += " ";
+
+        summaryMessage += "The maximum slice count of 1000 has been reached.";
+    }
+
+    if (summaryMessage.isNotEmpty())
+        showLoadError(summaryMessage);
+}
+
+void SliceListComponent::loadAudioRegions(const std::vector<VstXmlDragData::AudioRegion>& regions)
+{
+    auto remainingSlots = maxSliceCount - stateHandler.getNumSlices();
+    int failedRegions = 0;
+    juce::String firstErrorMessage;
+    int lastLoadedRow = -1;
+
+    if (remainingSlots <= 0)
+    {
+        showLoadError("The slice list already contains the maximum of 1000 slices.");
+        return;
+    }
+
+    for (const auto& region : regions)
+    {
+        if (remainingSlots <= 0)
+            break;
+
+        juce::String errorMessage;
+        const auto slice = audioFileLoader.loadFileRegion(region.sourceFile, region.sampleRange, &errorMessage);
+
+        if (slice == nullptr)
+        {
+            ++failedRegions;
+            if (firstErrorMessage.isEmpty())
+                firstErrorMessage = errorMessage;
+            continue;
+        }
+
+        if (region.name.isNotEmpty())
+            slice->name = region.name;
+        else if (region.hasSampleRange())
+            slice->name = region.sourceFile.getFileNameWithoutExtension()
+                          + " [" + juce::String(region.sampleRange.getStart())
+                          + "-" + juce::String(region.sampleRange.getEnd()) + "]";
+
+        lastLoadedRow = stateHandler.addSlice(*slice, nullptr, false);
+        --remainingSlots;
+    }
+
+    if (lastLoadedRow >= 0)
+        stateHandler.selectSlice(lastLoadedRow);
+
+    juce::String summaryMessage;
+    if (failedRegions > 0)
+    {
+        if (failedRegions == 1)
+            summaryMessage = firstErrorMessage;
+        else
+            summaryMessage = juce::String(failedRegions) + " dropped regions could not be loaded."
+                             + (firstErrorMessage.isNotEmpty() ? " First error: " + firstErrorMessage : juce::String());
+    }
+
+    if (remainingSlots <= 0 && ! regions.empty())
     {
         if (summaryMessage.isNotEmpty())
             summaryMessage += " ";

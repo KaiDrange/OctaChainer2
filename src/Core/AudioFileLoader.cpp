@@ -7,15 +7,27 @@ AudioFileLoader::AudioFileLoader()
 
 std::unique_ptr<Slice> AudioFileLoader::loadFile(const juce::File& file, juce::String* errorMessage)
 {
+    return loadFileRegion(file, {}, errorMessage);
+}
+
+bool AudioFileLoader::loadFile(const juce::File& file, Slice& destination, juce::String* errorMessage)
+{
+    return loadFileRegion(file, {}, destination, errorMessage);
+}
+
+std::unique_ptr<Slice> AudioFileLoader::loadFileRegion(const juce::File& file, const juce::Range<juce::int64> sampleRange,
+                                                       juce::String* errorMessage)
+{
     auto slice = std::make_unique<Slice>();
 
-    if (! loadFile(file, *slice, errorMessage))
+    if (! loadFileRegion(file, sampleRange, *slice, errorMessage))
         return nullptr;
 
     return slice;
 }
 
-bool AudioFileLoader::loadFile(const juce::File& file, Slice& destination, juce::String* errorMessage)
+bool AudioFileLoader::loadFileRegion(const juce::File& file, const juce::Range<juce::int64> sampleRange,
+                                     Slice& destination, juce::String* errorMessage)
 {
     setError(errorMessage, {});
 
@@ -44,7 +56,24 @@ bool AudioFileLoader::loadFile(const juce::File& file, Slice& destination, juce:
         return false;
     }
 
-    if (reader->lengthInSamples > static_cast<juce::int64>(std::numeric_limits<int>::max()))
+    auto rangeStart = static_cast<juce::int64>(0);
+    auto rangeEnd = reader->lengthInSamples;
+
+    if (! sampleRange.isEmpty())
+    {
+        rangeStart = juce::jlimit<juce::int64>(0, reader->lengthInSamples, sampleRange.getStart());
+        rangeEnd = juce::jlimit<juce::int64>(rangeStart, reader->lengthInSamples, sampleRange.getEnd());
+
+        if (rangeEnd <= rangeStart)
+        {
+            setError(errorMessage, "Dropped audio region contains no readable samples: " + file.getFileName());
+            return false;
+        }
+    }
+
+    const auto numSamplesToRead = rangeEnd - rangeStart;
+
+    if (numSamplesToRead > static_cast<juce::int64>(std::numeric_limits<int>::max()))
     {
         setError(errorMessage,
                  "Audio file is too big to load into memory: " + file.getFileName() + ".");
@@ -52,7 +81,7 @@ bool AudioFileLoader::loadFile(const juce::File& file, Slice& destination, juce:
     }
 
     const auto estimatedAudioDataBytes = static_cast<juce::int64>(reader->numChannels)
-                                         * reader->lengthInSamples
+                                         * numSamplesToRead
                                          * static_cast<juce::int64>(sizeof(float));
     if (estimatedAudioDataBytes > maxLoadedAudioDataBytes)
     {
@@ -65,13 +94,13 @@ bool AudioFileLoader::loadFile(const juce::File& file, Slice& destination, juce:
     }
 
     const auto numChannels = static_cast<int>(reader->numChannels);
-    const auto numSamples = static_cast<int>(reader->lengthInSamples);
+    const auto numSamples = static_cast<int>(numSamplesToRead);
 
     auto* audioData = destination.getAudioData();
     audioData->setSize(numChannels, numSamples);
     audioData->clear();
 
-    if (! reader->read(audioData, 0, numSamples, 0, true, true))
+    if (! reader->read(audioData, 0, numSamples, rangeStart, true, true))
     {
         audioData->setSize(0, 0);
         setError(errorMessage, "Failed to read audio data from: " + file.getFileName());
@@ -81,7 +110,7 @@ bool AudioFileLoader::loadFile(const juce::File& file, Slice& destination, juce:
     destination.samplerate = reader->sampleRate;
     destination.bitDepth = reader->bitsPerSample;
     destination.channels = numChannels;
-    destination.lengthInSamples = reader->lengthInSamples;
+    destination.lengthInSamples = numSamplesToRead;
     destination.start = 0;
     destination.end = destination.lengthInSamples;
     destination.loopStart = 0;

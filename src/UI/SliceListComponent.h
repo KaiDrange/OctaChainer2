@@ -4,6 +4,7 @@
 
 #include "../Core/AudioFileLoader.h"
 #include "../Core/StateHandler.h"
+#include "../Core/VstXmlDragData.h"
 #include "NumberInputComponent.h"
 #include "PanelComponent.h"
 
@@ -11,6 +12,7 @@ class SliceListComponent : public PanelComponent,
                            public juce::TableListBoxModel,
                            public juce::DragAndDropTarget,
                            public juce::FileDragAndDropTarget,
+                           public juce::TextDragAndDropTarget,
                            StateHandler::Listener,
                            NumberInputComponent::Listener
 {
@@ -41,6 +43,11 @@ public:
     void fileDragMove(const juce::StringArray& files, int x, int y) override;
     void fileDragExit(const juce::StringArray& files) override;
     void filesDropped(const juce::StringArray& files, int x, int y) override;
+    bool isInterestedInTextDrag(const juce::String& text) override;
+    void textDragEnter(const juce::String& text, int x, int y) override;
+    void textDragMove(const juce::String& text, int x, int y) override;
+    void textDragExit(const juce::String& text) override;
+    void textDropped(const juce::String& text, int x, int y) override;
 
 private:
     static constexpr int maxSliceCount = 1000;
@@ -73,6 +80,7 @@ private:
     void clearDragIndicator();
     void showAddFileChooser();
     void loadFiles(const juce::Array<juce::File>& files);
+    void loadAudioRegions(const std::vector<VstXmlDragData::AudioRegion>& regions);
     static void showLoadError(const juce::String& message);
     static juce::String formatDuration(const juce::ValueTree& sliceTree);
     static juce::String formatAudioFormat(const juce::ValueTree& sliceTree);
