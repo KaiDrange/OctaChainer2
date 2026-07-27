@@ -14,6 +14,7 @@ public:
     public:
         virtual ~Listener() = default;
         virtual void chainExportRequested() = 0;
+        virtual void megabreakExportRequested() = 0;
     };
 
     SettingsPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
@@ -87,6 +88,7 @@ private:
                                       int groupId, std::initializer_list<juce::ToggleButton*> buttons);
     static void configureRadioButton(juce::ToggleButton& button, int groupId);
     void sendChainExportRequested();
+    void sendMegabreakExportRequested();
 
     StateHandler& stateHandler;
     juce::ListenerList<Listener> listeners;

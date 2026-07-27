@@ -1,5 +1,6 @@
 #include "MainComponent.h"
-#include "../Core/AudioUtil.h"
+#include "../Core/ChainExporter.h"
+#include "../Core/MegabreakExporter.h"
 
 MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngine& audioPlaybackEngineToUse)
     : stateHandler(stateHandlerToUse),
@@ -176,6 +177,11 @@ void MainComponent::chainExportRequested()
     saveChainToFile();
 }
 
+void MainComponent::megabreakExportRequested()
+{
+    saveMegabreakToFile();
+}
+
 void MainComponent::waveformSegmentClicked(const int segmentIndex, const int sliceIndex)
 {
     juce::ignoreUnused(segmentIndex);
@@ -299,7 +305,7 @@ void MainComponent::saveChainToFile()
                                               + file.getFileExtension())
                         : file;
 
-                    if (! MainComponent::exportChainToFile(exportFile, exportState, targetSampleRate, bitDepth, &errorMessage))
+                    if (! ChainExporter::exportToFile(exportFile, exportState, targetSampleRate, bitDepth, &errorMessage))
                     {
                         success = false;
                         if (chainCount > 1 && errorMessage.isNotEmpty())
@@ -327,52 +333,71 @@ void MainComponent::saveChainToFile()
     });
 }
 
-bool MainComponent::exportChainToFile(const juce::File& wavFile, const juce::ValueTree& exportState,
-                                      const double targetSampleRate, const int bitDepth,
-                                      juce::String* errorMessage)
+void MainComponent::saveMegabreakToFile()
 {
-    if (wavFile == juce::File{} || targetSampleRate <= 0.0)
+    const juce::File defaultFolder(stateHandler.getStateValue(
+        StateHandler::defaultExportFolderId,
+        juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()));
+
+    chainExportChooser = std::make_unique<juce::FileChooser>("Save megabreak as", defaultFolder.getChildFile("megabreak.wav"), "*.wav");
+    constexpr auto browserFlags = juce::FileBrowserComponent::saveMode
+                                  | juce::FileBrowserComponent::canSelectFiles
+                                  | juce::FileBrowserComponent::warnAboutOverwriting;
+
+    const juce::Component::SafePointer<MainComponent> safeThis(this);
+    chainExportChooser->launchAsync(browserFlags, [safeThis](const juce::FileChooser& chooser)
     {
-        if (errorMessage != nullptr)
-            *errorMessage = "Invalid output file or sample rate.";
-        return false;
-    }
+        if (safeThis == nullptr)
+            return;
 
-    Chain exportChain;
-    juce::String renderError;
-    const auto completed = exportChain.create(exportState, targetSampleRate, [] { return false; }, &renderError);
+        auto file = chooser.getResult();
+        if (file == juce::File{})
+            return;
 
-    if (! completed || ! exportChain.isValid())
-    {
-        if (errorMessage != nullptr)
-            *errorMessage = renderError.isNotEmpty() ? renderError : "The chain could not be rendered.";
-        return false;
-    }
+        file = file.withFileExtension(".wav");
 
-    const auto settingsTree = exportState.getChildWithName(StateHandler::settingsId);
-    const auto embedMarkers = settingsTree.isValid()
-                              && static_cast<bool>(settingsTree.getProperty(StateHandler::embedMarkersId,
-                                                                            StateHandler::embedMarkersDefault));
-    const auto cueOffsets = embedMarkers ? AudioUtil::buildCueOffsetsFromSegments(exportChain.getSegments())
-                                         : std::vector<juce::int64>{};
+        auto stateXml = std::unique_ptr<juce::XmlElement>(safeThis->stateHandler.createXml());
+        const auto targetSampleRate = static_cast<double>(safeThis->stateHandler.getStateValue<int>(
+            StateHandler::samplerateId,
+            44100));
+        const auto bitDepth = safeThis->stateHandler.getStateValue<int>(StateHandler::bitDepthId, 16);
+        const auto partCount = juce::jmax(1, safeThis->stateHandler.getStateValue<int>(
+            StateHandler::megabreakFileCountId,
+            1));
+        const auto playbackClip = safeThis->audioPlaybackEngine.getCurrentClip();
+        const auto chainClip = safeThis->chain.getAudioClip();
 
-    juce::String writeError;
-    if (!AudioUtil::writeWavFile(wavFile,
-                                  exportChain.getAudioData(),
-                                  targetSampleRate,
-                                  bitDepth,
-                                  cueOffsets.empty() ? nullptr : &cueOffsets,
-                                  &writeError))
-    {
-        if (errorMessage != nullptr)
-            *errorMessage = writeError.isNotEmpty() ? writeError : "The WAV file could not be written.";
-        return false;
-    }
+        if (playbackClip != nullptr && playbackClip == chainClip)
+            safeThis->audioPlaybackEngine.stop();
 
-    if (shouldWriteOtFile(exportState) && ! writeOtFile(wavFile, exportState, exportChain, errorMessage))
-        return false;
+        safeThis->cancelChainRender();
+        safeThis->clearPlaybackChain();
 
-    return true;
+        std::thread([safeThis, file, stateXml = std::move(stateXml), targetSampleRate, bitDepth, partCount]() mutable
+        {
+            juce::String errorMessage;
+            bool success = false;
+
+            if (safeThis != nullptr)
+            {
+                const auto baseState = stateXml != nullptr ? juce::ValueTree::fromXml(*stateXml) : juce::ValueTree{};
+                success = MegabreakExporter::exportToFiles(file, baseState, targetSampleRate, bitDepth, partCount, &errorMessage);
+            }
+
+            juce::MessageManager::callAsync([safeThis, success, errorMessage = std::move(errorMessage)]() mutable
+            {
+                if (! success && safeThis != nullptr)
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                                                           "Could not save megabreak",
+                                                           errorMessage.isNotEmpty() ? errorMessage : "The megabreak could not be rendered.");
+                }
+
+                if (safeThis != nullptr)
+                    safeThis->requestChainRender(false);
+            });
+        }).detach();
+    });
 }
 
 void MainComponent::clearPlaybackChain()
@@ -471,126 +496,6 @@ void MainComponent::showChainRenderError(const juce::String& message)
     juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
                                            "Could not render chain",
                                            message);
-}
-
-OtFileFormat::Stretch_t MainComponent::getOtStretchSetting(const juce::ValueTree& settingsTree)
-{
-    const auto stretchValue = settingsTree.getProperty(StateHandler::timestretchId, "off").toString();
-
-    if (stretchValue == "normal")
-        return OtFileFormat::Normal;
-
-    if (stretchValue == "beat")
-        return OtFileFormat::Beat;
-
-    return OtFileFormat::NoStretch;
-}
-
-OtFileFormat::Loop_t MainComponent::getOtLoopSetting(const juce::ValueTree& settingsTree)
-{
-    const auto loopValue = settingsTree.getProperty(StateHandler::loopModeId, "off").toString();
-
-    if (loopValue == "on")
-        return OtFileFormat::Loop;
-
-    if (loopValue == "pingpong")
-        return OtFileFormat::PIPO;
-
-    return OtFileFormat::NoLoop;
-}
-
-OtFileFormat::TrigQuant_t MainComponent::getOtTrigQuantSetting(const juce::ValueTree& settingsTree)
-{
-    const auto quantizeValue = settingsTree.getProperty(StateHandler::triqQuantId, "direct");
-
-    if (quantizeValue.isString())
-    {
-        if (quantizeValue.toString() == "pattern")
-            return OtFileFormat::Pattern;
-
-        return OtFileFormat::Direct;
-    }
-
-    switch (static_cast<int>(quantizeValue))
-    {
-    case 1: return OtFileFormat::S_1;
-    case 2: return OtFileFormat::S_2;
-    case 3: return OtFileFormat::S_3;
-    case 4: return OtFileFormat::S_4;
-    case 6: return OtFileFormat::S_6;
-    case 8: return OtFileFormat::S_8;
-    case 12: return OtFileFormat::S_12;
-    case 16: return OtFileFormat::S_16;
-    case 24: return OtFileFormat::S_24;
-    case 32: return OtFileFormat::S_32;
-    case 48: return OtFileFormat::S_48;
-    case 64: return OtFileFormat::S_64;
-    case 96: return OtFileFormat::S_96;
-    case 128: return OtFileFormat::S_128;
-    case 192: return OtFileFormat::S_192;
-    case 256: return OtFileFormat::S_256;
-    default: break;
-    }
-
-    jassertfalse;
-    return OtFileFormat::Direct;
-}
-
-bool MainComponent::shouldWriteOtFile(const juce::ValueTree& exportState)
-{
-    const auto settingsTree = exportState.getChildWithName(StateHandler::settingsId);
-    if (! settingsTree.isValid())
-        return false;
-
-    return settingsTree.getProperty(StateHandler::otFileId, StateHandler::otFileDefault);
-}
-
-bool MainComponent::writeOtFile(const juce::File& wavFile, const juce::ValueTree& exportState, const Chain& exportChain,
-    juce::String* errorMessage)
-{
-    const auto settingsTree = exportState.getChildWithName(StateHandler::settingsId);
-    if (! settingsTree.isValid())
-    {
-        if (errorMessage != nullptr)
-            *errorMessage = "The export settings are invalid.";
-        return false;
-    }
-
-    const auto totalSamples = exportChain.getAudioData().getNumSamples();
-    const auto sampleRate = juce::roundToInt(exportChain.getSampleRate());
-    if (totalSamples <= 0 || sampleRate <= 0)
-    {
-        if (errorMessage != nullptr)
-            *errorMessage = "The rendered chain is invalid.";
-        return false;
-    }
-
-    const auto gain = static_cast<double>(settingsTree.getProperty(
-        StateHandler::gainId,
-        StateHandler::gainValue.defaultValue));
-    const auto bpm = static_cast<double>(settingsTree.getProperty(
-        StateHandler::bpmId,
-        StateHandler::bpmValue.defaultValue));
-    auto writer = OtWriter(wavFile.withFileExtension(".ot"),
-                           sampleRate,
-                           getOtLoopSetting(settingsTree),
-                           getOtStretchSetting(settingsTree),
-                           getOtTrigQuantSetting(settingsTree),
-                           gain,
-                           bpm);
-
-    for (const auto& segment : exportChain.getSegments())
-        writer.addSlice(static_cast<std::uint32_t>(segment.startSample),
-                        static_cast<std::uint32_t>(segment.startSample + segment.sampleCount));
-
-    if (! writer.write(static_cast<std::uint32_t>(totalSamples)))
-    {
-        if (errorMessage != nullptr)
-            *errorMessage = "The OT file could not be written.";
-        return false;
-    }
-
-    return true;
 }
 
 bool MainComponent::isSelectedSliceInCurrentChain() const

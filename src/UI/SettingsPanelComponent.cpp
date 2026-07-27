@@ -78,6 +78,7 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     exportEmbedMarkers.onClick = [this]{ stateHandler.setStateValue(StateHandler::embedMarkersId, exportEmbedMarkers.getToggleState()); };
     megabreakFileCountBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::megabreakFileCountId, megabreakFileCountBox.getSelectedId()); };
     createButton.onClick = [this]{ sendChainExportRequested(); };
+    createMegabreakButton.onClick = [this]{ sendMegabreakExportRequested(); };
 
     gainInput.addListener(this);
     bpmInput.addListener(this);
@@ -328,7 +329,8 @@ bool SettingsPanelComponent::isOtCompatibleExport(const StateHandler& stateHandl
 bool SettingsPanelComponent::isMegabreakCompatibleExport(const StateHandler& stateHandler, const bool hasSlices)
 {
     const auto sliceCount = stateHandler.getNumSlices();
-    return isOtCompatibleExport(stateHandler, hasSlices) && sliceCount <= static_cast<int>(OtFileFormat::maxSliceCount);
+    juce::ignoreUnused(hasSlices);
+    return sliceCount > 0 && sliceCount <= static_cast<int>(OtFileFormat::maxSliceCount);
 }
 
 void SettingsPanelComponent::sendChainExportRequested()
@@ -336,5 +338,13 @@ void SettingsPanelComponent::sendChainExportRequested()
     listeners.call([](Listener& listener)
     {
         listener.chainExportRequested();
+    });
+}
+
+void SettingsPanelComponent::sendMegabreakExportRequested()
+{
+    listeners.call([](Listener& listener)
+    {
+        listener.megabreakExportRequested();
     });
 }
