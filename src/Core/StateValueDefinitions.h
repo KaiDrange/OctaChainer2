@@ -116,7 +116,7 @@ struct NumberValue
     double stepSize;
 };
 
-static const inline NumberValue gainValue = { -24.0, 24.0, 0.0, 0.1 };
+static const inline NumberValue gainValue = { -24.0, 24.0, 0.0, 0.5 };
 static const inline NumberValue bpmValue = { 30.0, 300.0, 120.0, 0.25 };
 static const inline NumberValue chainMaxLengthValue = { 1.0, 120.0, 64.0, 1.0 };
 

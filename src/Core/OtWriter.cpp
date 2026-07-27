@@ -7,11 +7,11 @@ OtWriter::OtWriter(juce::File outputFile,
                    const OtFileFormat::Loop_t loopSetting,
                    const OtFileFormat::Stretch_t stretchSetting,
                    const OtFileFormat::TrigQuant_t trigQuantSetting,
-                   const int gain,
-                   const int tempo)
+                   const double gain,
+                   const double bpm)
     : outputFile(std::move(outputFile)),
       sampleRate(sampleRate),
-      tempo(tempo),
+      bpm(bpm),
       gain(gain),
       loopSetting(loopSetting),
       stretchSetting(stretchSetting),
@@ -47,18 +47,18 @@ std::array<std::uint8_t, OtFileFormat::otFileSize> OtWriter::buildPayload(const 
     std::memcpy(writePos, OtFileFormat::unknownBytes.data(), OtFileFormat::unknownBytes.size());
     writePos += OtFileFormat::unknownBytes.size();
 
-    writeU32BE(writePos, static_cast<std::uint32_t>(tempo * 6));
+    writeU32BE(writePos, static_cast<std::uint32_t>(juce::roundToInt(bpm * 24.0)));
 
     const auto barUnits = static_cast<std::uint32_t>(
-                              static_cast<double>(tempo) * static_cast<double>(totalSamples)
-                               / (static_cast<double>(sampleRate) * 60.0 * 4.0) + 0.5)
+                              bpm * static_cast<double>(totalSamples)
+                               / (static_cast<double>(sampleRate) * 60.0) + 0.5)
                           * 25u;
 
     writeU32BE(writePos, barUnits);
     writeU32BE(writePos, barUnits);
     writeU32BE(writePos, static_cast<std::uint32_t>(stretchSetting));
     writeU32BE(writePos, static_cast<std::uint32_t>(loopSetting));
-    writeU16BE(writePos, static_cast<std::uint16_t>(gain + 48));
+    writeU16BE(writePos, static_cast<std::uint16_t>(juce::roundToInt(gain * 2.0 + 48.0)));
 
     *writePos++ = static_cast<std::uint8_t>(trigQuantSetting);
 

@@ -552,19 +552,19 @@ bool MainComponent::writeOtFile(const juce::File& wavFile, const juce::ValueTree
         return false;
     }
 
-    const auto gain = juce::roundToInt(static_cast<double>(settingsTree.getProperty(
+    const auto gain = static_cast<double>(settingsTree.getProperty(
         StateHandler::gainId,
-        StateHandler::gainValue.defaultValue)));
-    const auto tempo = juce::roundToInt(static_cast<double>(settingsTree.getProperty(
+        StateHandler::gainValue.defaultValue));
+    const auto bpm = static_cast<double>(settingsTree.getProperty(
         StateHandler::bpmId,
-        StateHandler::bpmValue.defaultValue)));
+        StateHandler::bpmValue.defaultValue));
     auto writer = OtWriter(wavFile.withFileExtension(".ot"),
                            sampleRate,
                            getOtLoopSetting(settingsTree),
                            getOtStretchSetting(settingsTree),
                            getOtTrigQuantSetting(settingsTree),
                            gain,
-                           tempo * 4);
+                           bpm);
 
     for (const auto& segment : exportChain.getSegments())
         writer.addSlice(static_cast<std::uint32_t>(segment.startSample),

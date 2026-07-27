@@ -93,10 +93,10 @@ bool OtReader::parseOtBytes(const std::vector<std::uint8_t>& bytes, ParsedOtFile
         return false;
     }
 
-    parsed.tempo = juce::roundToInt(static_cast<double>(readU32BE(bytes.data(), 23)) / 24.0);
+    parsed.tempo = static_cast<double>(readU32BE(bytes.data(), 23)) / 24.0;
     parsed.stretchSetting = static_cast<OtFileFormat::Stretch_t>(readU32BE(bytes.data(), 35));
     parsed.loopSetting = static_cast<OtFileFormat::Loop_t>(readU32BE(bytes.data(), 39));
-    parsed.gain = juce::roundToInt(static_cast<double>(readU16BE(bytes.data(), 43)) - 48.0);
+    parsed.gain = (static_cast<double>(readU16BE(bytes.data(), 43)) - 48.0) / 2.0;
     parsed.trigQuantSetting = static_cast<OtFileFormat::TrigQuant_t>(bytes[45]);
     parsed.trimStart = readU32BE(bytes.data(), 46);
     parsed.trimEnd = readU32BE(bytes.data(), 50);

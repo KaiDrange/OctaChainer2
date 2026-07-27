@@ -20,8 +20,8 @@ public:
         int bitDepth = 0;
         int audioChannels = 0;
         juce::int64 audioLengthInSamples = 0;
-        int tempo = 0;
-        int gain = 0;
+        double tempo = 0.0;
+        double gain = 0.0;
         OtFileFormat::Loop_t loopSetting = OtFileFormat::NoLoop;
         OtFileFormat::Stretch_t stretchSetting = OtFileFormat::NoStretch;
         OtFileFormat::TrigQuant_t trigQuantSetting = OtFileFormat::Direct;
@@ -37,8 +37,8 @@ public:
 private:
     struct ParsedOtFile
     {
-        int tempo = 0;
-        int gain = 0;
+        double tempo = 0.0;
+        double gain = 0.0;
         OtFileFormat::Loop_t loopSetting = OtFileFormat::NoLoop;
         OtFileFormat::Stretch_t stretchSetting = OtFileFormat::NoStretch;
         OtFileFormat::TrigQuant_t trigQuantSetting = OtFileFormat::Direct;

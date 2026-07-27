@@ -16,8 +16,8 @@ public:
              OtFileFormat::Loop_t loopSetting,
              OtFileFormat::Stretch_t stretchSetting,
              OtFileFormat::TrigQuant_t trigQuantSetting,
-             int gain,
-             int tempo);
+             double gain,
+             double bpm);
 
     bool write(std::uint32_t totalSamples) const;
     void addSlice(std::uint32_t start, std::uint32_t end);
@@ -30,8 +30,8 @@ private:
 
     juce::File outputFile;
     int sampleRate = 0;
-    int tempo = 0;
-    int gain = 0;
+    double bpm = 0.0;
+    double gain = 0.0;
     OtFileFormat::Loop_t loopSetting = OtFileFormat::NoLoop;
     OtFileFormat::Stretch_t stretchSetting = OtFileFormat::NoStretch;
     OtFileFormat::TrigQuant_t trigQuantSetting = OtFileFormat::Pattern;
