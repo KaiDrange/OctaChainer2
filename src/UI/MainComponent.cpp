@@ -348,8 +348,20 @@ bool MainComponent::exportChainToFile(const juce::File& wavFile, const juce::Val
         return false;
     }
 
+    const auto settingsTree = exportState.getChildWithName(StateHandler::settingsId);
+    const auto embedMarkers = settingsTree.isValid()
+                              && static_cast<bool>(settingsTree.getProperty(StateHandler::embedMarkersId,
+                                                                            StateHandler::embedMarkersDefault));
+    const auto cueOffsets = embedMarkers ? AudioUtil::buildCueOffsetsFromSegments(exportChain.getSegments())
+                                         : std::vector<juce::int64>{};
+
     juce::String writeError;
-    if (! AudioUtil::writeWavFile(wavFile, exportChain.getAudioData(), targetSampleRate, bitDepth, &writeError))
+    if (!AudioUtil::writeWavFile(wavFile,
+                                  exportChain.getAudioData(),
+                                  targetSampleRate,
+                                  bitDepth,
+                                  cueOffsets.empty() ? nullptr : &cueOffsets,
+                                  &writeError))
     {
         if (errorMessage != nullptr)
             *errorMessage = writeError.isNotEmpty() ? writeError : "The WAV file could not be written.";

@@ -61,6 +61,7 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     fadeoutBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::fadeoutId, fadeoutBox.getSelectedId()); };
     exportOtFile.onClick = [this]{ stateHandler.setStateValue(StateHandler::otFileId, exportOtFile.getToggleState()); };
     exportEvenGrid.onClick = [this]{ stateHandler.setStateValue(StateHandler::evenGridId, exportEvenGrid.getToggleState()); };
+    exportEmbedMarkers.onClick = [this]{ stateHandler.setStateValue(StateHandler::embedMarkersId, exportEmbedMarkers.getToggleState()); };
     megabreakFileCountBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::megabreakFileCountId, megabreakFileCountBox.getSelectedId()); };
     createButton.onClick = [this]{ sendChainExportRequested(); };
 
