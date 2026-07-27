@@ -1,7 +1,4 @@
-#include <limits>
-
 #include "Chain.h"
-
 
 void Chain::clear()
 {

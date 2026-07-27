@@ -1,7 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <functional>
 
 class DefaultSettingsDialogComponent final : public juce::Component
 {

@@ -1,5 +1,4 @@
 #include "PluginEditor.h"
-
 #include "Core/AudioUtil.h"
 
 OctaChainer2AudioProcessorEditor::OctaChainer2AudioProcessorEditor(OctaChainer2AudioProcessor& p)

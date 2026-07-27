@@ -1,11 +1,9 @@
 #pragma once
 
-#include <vector>
-
+#include <JuceHeader.h>
 #include "../Core/AudioClip.h"
 #include "../Core/Chain.h"
 #include "PanelComponent.h"
-
 
 class WaveformComponent : public PanelComponent
 {

@@ -1,8 +1,6 @@
 #include "StandaloneAppMainWindow.h"
-
 #include "Core/AudioUtil.h"
 #include "UI/DefaultSettingsDialogComponent.h"
-#include "UI/MainComponent.h"
 
 StandaloneAppMainWindow::StandaloneAppMainWindow(const juce::String& name)
     : DocumentWindow(name,

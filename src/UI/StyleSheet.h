@@ -2,7 +2,6 @@
 
 #include <JuceHeader.h>
 
-
 class StyleSheet : public juce::LookAndFeel_V4
 {
 public:

@@ -1,6 +1,5 @@
 #include "PanelComponent.h"
 
-
 PanelComponent::PanelComponent(const Dimension& height, const Dimension& width, juce::String title)
     : panelWidth(width),
       panelHeight(height),

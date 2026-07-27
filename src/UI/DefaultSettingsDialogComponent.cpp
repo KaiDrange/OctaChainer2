@@ -1,5 +1,4 @@
 #include "DefaultSettingsDialogComponent.h"
-
 #include "StyleSheet.h"
 
 DefaultSettingsDialogComponent::DefaultSettingsDialogComponent(const juce::String& defaultAudioFolder,

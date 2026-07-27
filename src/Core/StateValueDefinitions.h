@@ -1,7 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <vector>
 
 /*
  * UI components use an int Id that is not 0 for selected option, while state values

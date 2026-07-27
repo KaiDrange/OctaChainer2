@@ -1,7 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-
 #include "StandaloneAppMainWindow.h"
 
 class OctaChainer2StandaloneApplication final : public juce::JUCEApplication

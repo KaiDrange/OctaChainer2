@@ -1,8 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <initializer_list>
-#include <vector>
+#include "Slice.h"
 
 class Slice;
 

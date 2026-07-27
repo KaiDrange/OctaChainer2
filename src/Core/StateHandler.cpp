@@ -1,5 +1,4 @@
 #include "StateHandler.h"
-#include "Slice.h"
 
 StateHandler::StateChange makeStateChange(const StateHandler::StateChange::Flag flags, const juce::Identifier& property = {})
 {

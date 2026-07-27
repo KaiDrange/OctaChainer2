@@ -109,6 +109,7 @@ bool OtReader::parseOtBytes(const std::vector<std::uint8_t>& bytes, ParsedOtFile
         return false;
     }
 
+    parsed.hasExplicitSlices = sliceCount > 0;
     parsed.slices.clear();
     parsed.slices.reserve(sliceCount > 0 ? sliceCount : 1);
 
@@ -205,6 +206,7 @@ bool OtReader::readImportSettingsImpl(const juce::File& otFile, ImportSettings& 
     settings.loopSetting = parsed.loopSetting;
     settings.stretchSetting = parsed.stretchSetting;
     settings.trigQuantSetting = parsed.trigQuantSetting;
+    settings.hasExplicitSlices = parsed.hasExplicitSlices;
     settings.sliceRanges.clear();
 
     for (const auto& slice : parsed.slices)
@@ -229,11 +231,15 @@ bool OtReader::performImportImpl(const ImportSettings& settings, StateHandler& s
     std::vector<std::unique_ptr<Slice>> importedSlices;
     importedSlices.reserve(settings.sliceRanges.size());
 
-    for (const auto& range : settings.sliceRanges)
+    for (std::size_t i = 0; i < settings.sliceRanges.size(); ++i)
     {
+        const auto& range = settings.sliceRanges[i];
         auto loadedSlice = audioFileLoader.loadFileRegion(settings.audioFile, range, errorMessage);
         if (loadedSlice == nullptr)
             return false;
+
+        if (settings.hasExplicitSlices)
+            loadedSlice->name = settings.audioFile.getFileNameWithoutExtension() + " " + juce::String(static_cast<juce::int64>(i + 1));
 
         importedSlices.push_back(std::move(loadedSlice));
     }

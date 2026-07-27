@@ -1,7 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-
 #include "StyleSheet.h"
 
 class SectionComponent : public juce::Component

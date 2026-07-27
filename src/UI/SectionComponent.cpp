@@ -1,7 +1,5 @@
 #include "SectionComponent.h"
 
-#include "StyleSheet.h"
-
 SectionComponent::SectionComponent(juce::String title)
     : title(std::move(title))
 {

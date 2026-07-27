@@ -1,8 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <memory>
-
 #include "AudioClip.h"
 
 class AudioPlaybackEngine : public juce::ActionBroadcaster

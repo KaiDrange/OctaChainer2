@@ -1,9 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <functional>
-#include <vector>
-
 #include "AudioClip.h"
 #include "StateHandler.h"
 

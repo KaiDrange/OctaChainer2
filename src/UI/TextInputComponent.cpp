@@ -1,4 +1,3 @@
-#include <JuceHeader.h>
 #include "TextInputComponent.h"
 #include "StyleSheet.h"
 

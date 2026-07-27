@@ -1,10 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <array>
-#include <cstdint>
-#include <vector>
-
 #include "OtFileFormat.h"
 
 

@@ -1,5 +1,4 @@
 #include "TransportButtonComponent.h"
-
 #include "StyleSheet.h"
 
 TransportButtonComponent::TransportButtonComponent(const juce::String& labelText)

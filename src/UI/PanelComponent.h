@@ -1,7 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-
 #include "StyleSheet.h"
 
 class PanelComponent : public juce::Component

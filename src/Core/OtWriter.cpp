@@ -1,7 +1,5 @@
 #include "OtWriter.h"
 
-#include <utility>
-
 OtWriter::OtWriter(juce::File outputFile,
                    const int sampleRate,
                    const OtFileFormat::Loop_t loopSetting,

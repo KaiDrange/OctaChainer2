@@ -1,10 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <cstdint>
-#include <memory>
-#include <vector>
-
 #include "AudioFileLoader.h"
 #include "OtFileFormat.h"
 #include "StateHandler.h"
@@ -16,6 +12,7 @@ public:
     {
         juce::File otFile;
         juce::File audioFile;
+        bool hasExplicitSlices = false;
         int sampleRate = 0;
         int bitDepth = 0;
         int audioChannels = 0;
@@ -39,6 +36,7 @@ private:
     {
         double tempo = 0.0;
         double gain = 0.0;
+        bool hasExplicitSlices = false;
         OtFileFormat::Loop_t loopSetting = OtFileFormat::NoLoop;
         OtFileFormat::Stretch_t stretchSetting = OtFileFormat::NoStretch;
         OtFileFormat::TrigQuant_t trigQuantSetting = OtFileFormat::Direct;

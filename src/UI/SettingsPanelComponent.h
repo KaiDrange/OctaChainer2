@@ -1,7 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-
 #include "../Core/StateHandler.h"
 #include "NumberInputComponent.h"
 #include "PanelComponent.h"

@@ -1,7 +1,5 @@
 #include "MainMenuBarModel.h"
 
-#include <utility>
-
 MainMenuBarModel::MainMenuBarModel(Action onQuit, Action onProjectSave, Action onProjectLoad, Action onOtImport,
                                    Action onAudioSettings, Action onDefaultFolders, Action onHelp)
     : onQuit(std::move(onQuit)),

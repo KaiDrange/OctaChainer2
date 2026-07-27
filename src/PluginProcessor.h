@@ -1,7 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-
 #include "Core/AudioPlaybackEngine.h"
 #include "Core/StateHandler.h"
 

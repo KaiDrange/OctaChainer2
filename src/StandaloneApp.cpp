@@ -1,5 +1,4 @@
 #include "StandaloneApp.h"
-
 #include "UI/MainComponent.h"
 
 const juce::String OctaChainer2StandaloneApplication::getApplicationName()

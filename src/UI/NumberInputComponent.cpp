@@ -1,5 +1,3 @@
-#include <JuceHeader.h>
-#include <cmath>
 #include "NumberInputComponent.h"
 #include "StyleSheet.h"
 

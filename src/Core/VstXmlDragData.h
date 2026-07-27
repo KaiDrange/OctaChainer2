@@ -1,7 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <vector>
 
 using NameList = std::initializer_list<const char*>;
 

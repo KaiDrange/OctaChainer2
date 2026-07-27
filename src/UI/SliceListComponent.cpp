@@ -473,9 +473,9 @@ void SliceListComponent::loadFiles(const juce::Array<juce::File>& files)
             break;
 
         juce::String errorMessage;
-        const auto slice = audioFileLoader.loadFile(file, &errorMessage);
+        const auto slices = audioFileLoader.loadFileSlices(file, &errorMessage);
 
-        if (slice == nullptr)
+        if (slices.empty())
         {
             ++failedFiles;
             if (firstErrorMessage.isEmpty())
@@ -483,8 +483,14 @@ void SliceListComponent::loadFiles(const juce::Array<juce::File>& files)
             continue;
         }
 
-        lastLoadedRow = stateHandler.addSlice(*slice, nullptr, false);
-        --remainingSlots;
+        for (const auto& slice : slices)
+        {
+            if (remainingSlots <= 0)
+                break;
+
+            lastLoadedRow = stateHandler.addSlice(*slice, nullptr, false);
+            --remainingSlots;
+        }
     }
 
     if (lastLoadedRow >= 0)

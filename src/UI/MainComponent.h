@@ -1,12 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <atomic>
-#include <condition_variable>
-#include <cstdint>
-#include <mutex>
-#include <memory>
-#include <thread>
 
 #include "../Core/AudioPlaybackEngine.h"
 #include "../Core/Chain.h"
