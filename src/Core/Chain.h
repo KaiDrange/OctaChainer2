@@ -38,8 +38,8 @@ private:
     static void padBufferToLength(juce::AudioBuffer<float>& buffer, int targetSampleCount);
     static juce::int64 estimateRenderedSampleCount(juce::int64 sourceSampleCount, double sourceSampleRate,
                                                    double targetSampleRate);
-
-    static void applyFadeInOut(juce::AudioBuffer<float>& buffer, double sampleRate, int fadeInMs, int fadeOutMs);
+static void applyFadeInOut(juce::AudioBuffer<float>& buffer, double sampleRate, int fadeInMs, int fadeOutMs);
+    static juce::int64 getTrimmedSliceLength(const juce::ValueTree& sliceTree);
 
     std::shared_ptr<AudioClip> audioClip;
     std::vector<Segment> segments;

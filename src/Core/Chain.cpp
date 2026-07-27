@@ -227,6 +227,21 @@ void Chain::applyFadeInOut(juce::AudioBuffer<float>& buffer, const double sample
     }
 }
 
+juce::int64 Chain::getTrimmedSliceLength(const juce::ValueTree& sliceTree)
+{
+    const auto numSamples = static_cast<juce::int64>(sliceTree.getProperty(StateHandler::sliceNumSamplesId, 0));
+    if (numSamples <= 0)
+        return 0;
+
+    const auto rangeStart = juce::jlimit<juce::int64>(0, numSamples, sliceTree.getProperty(StateHandler::sliceStartSampleId, 0));
+    auto rangeEnd = juce::jlimit<juce::int64>(rangeStart, numSamples,
+                                              static_cast<juce::int64>(sliceTree.getProperty(StateHandler::sliceEndSampleId, numSamples)));
+    if (rangeEnd <= rangeStart)
+        rangeEnd = juce::jmin<juce::int64>(numSamples, rangeStart + 1);
+
+    return rangeEnd - rangeStart;
+}
+
 bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRate,
                    const std::function<bool()>& shouldAbort,
                    juce::String* errorMessage)
@@ -301,7 +316,11 @@ bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRa
         if (sourceBytes <= 0)
             continue;
 
-        const auto renderedSampleCount = estimateRenderedSampleCount(numSamples, sourceSampleRate, targetSampleRate);
+        const auto trimmedSampleCount = getTrimmedSliceLength(sliceTree);
+        if (trimmedSampleCount <= 0)
+            continue;
+
+        const auto renderedSampleCount = estimateRenderedSampleCount(trimmedSampleCount, sourceSampleRate, targetSampleRate);
         if (renderedSampleCount <= 0)
             continue;
 
