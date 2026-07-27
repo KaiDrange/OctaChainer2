@@ -65,6 +65,7 @@ juce_add_gui_app(OctaChainer2_App
         PRODUCT_NAME "OctaChainer 2"
         COMPANY_NAME "Tic Tech"
         BUNDLE_ID "com.octa.octachainer2.app"
+        ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/assets/app_icon.png"
 )
 
 juce_generate_juce_header(OctaChainer2_App)
