@@ -187,12 +187,13 @@ bool AudioUtil::writeWavFile(const juce::File& file, const juce::AudioBuffer<flo
 
         for (std::size_t i = 0; i < validCueOffsets.size(); ++i)
         {
-            writeU32LE(writePos, static_cast<std::uint32_t>(i + 1));
-            writeU32LE(writePos, static_cast<std::uint32_t>(i));
+            writeU32LE(writePos, i + 1);
+            const auto cueOffset = static_cast<std::uint32_t>(validCueOffsets[i]);
+            writeU32LE(writePos, cueOffset);
             writeFourCC(writePos, dataChunkId);
             writeU32LE(writePos, 0u);
             writeU32LE(writePos, 0u);
-            writeU32LE(writePos, static_cast<std::uint32_t>(validCueOffsets[i]));
+            writeU32LE(writePos, cueOffset);
         }
     }
 
@@ -226,7 +227,7 @@ bool AudioUtil::readWaveCueOffsets(const juce::File& file, std::vector<juce::int
     while (stream.getPosition() + 8 <= totalLength)
     {
         std::array<std::uint8_t, 8> chunkHeader{};
-        const auto chunkHeaderSize = static_cast<int>(chunkHeader.size());
+        constexpr auto chunkHeaderSize = static_cast<int>(chunkHeader.size());
         if (stream.read(chunkHeader.data(), chunkHeaderSize) != chunkHeaderSize)
             return false;
 
@@ -244,7 +245,7 @@ bool AudioUtil::readWaveCueOffsets(const juce::File& file, std::vector<juce::int
                 return false;
 
             std::array<std::uint8_t, 4> countBytes{};
-            const auto countBytesSize = static_cast<int>(countBytes.size());
+            constexpr auto countBytesSize = static_cast<int>(countBytes.size());
             if (stream.read(countBytes.data(), countBytesSize) != countBytesSize)
                 return false;
 
@@ -258,7 +259,7 @@ bool AudioUtil::readWaveCueOffsets(const juce::File& file, std::vector<juce::int
             for (std::uint32_t i = 0; i < cueCount; ++i)
             {
                 std::array<std::uint8_t, 24> cuePoint{};
-                const auto cuePointSize = static_cast<int>(cuePoint.size());
+                constexpr auto cuePointSize = static_cast<int>(cuePoint.size());
                 if (stream.read(cuePoint.data(), cuePointSize) != cuePointSize)
                     return false;
 
