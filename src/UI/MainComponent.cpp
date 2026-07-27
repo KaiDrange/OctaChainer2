@@ -19,7 +19,8 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngin
                              "Chain waveform"),
       audioPanelComponent(PanelComponent::Dimension::fixed(audioSectionFixedHeight),
                           PanelComponent::Dimension::fixed(settingsPanelFixedWidth),
-                          stateHandler)
+                          stateHandler),
+      tooltipWindow(this)
 {
     setLookAndFeel(&style);
     addAndMakeVisible(sampleListComponent);

@@ -9,6 +9,7 @@ public:
     explicit SectionComponent(juce::String title = "");
 
     void setTitle(juce::String newTitle);
+    void setTooltip(const juce::String& tooltip);
     const juce::String& getTitle();
     juce::Rectangle<int> getContentBounds() const noexcept;
 
@@ -18,6 +19,9 @@ public:
     juce::Colour backgroundColour{StyleSheet::getDefaultSectionBackgroundColour()};
 
 private:
+    struct TitleTooltipArea : juce::Component, juce::SettableTooltipClient {};
+    TitleTooltipArea titleTooltip;
+
     juce::String title;
     juce::Rectangle<int> contentBounds;
     juce::Font titleFont{juce::FontOptions(StyleSheet::fontDefaultSize, juce::Font::bold)};

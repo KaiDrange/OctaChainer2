@@ -16,6 +16,13 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     addAndMakeVisible(chainExportSection);
     addAndMakeVisible(megabreakExportSection);
 
+    bitDepthSection.setTooltip("Bit depth of exported audio file(s)");
+    channelSection.setTooltip("Number of channels of exported audio file(s)");
+    sampleRateSection.setTooltip("Sample rate of exported audio file(s)");
+    otAttributesSection.setTooltip("Settings for Elektron Octatrack OT file(s)");
+    chainExportSection.setTooltip("Settings for exported .wav chain");
+    megabreakExportSection.setTooltip("Elektron Octatrack megabreak export");
+
     otAttributesSection.backgroundColour = otAttributesSection.backgroundColour.darker(0.02f);
     chainExportSection.backgroundColour =
         chainExportSection.backgroundColour.withHue(chainExportSection.backgroundColour.getHue() + 0.03f);
@@ -39,12 +46,19 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     chainExportSection.addAndMakeVisible(fadeinBox);
     chainExportSection.addAndMakeVisible(fadeoutBox);
     chainExportSection.addAndMakeVisible(exportOtFile);
+    exportOtFile.setTooltip("A separate .ot file with metadata used by Elektron Octatrack");
     chainExportSection.addAndMakeVisible(exportEvenGrid);
+    exportEvenGrid.setTooltip("Makes all slices the same length, based on the longest slice in the chain");
     chainExportSection.addAndMakeVisible(exportEmbedMarkers);
+    exportEmbedMarkers.setTooltip("Embeds cue markers for slices in the exported wav file(s)");
     chainExportSection.addAndMakeVisible(createButton);
+    createButton.addShortcut(KeyPress('S', ModifierKeys::ctrlModifier, 0));
+    createButton.setTooltip("Combines slices into one or more .wav files (Hotkey: Ctrl/Cmd + S)");
 
     megabreakExportSection.addAndMakeVisible(megabreakFileCountBox);
+    megabreakFileCountBox.setTooltip("Each slice will be divided into this many parts and saved in separate files");
     megabreakExportSection.addAndMakeVisible(createMegabreakButton);
+    createMegabreakButton.setTooltip("Creates a set of megabreak files for the Elektron Octatrack");
 
     createButton.setEnabled(false);
     createMegabreakButton.setEnabled(false);

@@ -116,6 +116,7 @@ private:
     std::uint64_t chainRenderPendingRequestId = 0;
     std::atomic<std::uint64_t> chainRenderLatestRequestId{0};
     std::unique_ptr<juce::FileChooser> chainExportChooser;
+    juce::TooltipWindow tooltipWindow;
 
     void sendTransportEvent(TransportButtonComponent::TransportEvent event);
     juce::ListenerList<Listener> listeners;

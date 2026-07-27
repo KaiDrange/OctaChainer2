@@ -3,12 +3,18 @@
 SectionComponent::SectionComponent(juce::String title)
     : title(std::move(title))
 {
+    addAndMakeVisible(titleTooltip);
 }
 
 void SectionComponent::setTitle(juce::String newTitle)
 {
     title = std::move(newTitle);
     repaint();
+}
+
+void SectionComponent::setTooltip(const juce::String& tooltip)
+{
+    titleTooltip.setTooltip(tooltip);
 }
 
 const juce::String& SectionComponent::getTitle()
@@ -40,6 +46,7 @@ void SectionComponent::paint(juce::Graphics& g)
 
 void SectionComponent::resized()
 {
+    titleTooltip.setBounds(0, 0, getWidth(), StyleSheet::sectionHeaderHeight);
     contentBounds = getLocalBounds();
     contentBounds.removeFromTop(StyleSheet::sectionHeaderHeight);
     contentBounds.reduce(StyleSheet::sectionContentPadding, StyleSheet::sectionContentPadding);

@@ -528,3 +528,14 @@ void StyleSheet::drawTextEditorOutline(juce::Graphics& g, const int width, const
     g.setColour(border);
     g.drawRoundedRectangle(bounds, 5.0f, 1.0f);
 }
+
+void StyleSheet::drawTooltip(juce::Graphics& g, const String& text, const int width, const int height)
+{
+    g.fillAll(juce::Colour(tooltipBackgroundColour));
+    g.setColour(juce::Colour(tooltipOutlineColour));
+    g.drawRect(0, 0, width, height, 1);
+
+    g.setColour(juce::Colour(tooltipTextColour));
+    g.setFont(12.0f);
+    g.drawText(text, 0, 0, width, height, juce::Justification::centred, true);
+}

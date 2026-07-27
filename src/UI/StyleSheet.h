@@ -52,6 +52,10 @@ public:
     static constexpr uint32 sliceWaveformMarkerColour = 0xFF2E322F;
     static constexpr uint32 sliceWaveformMarkerHandleColour = 0xFFF7F2E9;
 
+    static constexpr uint32 tooltipBackgroundColour = 0xFF505050;
+    static constexpr uint32 tooltipTextColour = 0xFFFFFFFF;
+    static constexpr uint32 tooltipOutlineColour = 0xFF9F9F9F;
+
     static constexpr uint32 controlBackgroundColour = 0xFFF7F2E9;
     static constexpr uint32 controlBackgroundFocusedColour = 0xFFFFFFFF;
     static constexpr uint32 controlBorderColour = 0x809DA79D;
@@ -211,4 +215,5 @@ public:
                          juce::MenuBarComponent& menuBar) override;
     void fillTextEditorBackground(juce::Graphics& g, int width, int height, juce::TextEditor& editor) override;
     void drawTextEditorOutline(juce::Graphics& g, int width, int height, juce::TextEditor& editor) override;
+    void drawTooltip(juce::Graphics& g, const String& text, int width, int height) override;
 };

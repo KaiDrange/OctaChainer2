@@ -19,11 +19,22 @@ SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, 
     addAndMakeVisible(chainMaxLength);
     chainMaxLength.setLabelColour(StyleSheet::getSliceListTextColour());
 
+    btnAdd.addShortcut(juce::KeyPress('O', juce::ModifierKeys::ctrlModifier, 0));
+    btnAdd.setTooltip("Load audio files as slices (Hotkey: Ctrl/Cmd + O)");
     btnAdd.onClick = [this] { showAddFileChooser(); };
+
+    btnRemove.addShortcut(juce::KeyPress(juce::KeyPress::deleteKey));
+    btnRemove.setTooltip("Remove selected slice (Hotkey: Delete)");
     btnRemove.onClick = [this] { stateHandler.removeSelectedSlice(); };
+
+    btnRemoveAll.setTooltip("Remove all slices from list");
     btnRemoveAll.onClick = [this] { stateHandler.removeAllSlices(); };
+
+    btnAddSilence.setTooltip("Add a short slice of silence");
     btnAddSilence.onClick = [this] { stateHandler.addBlankSlice(22050); };
     stateHandler.addListener(this);
+
+    chainMaxLength.input.setTooltip("Maximum number of slices per chain");
     chainMaxLength.addListener(this);
     SliceListComponent::stateChanged({ StateHandler::StateChange::fullReload });
 }
