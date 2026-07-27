@@ -1,11 +1,11 @@
 #include "MainMenuBarModel.h"
 
 MainMenuBarModel::MainMenuBarModel(Action onQuit, Action onProjectSave, Action onProjectLoad, Action onOtImport,
-                                   Action onAudioSettings, Action onDefaultFolders, Action onHelp)
+                                   Action onAudioSettings, Action onDefaultFolders, Action onAbout)
     : onQuit(std::move(onQuit)),
       onAudioSettings(std::move(onAudioSettings)),
       onDefaultSettings(std::move(onDefaultFolders)),
-      onHelp(std::move(onHelp)),
+      onAbout(std::move(onAbout)),
       onProjectSave(std::move(onProjectSave)),
       onProjectLoad(std::move(onProjectLoad)),
       onOtImport(std::move(onOtImport))
@@ -71,8 +71,8 @@ void MainMenuBarModel::menuItemSelected(const int menuItemID, int topLevelMenuIn
     {
         onDefaultSettings();
     }
-    else if (menuItemID == 30 && onHelp)
+    else if (menuItemID == 30 && onAbout)
     {
-        onHelp();
+        onAbout();
     }
 }

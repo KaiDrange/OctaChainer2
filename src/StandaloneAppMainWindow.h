@@ -26,6 +26,7 @@ public:
 
     void showAudioSettings();
     void showDefaultSettings();
+    void showAboutDialog();
     void saveAudioSettings() const;
     void saveDefaultSettings() const;
     void saveCurrentSettingsAsDefaults() const;

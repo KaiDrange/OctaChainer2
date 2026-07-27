@@ -1,5 +1,6 @@
 #include "StandaloneAppMainWindow.h"
 #include "Core/AudioUtil.h"
+#include "UI/AboutDialogComponent.h"
 #include "UI/DefaultSettingsDialogComponent.h"
 
 StandaloneAppMainWindow::StandaloneAppMainWindow(const juce::String& name)
@@ -12,7 +13,8 @@ StandaloneAppMainWindow::StandaloneAppMainWindow(const juce::String& name)
           [this] { loadProject(); },
           [this] { importOtFile(); },
           [this] { showAudioSettings(); },
-          [this] { showDefaultSettings(); }
+          [this] { showDefaultSettings(); },
+          [this] { showAboutDialog(); }
       )
 {
     setLookAndFeel(&style);
@@ -196,6 +198,25 @@ void StandaloneAppMainWindow::showDefaultSettings()
     juce::DialogWindow::LaunchOptions options;
     options.content.setOwned(defaults.release());
     options.dialogTitle = "Application default settings";
+    options.dialogBackgroundColour = juce::Colour(StyleSheet::dialogBackgroundColour);
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = false;
+    options.componentToCentreAround = this;
+
+    options.launchAsync();
+}
+
+void StandaloneAppMainWindow::showAboutDialog()
+{
+    auto about = std::make_unique<AboutDialogComponent>(
+        "OctaChainer 2",
+        ProjectInfo::versionString
+    );
+
+    juce::DialogWindow::LaunchOptions options;
+    options.content.setOwned(about.release());
+    options.dialogTitle = "About OctaChainer 2";
     options.dialogBackgroundColour = juce::Colour(StyleSheet::dialogBackgroundColour);
     options.escapeKeyTriggersCloseButton = true;
     options.useNativeTitleBar = true;
