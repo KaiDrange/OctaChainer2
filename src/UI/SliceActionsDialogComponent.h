@@ -15,7 +15,12 @@ public:
         divideByBpm = 5
     };
 
-    SliceActionsDialogComponent(double bpmDefault, bool canCropToRange, bool canMergeWithSliceAbove);
+    using ActionCallback = std::function<void(ResultId)>;
+
+    SliceActionsDialogComponent(double bpmDefault,
+                                bool canCropToRange,
+                                bool canMergeWithSliceAbove,
+                                ActionCallback onActionSelected = {});
 
     void resized() override;
 
@@ -41,6 +46,7 @@ private:
     NumberInputComponent sliceCountInput;
     NumberInputComponent bpmInput;
     NumberInputComponent sixteenthNotesInput;
+    ActionCallback onActionSelected;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SliceActionsDialogComponent)
 };

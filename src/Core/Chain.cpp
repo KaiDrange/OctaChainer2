@@ -1,4 +1,5 @@
 #include "Chain.h"
+#include "AudioUtil.h"
 
 void Chain::clear()
 {
@@ -93,95 +94,6 @@ bool Chain::loadSliceRange(const juce::ValueTree& sliceTree,
     }
 
     return true;
-}
-
-bool Chain::resampleSliceToTargetRate(const juce::AudioBuffer<float>& source, const double sourceSampleRate,
-                                      const double targetSampleRate, juce::AudioBuffer<float>& destination)
-{
-    if (source.getNumChannels() <= 0 || source.getNumSamples() <= 0 || sourceSampleRate <= 0.0 || targetSampleRate <= 0.0)
-        return false;
-
-    if (sourceSampleRate == targetSampleRate)
-    {
-        destination.makeCopyOf(source);
-        return true;
-    }
-
-    const auto outputSampleCount = juce::jmax(1, juce::roundToInt(static_cast<double>(source.getNumSamples())
-                                                                   * targetSampleRate / sourceSampleRate));
-    destination.setSize(source.getNumChannels(), outputSampleCount, false, false, true);
-    destination.clear();
-
-    const auto speedRatio = sourceSampleRate / targetSampleRate;
-    for (int channel = 0; channel < source.getNumChannels(); ++channel)
-    {
-        juce::LagrangeInterpolator interpolator;
-        interpolator.reset();
-        interpolator.process(speedRatio,
-                             source.getReadPointer(channel),
-                             destination.getWritePointer(channel),
-                             outputSampleCount);
-    }
-
-    return true;
-}
-
-bool Chain::renderBufferToTargetChannelCount(const juce::AudioBuffer<float>& source, const int targetChannelCount,
-                                             juce::AudioBuffer<float>& destination)
-{
-    if (source.getNumChannels() <= 0 || source.getNumSamples() <= 0 || targetChannelCount <= 0)
-        return false;
-
-    if (source.getNumChannels() == targetChannelCount)
-    {
-        destination.makeCopyOf(source);
-        return true;
-    }
-
-    destination.setSize(targetChannelCount, source.getNumSamples(), false, false, true);
-    destination.clear();
-
-    if (targetChannelCount == 1)
-    {
-        const auto mixGain = 1.0f / static_cast<float>(source.getNumChannels());
-        for (int channel = 0; channel < source.getNumChannels(); ++channel)
-            destination.addFrom(0, 0, source, channel, 0, source.getNumSamples(), mixGain);
-
-        return true;
-    }
-
-    if (source.getNumChannels() == 1)
-    {
-        for (int channel = 0; channel < targetChannelCount; ++channel)
-            destination.copyFrom(channel, 0, source, 0, 0, source.getNumSamples());
-
-        return true;
-    }
-
-    for (int channel = 0; channel < targetChannelCount; ++channel)
-    {
-        const auto sourceChannel = juce::jmin(channel, source.getNumChannels() - 1);
-        destination.copyFrom(channel, 0, source, sourceChannel, 0, source.getNumSamples());
-    }
-
-    return true;
-}
-
-void Chain::normalizeAudioBuffer(juce::AudioBuffer<float>& buffer)
-{
-    const auto numChannels = buffer.getNumChannels();
-    const auto numSamples = buffer.getNumSamples();
-    if (numChannels <= 0 || numSamples <= 0)
-        return;
-
-    float peak = 0.0f;
-    for (int channel = 0; channel < numChannels; ++channel)
-        peak = juce::jmax(peak, buffer.getMagnitude(channel, 0, numSamples));
-
-    if (! std::isfinite(peak) || peak <= 0.0f)
-        return;
-
-    buffer.applyGain(1.0f / peak);
 }
 
 void Chain::padBufferToLength(juce::AudioBuffer<float>& buffer, const int targetSampleCount)
@@ -384,15 +296,15 @@ bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRa
             continue;
 
         juce::AudioBuffer<float> renderedBuffer;
-        if (! resampleSliceToTargetRate(sliceBuffer, sourceSampleRate, targetSampleRate, renderedBuffer))
+        if (! AudioUtil::resampleAudioBuffer(sliceBuffer, sourceSampleRate, targetSampleRate, renderedBuffer))
             continue;
 
         juce::AudioBuffer<float> channelMatchedBuffer;
-        if (! renderBufferToTargetChannelCount(renderedBuffer, outputChannelCount, channelMatchedBuffer))
+        if (! AudioUtil::renderAudioBufferToChannelCount(renderedBuffer, outputChannelCount, channelMatchedBuffer))
             continue;
 
         if (shouldNormalizeSlice)
-            normalizeAudioBuffer(channelMatchedBuffer);
+            AudioUtil::normalizeAudioBuffer(channelMatchedBuffer);
 
         applyFadeInOut(channelMatchedBuffer, targetSampleRate, fadeInInMs, fadeOutInMs);
 
@@ -422,7 +334,7 @@ bool Chain::create(const juce::ValueTree& stateTree, const double targetSampleRa
     }
 
     if (shouldNormalizeChain)
-        normalizeAudioBuffer(output);
+        AudioUtil::normalizeAudioBuffer(output);
 
     audioClip = std::make_shared<AudioClip>(std::move(output), targetSampleRate);
     return true;

@@ -470,7 +470,7 @@ void SliceListComponent::showAddFileChooser()
                                   | juce::FileBrowserComponent::canSelectFiles
                                   | juce::FileBrowserComponent::canSelectMultipleItems;
 
-    const juce::Component::SafePointer<SliceListComponent> safeThis(this);
+    const juce::Component::SafePointer safeThis(this);
     fileChooser->launchAsync(browserFlags, [safeThis](const juce::FileChooser& chooser)
     {
         if (safeThis != nullptr)
@@ -498,10 +498,23 @@ void SliceListComponent::showActionsDialog()
                                 && totalSamples > 0
                                 && ! (currentStart <= 0 && currentEnd >= totalSamples);
 
+    const juce::Component::SafePointer safeThis(this);
     auto actionsDialog = std::make_unique<SliceActionsDialogComponent>(
         stateHandler.getStateValue<double>(StateHandler::bpmId, StateHandler::bpmValue.defaultValue),
         canCropToRange,
-        selectedRow > 0);
+        selectedRow > 0,
+        [safeThis](const SliceActionsDialogComponent::ResultId result)
+        {
+            if (safeThis == nullptr)
+                return;
+
+            if (result == SliceActionsDialogComponent::cropToRange)
+                safeThis->stateHandler.cropSelectedSliceToRange();
+            else if (result == SliceActionsDialogComponent::normalizeSlice)
+                safeThis->stateHandler.normalizeSelectedSlice();
+            else if (result == SliceActionsDialogComponent::mergeWithSliceAbove)
+                safeThis->stateHandler.mergeSelectedSliceWithSliceAbove();
+        });
 
     juce::DialogWindow::LaunchOptions options;
     options.content.setOwned(actionsDialog.release());
@@ -603,11 +616,9 @@ void SliceListComponent::loadAudioRegions(const std::vector<VstXmlDragData::Audi
         }
 
         if (region.name.isNotEmpty())
-            slice->name = region.name;
-        else if (region.hasSampleRange())
-            slice->name = region.sourceFile.getFileNameWithoutExtension()
-                          + " [" + juce::String(region.sampleRange.getStart())
-                          + "-" + juce::String(region.sampleRange.getEnd()) + "]";
+            slice->setName(region.name);
+        else
+            slice->setName(region.sourceFile.getFileNameWithoutExtension() + " " + juce::String(static_cast<juce::int64>(stateHandler.getNumSlices() + 1)));
 
         lastLoadedRow = stateHandler.addSlice(*slice, nullptr, false);
         --remainingSlots;

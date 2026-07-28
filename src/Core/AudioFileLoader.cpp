@@ -71,7 +71,7 @@ std::vector<std::unique_ptr<Slice>> AudioFileLoader::loadFileSlices(const juce::
             return {};
 
         if (hasCuePoints && sliceRanges.size() > 1)
-            slice->name = file.getFileNameWithoutExtension() + " " + juce::String(static_cast<juce::int64>(i + 1));
+            slice->setName(file.getFileNameWithoutExtension() + " " + juce::String(static_cast<juce::int64>(i + 1)));
 
         slices.push_back(std::move(slice));
     }
@@ -191,7 +191,7 @@ bool AudioFileLoader::loadSliceFromReader(juce::AudioFormatReader& reader, const
     destination.start = 0;
     destination.end = destination.lengthInSamples;
     destination.loopStart = 0;
-    destination.name = file.getFileName();
+    destination.setName(file.getFileName());
     destination.sourcePath = file.getFullPathName();
 
     return true;

@@ -4,10 +4,12 @@
 
 SliceActionsDialogComponent::SliceActionsDialogComponent(const double bpmDefault,
                                                         const bool canCropToRange,
-                                                        const bool canMergeWithSliceAbove)
+                                                        const bool canMergeWithSliceAbove,
+                                                        ActionCallback onActionSelected)
     : sliceCountInput("Slice count:", 1.0, 64.0, 1.0, 1.0, true),
       bpmInput("BPM:", StateHandler::bpmValue.min, StateHandler::bpmValue.max, bpmDefault, 0.01, true),
-      sixteenthNotesInput("Sixteenth notes per slice:", 1.0, 64.0, 16.0, 1.0, true)
+      sixteenthNotesInput("Sixteenth notes per slice:", 1.0, 64.0, 16.0, 1.0, true),
+      onActionSelected(std::move(onActionSelected))
 {
     setSize(dialogWidth, dialogHeight);
 
@@ -75,6 +77,9 @@ void SliceActionsDialogComponent::configureOptionButton(juce::TextButton& button
     button.setButtonText(text);
     button.onClick = [this, resultId]
     {
+        if (onActionSelected)
+            onActionSelected(static_cast<ResultId>(resultId));
+
         closeDialog(resultId);
     };
 }

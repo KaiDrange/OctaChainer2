@@ -96,6 +96,9 @@ public:
     int addBlankSlice(int64 lengthInSamples, juce::UndoManager* undoManager = nullptr);
     void removeSelectedSlice();
     void removeAllSlices();
+    bool cropSelectedSliceToRange(juce::UndoManager* undoManager = nullptr);
+    bool normalizeSelectedSlice(juce::UndoManager* undoManager = nullptr);
+    bool mergeSelectedSliceWithSliceAbove(juce::UndoManager* undoManager = nullptr);
 
     bool selectSlice(int index, juce::UndoManager* undoManager = nullptr);
     bool setSelectedSliceRange(int startSample, int endSample, juce::UndoManager* undoManager = nullptr);
@@ -110,6 +113,8 @@ private:
     void ensureDataTree();
     void setDefaultStateValue(const juce::Identifier& identifier, const juce::var& value);
     void notifyListeners(const StateChange& change);
+    static bool loadSliceRangeAudio(const juce::ValueTree& sliceTree, juce::AudioBuffer<float>& destination,
+                                    double& sampleRate);
     static juce::MemoryBlock createAudioDataBlock(const Slice& slice);
 
     juce::ValueTree valueTree;

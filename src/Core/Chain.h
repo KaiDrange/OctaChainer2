@@ -30,11 +30,6 @@ public:
 private:
     static bool loadSliceRange(const juce::ValueTree& sliceTree,
                                juce::AudioBuffer<float>& destination, double& sampleRate);
-    static bool resampleSliceToTargetRate(const juce::AudioBuffer<float>& source, double sourceSampleRate,
-                                          double targetSampleRate, juce::AudioBuffer<float>& destination);
-    static bool renderBufferToTargetChannelCount(const juce::AudioBuffer<float>& source, int targetChannelCount,
-                                                 juce::AudioBuffer<float>& destination);
-    static void normalizeAudioBuffer(juce::AudioBuffer<float>& buffer);
     static void padBufferToLength(juce::AudioBuffer<float>& buffer, int targetSampleCount);
     static juce::int64 estimateRenderedSampleCount(juce::int64 sourceSampleCount, double sourceSampleRate,
                                                    double targetSampleRate);

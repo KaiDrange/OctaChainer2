@@ -1,4 +1,6 @@
 #include "StateHandler.h"
+#include "AudioUtil.h"
+#include "AudioFileLoader.h"
 
 StateHandler::StateChange makeStateChange(const StateHandler::StateChange::Flag flags, const juce::Identifier& property = {})
 {
@@ -410,6 +412,12 @@ bool StateHandler::loadFullSelectedSliceAudio(juce::AudioBuffer<float>& destinat
 bool StateHandler::loadSelectedSliceRangeAudio(juce::AudioBuffer<float>& destination, double& sampleRate) const
 {
     const auto sliceTree = getSelectedSliceTree();
+    return loadSliceRangeAudio(sliceTree, destination, sampleRate);
+}
+
+bool StateHandler::loadSliceRangeAudio(const juce::ValueTree& sliceTree, juce::AudioBuffer<float>& destination,
+                                       double& sampleRate)
+{
     if (! sliceTree.isValid())
         return false;
 
@@ -466,7 +474,7 @@ int StateHandler::addSlice(const Slice& slice, juce::UndoManager* undoManager, c
     ensureDataTree();
 
     juce::ValueTree sliceTree(sliceId);
-    sliceTree.setProperty(sliceNameId, slice.name, nullptr);
+    sliceTree.setProperty(sliceNameId, slice.getName(), nullptr);
     sliceTree.setProperty(sliceSourcePathId, slice.sourcePath, nullptr);
     sliceTree.setProperty(sliceChannelsId, slice.channels, nullptr);
     sliceTree.setProperty(sliceSamplerateId, slice.samplerate, nullptr);
@@ -490,7 +498,7 @@ int StateHandler::addBlankSlice(const int64 lengthInSamples, juce::UndoManager* 
 {
     ensureDataTree();
     Slice slice;
-    slice.name = "Blank";
+    slice.setName("Blank");
     slice.sourcePath = {"N/A"};
     slice.channels = 1;
     slice.samplerate = 44100;
@@ -523,6 +531,224 @@ void StateHandler::removeAllSlices()
 
     dataTree.removeAllChildren(nullptr);
     dataTree.setProperty(selectedSliceId, -1, nullptr);
+}
+
+bool StateHandler::cropSelectedSliceToRange(juce::UndoManager* undoManager)
+{
+    ensureDataTree();
+
+    auto sliceTree = getSelectedSliceTree();
+    if (! sliceTree.isValid())
+        return false;
+
+    const auto totalSamples = static_cast<juce::int64>(sliceTree.getProperty(sliceNumSamplesId, 0));
+    if (totalSamples <= 0)
+        return false;
+
+    const auto rangeStart = juce::jlimit<juce::int64>(0, totalSamples,
+                                                      sliceTree.getProperty(sliceStartSampleId, 0));
+    auto rangeEnd = juce::jlimit(rangeStart, totalSamples,
+                                 static_cast<juce::int64>(sliceTree.getProperty(sliceEndSampleId, totalSamples)));
+    if (rangeEnd <= rangeStart)
+        rangeEnd = juce::jmin<juce::int64>(totalSamples, rangeStart + 1);
+
+    const auto croppedLength = rangeEnd - rangeStart;
+    if (croppedLength <= 0 || (rangeStart <= 0 && rangeEnd >= totalSamples))
+        return false;
+
+    juce::AudioBuffer<float> croppedAudio;
+    double sampleRate = 0.0;
+    if (! loadSelectedSliceRangeAudio(croppedAudio, sampleRate))
+        return false;
+
+    Slice croppedSlice;
+    croppedSlice.setName(sliceTree.getProperty(sliceNameId).toString());
+    croppedSlice.sourcePath = sliceTree.getProperty(sliceSourcePathId).toString();
+    croppedSlice.channels = croppedAudio.getNumChannels();
+    croppedSlice.samplerate = sampleRate;
+    croppedSlice.bitDepth = static_cast<unsigned int>(static_cast<int>(sliceTree.getProperty(sliceBitrateId, 0)));
+    croppedSlice.lengthInSamples = croppedAudio.getNumSamples();
+    croppedSlice.start = 0;
+    croppedSlice.end = croppedSlice.lengthInSamples;
+    croppedSlice.loopStart = juce::jlimit<juce::int64>(0,
+                                                       croppedSlice.lengthInSamples,
+                                                       static_cast<juce::int64>(sliceTree.getProperty(sliceLoopStartSampleId, 0)) - rangeStart);
+
+    auto* audioData = croppedSlice.getAudioData();
+    audioData->setSize(croppedSlice.channels, static_cast<int>(croppedSlice.lengthInSamples), false, false, false);
+    audioData->clear();
+
+    for (int channel = 0; channel < croppedSlice.channels; ++channel)
+        audioData->copyFrom(channel, 0, croppedAudio, channel, 0, static_cast<int>(croppedSlice.lengthInSamples));
+
+    sliceTree.setProperty(sliceNameId, croppedSlice.getName(), undoManager);
+    sliceTree.setProperty(sliceSourcePathId, croppedSlice.sourcePath, undoManager);
+    sliceTree.setProperty(sliceChannelsId, croppedSlice.channels, undoManager);
+    sliceTree.setProperty(sliceSamplerateId, croppedSlice.samplerate, undoManager);
+    sliceTree.setProperty(sliceBitrateId, static_cast<int>(croppedSlice.bitDepth), undoManager);
+    sliceTree.setProperty(sliceNumSamplesId, croppedSlice.lengthInSamples, undoManager);
+    sliceTree.setProperty(sliceStartSampleId, croppedSlice.start, undoManager);
+    sliceTree.setProperty(sliceEndSampleId, croppedSlice.end, undoManager);
+    sliceTree.setProperty(sliceLoopStartSampleId, croppedSlice.loopStart, undoManager);
+    sliceTree.setProperty(sliceAudioDataId, juce::var(createAudioDataBlock(croppedSlice)), undoManager);
+
+    return true;
+}
+
+bool StateHandler::normalizeSelectedSlice(juce::UndoManager* undoManager)
+{
+    ensureDataTree();
+
+    auto sliceTree = getSelectedSliceTree();
+    if (! sliceTree.isValid())
+        return false;
+
+    juce::AudioBuffer<float> audioData;
+    double sampleRate = 0.0;
+    if (! loadFullSelectedSliceAudio(audioData, sampleRate))
+        return false;
+
+    const auto numChannels = audioData.getNumChannels();
+    const auto numSamples = audioData.getNumSamples();
+    if (numChannels <= 0 || numSamples <= 0)
+        return false;
+
+    AudioUtil::normalizeAudioBuffer(audioData);
+
+    Slice normalizedSlice;
+    normalizedSlice.setName(sliceTree.getProperty(sliceNameId).toString());
+    normalizedSlice.sourcePath = sliceTree.getProperty(sliceSourcePathId).toString();
+    normalizedSlice.channels = numChannels;
+    normalizedSlice.samplerate = sampleRate;
+    normalizedSlice.bitDepth = static_cast<unsigned int>(static_cast<int>(sliceTree.getProperty(sliceBitrateId, 0)));
+    normalizedSlice.lengthInSamples = numSamples;
+    normalizedSlice.start = static_cast<juce::int64>(sliceTree.getProperty(sliceStartSampleId, 0));
+    normalizedSlice.end = static_cast<juce::int64>(sliceTree.getProperty(sliceEndSampleId, numSamples));
+    normalizedSlice.loopStart = static_cast<juce::int64>(sliceTree.getProperty(sliceLoopStartSampleId, 0));
+
+    auto* destinationAudio = normalizedSlice.getAudioData();
+    destinationAudio->setSize(numChannels, numSamples, false, false, false);
+    destinationAudio->clear();
+
+    for (int channel = 0; channel < numChannels; ++channel)
+        destinationAudio->copyFrom(channel, 0, audioData, channel, 0, numSamples);
+
+    sliceTree.setProperty(sliceAudioDataId, juce::var(createAudioDataBlock(normalizedSlice)), undoManager);
+
+    return true;
+}
+
+bool StateHandler::mergeSelectedSliceWithSliceAbove(juce::UndoManager* undoManager)
+{
+    ensureDataTree();
+
+    const auto selectedIndex = getSelectedSliceIndex();
+    if (selectedIndex <= 0)
+        return false;
+
+    const auto aboveIndex = selectedIndex - 1;
+    auto aboveSliceTree = getSliceTree(aboveIndex);
+    auto selectedSliceTree = getSelectedSliceTree();
+    if (! aboveSliceTree.isValid() || ! selectedSliceTree.isValid())
+        return false;
+
+    juce::AudioBuffer<float> aboveAudio;
+    juce::AudioBuffer<float> selectedAudio;
+    double aboveSampleRate = 0.0;
+    double selectedSampleRate = 0.0;
+
+    if (! loadSliceRangeAudio(aboveSliceTree, aboveAudio, aboveSampleRate)
+        || ! loadSliceRangeAudio(selectedSliceTree, selectedAudio, selectedSampleRate))
+    {
+        return false;
+    }
+
+    const auto aboveChannels = aboveAudio.getNumChannels();
+    const auto selectedChannels = selectedAudio.getNumChannels();
+    const auto targetChannelCount = juce::jmax(aboveChannels, selectedChannels);
+    const auto targetSampleRate = juce::jmax(aboveSampleRate, selectedSampleRate);
+    if (targetChannelCount <= 0 || targetSampleRate <= 0.0)
+        return false;
+
+    juce::AudioBuffer<float> aboveResampled;
+    juce::AudioBuffer<float> selectedResampled;
+    juce::AudioBuffer<float> aboveRendered;
+    juce::AudioBuffer<float> selectedRendered;
+    if (! AudioUtil::resampleAudioBuffer(aboveAudio, aboveSampleRate, targetSampleRate, aboveResampled)
+        || ! AudioUtil::renderAudioBufferToChannelCount(aboveResampled, targetChannelCount, aboveRendered)
+        || ! AudioUtil::resampleAudioBuffer(selectedAudio, selectedSampleRate, targetSampleRate, selectedResampled)
+        || ! AudioUtil::renderAudioBufferToChannelCount(selectedResampled, targetChannelCount, selectedRendered))
+        return false;
+
+    const auto mergedSamples = aboveRendered.getNumSamples() + selectedRendered.getNumSamples();
+    if (mergedSamples <= 0)
+        return false;
+
+    const auto estimatedAudioBytes = static_cast<juce::int64>(targetChannelCount)
+                                     * static_cast<juce::int64>(mergedSamples)
+                                     * static_cast<juce::int64>(sizeof(float));
+    if (estimatedAudioBytes > AudioFileLoader::maxLoadedAudioDataBytes)
+        return false;
+
+    juce::AudioBuffer<float> mergedAudio;
+    mergedAudio.setSize(targetChannelCount, mergedSamples, false, false, true);
+    mergedAudio.clear();
+
+    const auto appendBuffer = [&mergedAudio](const juce::AudioBuffer<float>& source, int destStartSample)
+    {
+        const auto sourceChannels = source.getNumChannels();
+        const auto sourceSamples = source.getNumSamples();
+        if (sourceChannels <= 0 || sourceSamples <= 0)
+            return;
+
+        for (int channel = 0; channel < sourceChannels; ++channel)
+            mergedAudio.copyFrom(channel, destStartSample, source, channel, 0, sourceSamples);
+    };
+
+    appendBuffer(aboveRendered, 0);
+    appendBuffer(selectedRendered, aboveRendered.getNumSamples());
+
+    Slice mergedSlice;
+    const auto aboveName = aboveSliceTree.getProperty(sliceNameId).toString().trim();
+    const auto selectedName = selectedSliceTree.getProperty(sliceNameId).toString().trim();
+    mergedSlice.setName(selectedName + " (merged)");
+    mergedSlice.sourcePath = aboveSliceTree.getProperty(sliceSourcePathId).toString();
+    if (mergedSlice.sourcePath.isEmpty() || mergedSlice.sourcePath != selectedSliceTree.getProperty(sliceSourcePathId).toString())
+        mergedSlice.sourcePath = "Merged";
+    mergedSlice.channels = targetChannelCount;
+    mergedSlice.samplerate = targetSampleRate;
+    mergedSlice.bitDepth = juce::jmax(static_cast<int>(aboveSliceTree.getProperty(sliceBitrateId, 0)),
+                                      static_cast<int>(selectedSliceTree.getProperty(sliceBitrateId, 0)));
+    mergedSlice.lengthInSamples = mergedSamples;
+    mergedSlice.start = 0;
+    mergedSlice.end = mergedSlice.lengthInSamples;
+    mergedSlice.loopStart = 0;
+
+    auto* destinationAudio = mergedSlice.getAudioData();
+    destinationAudio->setSize(targetChannelCount, mergedSamples, false, false, false);
+    destinationAudio->clear();
+
+    for (int channel = 0; channel < targetChannelCount; ++channel)
+        destinationAudio->copyFrom(channel, 0, mergedAudio, channel, 0, static_cast<int>(mergedSamples));
+
+    juce::ValueTree mergedTree(sliceId);
+    mergedTree.setProperty(sliceNameId, mergedSlice.getName(), nullptr);
+    mergedTree.setProperty(sliceSourcePathId, mergedSlice.sourcePath, nullptr);
+    mergedTree.setProperty(sliceChannelsId, mergedSlice.channels, nullptr);
+    mergedTree.setProperty(sliceSamplerateId, mergedSlice.samplerate, nullptr);
+    mergedTree.setProperty(sliceBitrateId, static_cast<int>(mergedSlice.bitDepth), nullptr);
+    mergedTree.setProperty(sliceNumSamplesId, mergedSlice.lengthInSamples, nullptr);
+    mergedTree.setProperty(sliceStartSampleId, mergedSlice.start, nullptr);
+    mergedTree.setProperty(sliceEndSampleId, mergedSlice.end, nullptr);
+    mergedTree.setProperty(sliceLoopStartSampleId, mergedSlice.loopStart, nullptr);
+    mergedTree.setProperty(sliceAudioDataId, juce::var(createAudioDataBlock(mergedSlice)), nullptr);
+
+    dataTree.removeChild(selectedIndex, undoManager);
+    dataTree.removeChild(aboveIndex, undoManager);
+    dataTree.addChild(mergedTree, aboveIndex, undoManager);
+    dataTree.setProperty(selectedSliceId, aboveIndex, undoManager);
+
+    return true;
 }
 
 bool StateHandler::selectSlice(const int index, juce::UndoManager* undoManager)

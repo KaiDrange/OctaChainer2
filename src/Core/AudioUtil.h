@@ -13,6 +13,11 @@ public:
     static constexpr std::array<char, 4> cueChunkId{ 'c', 'u', 'e', ' ' };
 
     static std::shared_ptr<AudioClip> renderPlaybackClip(AudioClip clip, double targetSamplerate, int targetChannelCount);
+    static void normalizeAudioBuffer(juce::AudioBuffer<float>& buffer);
+    static bool resampleAudioBuffer(const juce::AudioBuffer<float>& source, double sourceSampleRate,
+                                    double targetSampleRate, juce::AudioBuffer<float>& destination);
+    static bool renderAudioBufferToChannelCount(const juce::AudioBuffer<float>& source, int targetChannelCount,
+                                                juce::AudioBuffer<float>& destination);
     static std::vector<juce::int64> buildCueOffsetsFromSegments(const std::vector<Chain::Segment>& segments);
     static bool writeWavFile(const juce::File& file, const juce::AudioBuffer<float>& audioData, double sampleRate,
                              int bitDepth, const std::vector<juce::int64>* cueOffsets = nullptr,

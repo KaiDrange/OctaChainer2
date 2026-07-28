@@ -239,7 +239,7 @@ bool OtReader::performImportImpl(const ImportSettings& settings, StateHandler& s
             return false;
 
         if (settings.hasExplicitSlices)
-            loadedSlice->name = settings.audioFile.getFileNameWithoutExtension() + " " + juce::String(static_cast<juce::int64>(i + 1));
+            loadedSlice->setName(settings.audioFile.getFileNameWithoutExtension() + " " + juce::String(static_cast<juce::int64>(i + 1)));
 
         importedSlices.push_back(std::move(loadedSlice));
     }
