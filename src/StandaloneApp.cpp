@@ -1,5 +1,8 @@
 #include "StandaloneApp.h"
+#include "Core/HeadlessBatchRunner.h"
 #include "UI/MainComponent.h"
+
+#include <iostream>
 
 const juce::String OctaChainer2StandaloneApplication::getApplicationName()
 {
@@ -18,7 +21,21 @@ bool OctaChainer2StandaloneApplication::moreThanOneInstanceAllowed()
 
 void OctaChainer2StandaloneApplication::initialise(const juce::String& commandLine)
 {
-    juce::ignoreUnused(commandLine);
+    const auto headlessResult = HeadlessBatchRunner::runFromCommandLine(commandLine);
+    if (headlessResult.handled)
+    {
+        if (headlessResult.output.isNotEmpty())
+        {
+            if (headlessResult.success)
+                std::cout << headlessResult.output << std::endl;
+            else
+                std::cerr << headlessResult.output << std::endl;
+        }
+
+        juce::JUCEApplicationBase::setApplicationReturnValue(headlessResult.exitCode);
+        quit();
+        return;
+    }
 
     mainWindow = std::make_unique<StandaloneAppMainWindow>(getApplicationName());
     mainWindow->initialise();
@@ -31,8 +48,12 @@ void OctaChainer2StandaloneApplication::shutdown()
 
 void OctaChainer2StandaloneApplication::systemRequestedQuit()
 {
-    mainWindow->saveAudioSettings();
-    mainWindow->saveDefaultSettings();
+    if (mainWindow != nullptr)
+    {
+        mainWindow->saveAudioSettings();
+        mainWindow->saveDefaultSettings();
+    }
+
     quit();
 }
 

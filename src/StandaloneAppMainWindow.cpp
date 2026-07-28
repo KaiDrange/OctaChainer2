@@ -231,12 +231,12 @@ void StandaloneAppMainWindow::showAboutDialog()
 
 void StandaloneAppMainWindow::showOnlineManual()
 {
-    const auto url = juce::URL(AboutDialogComponent::onlineManualUrl).launchInDefaultBrowser();
+    juce::ignoreUnused(juce::URL(AboutDialogComponent::onlineManualUrl).launchInDefaultBrowser());
 }
 
 void StandaloneAppMainWindow::showOurMusic()
 {
-    const auto url = juce::URL(AboutDialogComponent::ourMusicUrl).launchInDefaultBrowser();
+    juce::ignoreUnused(juce::URL(AboutDialogComponent::ourMusicUrl).launchInDefaultBrowser());
 }
 
 void StandaloneAppMainWindow::saveAudioSettings() const
