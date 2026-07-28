@@ -69,6 +69,7 @@ private:
     };
 
     void configureTable();
+    void showActionsDialog();
     int getChainGroupSize() const;
     int getDragInsertionIndex(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) const;
     bool isRowDragFromThisTable(const juce::DragAndDropTarget::SourceDetails& dragSourceDetails) const;
@@ -93,6 +94,7 @@ private:
     int dragInsertIndex = -1;
     juce::TextButton btnAdd{"Load file(s)"};
     juce::TextButton btnAddSilence{"Add blank"};
+    juce::TextButton btnActions{"Actions"};
     juce::TextButton btnRemove{"Remove"};
     juce::TextButton btnRemoveAll{"Clear"};
     NumberInputComponent chainMaxLength{

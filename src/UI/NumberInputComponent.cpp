@@ -13,7 +13,7 @@ NumberInputComponent::NumberInputComponent(const juce::String& labelText,
     input.setInputFilter(new juce::TextEditor::LengthAndCharacterRestriction(16, "-0123456789."), true);
     input.setJustification(juce::Justification::right);
     input.setFont(StyleSheet::getControlFont());
-    input.setColour(juce::TextEditor::textColourId, juce::Colour(StyleSheet::controlTextColour));
+    setValueColour(juce::Colour(StyleSheet::controlTextColour));
     input.setIndents(StyleSheet::controlTextInsetX, StyleSheet::controlTextInsetY);
     addAndMakeVisible(label);
     addAndMakeVisible(input);
@@ -195,6 +195,12 @@ void NumberInputComponent::setLabelText(const juce::String& text) {
 void NumberInputComponent::setLabelColour(const juce::Colour& colour)
 {
     label.setColour(juce::Label::textColourId, colour);
+}
+
+void NumberInputComponent::setValueColour(const juce::Colour& colour)
+{
+    input.setColour(juce::TextEditor::textColourId, colour);
+    input.applyColourToAllText(colour);
 }
 
 void NumberInputComponent::addListener(Listener* listenerToAdd) {

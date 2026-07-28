@@ -12,6 +12,7 @@ public:
     void setValue(int number);
     void setValue(double number);
     void setValue(const juce::var& value);
+    void setValueColour(const juce::Colour& colour);
     void setLabelText(const juce::String& text);
     void setLabelColour(const juce::Colour& colour);
     void resized() override;

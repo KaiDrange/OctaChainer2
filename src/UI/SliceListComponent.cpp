@@ -1,8 +1,9 @@
 #include "SliceListComponent.h"
+#include "SliceActionsDialogComponent.h"
 
 SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
-                                         StateHandler& stateHandlerToUse,
-                                         const juce::String& title)
+                                       StateHandler& stateHandlerToUse,
+                                       const juce::String& title)
     : PanelComponent(height, width, title),
       stateHandler(stateHandlerToUse)
 {
@@ -14,6 +15,7 @@ SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, 
     addAndMakeVisible(table);
     addAndMakeVisible(btnAdd);
     addAndMakeVisible(btnAddSilence);
+    addAndMakeVisible(btnActions);
     addAndMakeVisible(btnRemove);
     addAndMakeVisible(btnRemoveAll);
     addAndMakeVisible(chainMaxLength);
@@ -32,6 +34,8 @@ SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, 
 
     btnAddSilence.setTooltip("Add a short slice of silence");
     btnAddSilence.onClick = [this] { stateHandler.addBlankSlice(22050); };
+    btnActions.setTooltip("Process selected slice");
+    btnActions.onClick = [this] { showActionsDialog(); };
     stateHandler.addListener(this);
 
     chainMaxLength.input.setTooltip("Maximum number of slices per chain");
@@ -55,8 +59,9 @@ void SliceListComponent::resized()
 
     table.getHeader().setColumnVisible(5, contentArea.getWidth() > 700);
 
-    btnAdd.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 5).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
-    btnAddSilence.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 4).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
+    btnAdd.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 6).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
+    btnAddSilence.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 5).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
+    btnActions.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 4).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
     btnRemove.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 3).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
     btnRemoveAll.setBounds(buttonArea.removeFromLeft(buttonArea.getWidth() / 2).reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
     chainMaxLength.setBounds(buttonArea.reduced(StyleSheet::buttonMargins, StyleSheet::buttonMargins));
@@ -410,9 +415,11 @@ void SliceListComponent::stateChanged(const StateHandler::StateChange& change)
             table.deselectAllRows();
     }
 
-    if (refreshContent || change.has(StateHandler::StateChange::fullReload))
+    if (refreshContent || refreshSelection || change.has(StateHandler::StateChange::fullReload))
     {
         const auto hasSlices = stateHandler.getNumSlices() > 0;
+        const auto hasSelection = stateHandler.getSelectedSliceIndex() >= 0;
+        btnActions.setEnabled(hasSelection);
         btnRemove.setEnabled(hasSlices);
         btnRemoveAll.setEnabled(hasSlices);
     }
@@ -469,6 +476,43 @@ void SliceListComponent::showAddFileChooser()
         if (safeThis != nullptr)
             safeThis->loadFiles(chooser.getResults());
     });
+}
+
+void SliceListComponent::showActionsDialog()
+{
+    const auto selectedRow = stateHandler.getSelectedSliceIndex();
+    if (selectedRow < 0)
+        return;
+
+    const auto sliceTree = stateHandler.getSelectedSliceTree();
+    const auto totalSamples = sliceTree.isValid()
+        ? static_cast<juce::int64>(sliceTree.getProperty(StateHandler::sliceNumSamplesId, 0))
+        : 0;
+    const auto currentStart = sliceTree.isValid()
+        ? static_cast<juce::int64>(sliceTree.getProperty(StateHandler::sliceStartSampleId, 0))
+        : 0;
+    const auto currentEnd = sliceTree.isValid()
+        ? static_cast<juce::int64>(sliceTree.getProperty(StateHandler::sliceEndSampleId, totalSamples))
+        : 0;
+    const auto canCropToRange = sliceTree.isValid()
+                                && totalSamples > 0
+                                && ! (currentStart <= 0 && currentEnd >= totalSamples);
+
+    auto actionsDialog = std::make_unique<SliceActionsDialogComponent>(
+        stateHandler.getStateValue<double>(StateHandler::bpmId, StateHandler::bpmValue.defaultValue),
+        canCropToRange,
+        selectedRow > 0);
+
+    juce::DialogWindow::LaunchOptions options;
+    options.content.setOwned(actionsDialog.release());
+    options.dialogTitle = "Slice actions";
+    options.dialogBackgroundColour = juce::Colour(StyleSheet::dialogBackgroundColour);
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = false;
+    options.componentToCentreAround = this;
+
+    options.launchAsync();
 }
 
 void SliceListComponent::loadFiles(const juce::Array<juce::File>& files)

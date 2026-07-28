@@ -30,6 +30,7 @@ public:
     static constexpr uint32 buttonBackgroundDownColour = 0xFF55695D;
     static constexpr uint32 buttonBorderColour = 0x80545F58;
     static constexpr uint32 buttonTextColour = 0xFFF7F5EF;
+    static constexpr uint32 darkInputsValueColour = buttonTextColour;
     static constexpr uint32 toggleTickColour = 0xFF0A84FF;
 
     static constexpr uint32 sliceListBackgroundColour = 0xFF44423D;
