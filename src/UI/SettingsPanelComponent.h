@@ -28,8 +28,8 @@ public:
 
     static constexpr int topSectionHeight = 80;
     static constexpr int otSectionHeight = 160;
-    static constexpr int chainExportSectionHeight = 180;
-    static constexpr int megabreakExportSectionHeight = 63;
+    static constexpr int chainExportSectionHeight = 162;
+    static constexpr int megabreakExportSectionHeight = 100;
 
     void stateChanged(const StateHandler::StateChange& change) override;
     void numberInputChanged(NumberInputComponent* numberInput) override;
@@ -73,6 +73,8 @@ private:
     juce::ComboBox fadeinBox;
     juce::ComboBox fadeoutBox;
     juce::ComboBox megabreakFileCountBox;
+    juce::ComboBox megabreakFadeinBox;
+    juce::ComboBox megabreakFadeoutBox;
 
     NumberInputComponent gainInput{"Gain:", StateHandler::gainValue.min, StateHandler::gainValue.max, StateHandler::gainValue.defaultValue, StateHandler::gainValue.stepSize, false};
     NumberInputComponent bpmInput{"BPM:", StateHandler::bpmValue.min, StateHandler::bpmValue.max, StateHandler::bpmValue.defaultValue, StateHandler::bpmValue.stepSize, false};

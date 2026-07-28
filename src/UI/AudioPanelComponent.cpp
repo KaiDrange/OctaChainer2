@@ -62,7 +62,7 @@ void AudioPanelComponent::resized()
     const auto height = innerBounds.getHeight();
     setVisible(height > 40);
 
-    const auto hideLabels = height < 80;
+    const auto hideLabels = height < 60;
     btnPlaySlice.showLabel = !hideLabels;
     btnPlayChain.showLabel = !hideLabels;
     masterVolumeLabel.setVisible(!hideLabels);

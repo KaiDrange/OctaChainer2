@@ -298,6 +298,8 @@ void StandaloneAppMainWindow::saveCurrentSettingsAsDefaults() const
     xml.setAttribute("normalization", stateHandler.getCurrentOption(StateHandler::normalizationId).itemId);
     xml.setAttribute("fadein", stateHandler.getCurrentOption(StateHandler::fadeinId).itemId);
     xml.setAttribute("fadeout", stateHandler.getCurrentOption(StateHandler::fadeoutId).itemId);
+    xml.setAttribute("megabreakFadein", stateHandler.getCurrentOption(StateHandler::megabreakFadeinId).itemId);
+    xml.setAttribute("megabreakFadeout", stateHandler.getCurrentOption(StateHandler::megabreakFadeoutId).itemId);
     xml.setAttribute("otFile", stateHandler.getStateValue<bool>(StateHandler::otFileId, StateHandler::otFileDefault));
     xml.setAttribute("evenGrid", stateHandler.getStateValue<bool>(StateHandler::evenGridId, StateHandler::evenGridDefault));
     xml.setAttribute("embedMarkers", stateHandler.getStateValue<bool>(StateHandler::embedMarkersId, StateHandler::embedMarkersDefault));
@@ -386,6 +388,8 @@ void StandaloneAppMainWindow::loadCurrentSettingsDefaults()
     applyItemId(StateHandler::normalizationId, "normalization");
     applyItemId(StateHandler::fadeinId, "fadein");
     applyItemId(StateHandler::fadeoutId, "fadeout");
+    applyItemId(StateHandler::megabreakFadeinId, "megabreakFadein");
+    applyItemId(StateHandler::megabreakFadeoutId, "megabreakFadeout");
     applyItemId(StateHandler::megabreakFileCountId, "megabreakFileCount");
 
     if (xml->hasAttribute("gain"))

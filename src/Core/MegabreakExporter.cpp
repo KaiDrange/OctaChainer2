@@ -45,6 +45,14 @@ bool MegabreakExporter::prepareExportState(const juce::ValueTree& exportState, c
     settingsTree.setProperty(StateHandler::evenGridId, false, nullptr);
     settingsTree.setProperty(StateHandler::otFileId, true, nullptr);
     settingsTree.setProperty(StateHandler::chainMaxLengthId, sliceCount, nullptr);
+    settingsTree.setProperty(StateHandler::fadeinId,
+                             settingsTree.getProperty(StateHandler::megabreakFadeinId,
+                                                      settingsTree.getProperty(StateHandler::fadeinId, "none")),
+                             nullptr);
+    settingsTree.setProperty(StateHandler::fadeoutId,
+                             settingsTree.getProperty(StateHandler::megabreakFadeoutId,
+                                                      settingsTree.getProperty(StateHandler::fadeoutId, "none")),
+                             nullptr);
     dataTree.setProperty(StateHandler::selectedSliceId, 0, nullptr);
 
     for (int sliceIndex = 0; sliceIndex < sliceCount; ++sliceIndex)

@@ -55,7 +55,11 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     createButton.addShortcut(KeyPress('S', ModifierKeys::ctrlModifier, 0));
     createButton.setTooltip("Combines slices into one or more .wav files (Hotkey: Ctrl/Cmd + S)");
 
+    megabreakExportSection.addAndMakeVisible(megabreakFadeinBox);
+    megabreakExportSection.addAndMakeVisible(megabreakFadeoutBox);
     megabreakExportSection.addAndMakeVisible(megabreakFileCountBox);
+    megabreakFadeinBox.setTooltip("Applied to each megabreak part");
+    megabreakFadeoutBox.setTooltip("Applied to each megabreak part");
     megabreakFileCountBox.setTooltip("Each slice will be divided into this many parts and saved in separate files");
     megabreakExportSection.addAndMakeVisible(createMegabreakButton);
     createMegabreakButton.setTooltip("Creates a set of megabreak files for the Elektron Octatrack");
@@ -73,6 +77,8 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     normalizationBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::normalizationId, normalizationBox.getSelectedId()); };
     fadeinBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::fadeinId, fadeinBox.getSelectedId()); };
     fadeoutBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::fadeoutId, fadeoutBox.getSelectedId()); };
+    megabreakFadeinBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::megabreakFadeinId, megabreakFadeinBox.getSelectedId()); };
+    megabreakFadeoutBox.onChange = [this]{ stateHandler.setStateValueFromItemId(StateHandler::megabreakFadeoutId, megabreakFadeoutBox.getSelectedId()); };
     exportOtFile.onClick = [this]{ stateHandler.setStateValue(StateHandler::otFileId, exportOtFile.getToggleState()); };
     exportEvenGrid.onClick = [this]{ stateHandler.setStateValue(StateHandler::evenGridId, exportEvenGrid.getToggleState()); };
     exportEmbedMarkers.onClick = [this]{ stateHandler.setStateValue(StateHandler::embedMarkersId, exportEmbedMarkers.getToggleState()); };
@@ -246,6 +252,13 @@ void SettingsPanelComponent::layoutMegabreakExportSection()
     megabreakExportSection.setBounds(exportArea.removeFromTop(megabreakExportSectionHeight));
 
     auto megabreakExportControls = megabreakExportSection.getContentBounds();
+    const auto fadeRow = megabreakExportControls.removeFromTop(StyleSheet::comboboxHeight);
+    const auto fadeWidth = (fadeRow.getWidth() - StyleSheet::controlGap) / 2;
+    megabreakFadeinBox.setBounds(fadeRow.getX(), fadeRow.getY(), fadeWidth, StyleSheet::comboboxHeight);
+    megabreakFadeoutBox.setBounds(fadeRow.getX() + fadeWidth + StyleSheet::controlGap,
+                                  fadeRow.getY(), fadeWidth, StyleSheet::comboboxHeight);
+
+    megabreakExportControls.removeFromTop(StyleSheet::controlGap);
     const auto megabreakRow = megabreakExportControls.removeFromTop(StyleSheet::comboboxHeight);
     const auto megabreakWidth = (megabreakRow.getWidth() - StyleSheet::controlGap) / 2;
     megabreakFileCountBox.setBounds(megabreakRow.getX(), megabreakRow.getY(), megabreakWidth, StyleSheet::comboboxHeight);
@@ -288,6 +301,8 @@ void SettingsPanelComponent::stateChanged(const StateHandler::StateChange& chang
     stateHandler.refreshComboBox(StateHandler::normalizationId, normalizationBox);
     stateHandler.refreshComboBox(StateHandler::fadeinId, fadeinBox);
     stateHandler.refreshComboBox(StateHandler::fadeoutId, fadeoutBox);
+    stateHandler.refreshComboBox(StateHandler::megabreakFadeinId, megabreakFadeinBox);
+    stateHandler.refreshComboBox(StateHandler::megabreakFadeoutId, megabreakFadeoutBox);
     stateHandler.refreshComboBox(StateHandler::megabreakFileCountId, megabreakFileCountBox);
 
     gainInput.setValue(juce::var(stateHandler.getStateValue<double>(StateHandler::gainId, StateHandler::gainValue.defaultValue)));

@@ -92,6 +92,8 @@ void StateHandler::initialiseDefaultState()
     setDefaultOption(normalizationId);
     setDefaultOption(fadeinId);
     setDefaultOption(fadeoutId);
+    setDefaultOption(megabreakFadeinId);
+    setDefaultOption(megabreakFadeoutId);
     setDefaultStateValue(otFileId, otFileDefault);
     setDefaultStateValue(evenGridId, evenGridDefault);
     setDefaultStateValue(embedMarkersId, embedMarkersDefault);
@@ -265,6 +267,10 @@ std::vector<StateHandler::Option> StateHandler::getOptions(const juce::Identifie
         return fadeinOptions;
     if (identifier == fadeoutId)
         return fadeoutOptions;
+    if (identifier == megabreakFadeinId)
+        return megabreakFadeinOptions;
+    if (identifier == megabreakFadeoutId)
+        return megabreakFadeoutOptions;
     if (identifier == megabreakFileCountId)
         return megabreakFileCountOptions;
 
@@ -623,6 +629,8 @@ void StateHandler::ensureSettingsTree()
     {
         setDefaultStateValue(channelsId, channelOptions.front().value);
         setDefaultStateValue(samplerateId, samplerateOptions.front().value);
+        setDefaultStateValue(megabreakFadeinId, megabreakFadeinOptions.front().value);
+        setDefaultStateValue(megabreakFadeoutId, megabreakFadeoutOptions.front().value);
         setDefaultStateValue(defaultAudioFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
         setDefaultStateValue(defaultExportFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
         setDefaultStateValue(defaultProjectFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
@@ -632,6 +640,8 @@ void StateHandler::ensureSettingsTree()
     settingsTree = juce::ValueTree(settingsId);
     setDefaultStateValue(channelsId, channelOptions.front().value);
     setDefaultStateValue(samplerateId, samplerateOptions.front().value);
+    setDefaultStateValue(megabreakFadeinId, megabreakFadeinOptions.front().value);
+    setDefaultStateValue(megabreakFadeoutId, megabreakFadeoutOptions.front().value);
     setDefaultStateValue(defaultAudioFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
     setDefaultStateValue(defaultExportFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());
     setDefaultStateValue(defaultProjectFolderId, juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName());

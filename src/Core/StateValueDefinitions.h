@@ -91,6 +91,10 @@ const std::vector<Option> fadeoutOptions = {
     {6, typeid(int), 10, "10ms fade-out"}
 };
 
+const std::vector<Option> megabreakFadeinOptions = fadeinOptions;
+
+const std::vector<Option> megabreakFadeoutOptions = fadeoutOptions;
+
 const std::vector<Option> megabreakFileCountOptions = {
     {1, typeid(int), 1, "File count: 1"},
     {2, typeid(int), 2, "File count: 2"},
