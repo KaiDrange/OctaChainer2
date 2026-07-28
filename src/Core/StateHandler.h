@@ -94,11 +94,12 @@ public:
 
     int addSlice(const Slice& slice, juce::UndoManager* undoManager = nullptr, bool selectNewSlice = true);
     int addBlankSlice(int64 lengthInSamples, juce::UndoManager* undoManager = nullptr);
+    bool cloneSelectedSlice(juce::UndoManager* undoManager = nullptr);
     void removeSelectedSlice();
     void removeAllSlices();
     bool cropSelectedSliceToRange(juce::UndoManager* undoManager = nullptr);
     bool normalizeSelectedSlice(juce::UndoManager* undoManager = nullptr);
-    bool mergeSelectedSliceWithSliceAbove(juce::UndoManager* undoManager = nullptr);
+    bool mergeSelectedSliceWithSliceAbove(juce::UndoManager* undoManager = nullptr, juce::String* errorMessage = nullptr);
 
     bool selectSlice(int index, juce::UndoManager* undoManager = nullptr);
     bool setSelectedSliceRange(int startSample, int endSample, juce::UndoManager* undoManager = nullptr);

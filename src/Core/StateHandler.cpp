@@ -511,6 +511,31 @@ int StateHandler::addBlankSlice(const int64 lengthInSamples, juce::UndoManager* 
     return addSlice(slice, undoManager);
 }
 
+bool StateHandler::cloneSelectedSlice(juce::UndoManager* undoManager)
+{
+    ensureDataTree();
+
+    const auto selectedIndex = getSelectedSliceIndex();
+    if (selectedIndex < 0)
+        return false;
+
+    const auto selectedSliceTree = getSelectedSliceTree();
+    if (! selectedSliceTree.isValid())
+        return false;
+
+    const auto currentName = selectedSliceTree.getProperty(sliceNameId).toString().trim();
+    auto clonedName = currentName.isEmpty() ? juce::String("Copy") : currentName + " (copy)";
+    clonedName = clonedName.substring(0, Slice::maxNameLength);
+
+    const auto insertionIndex = selectedIndex + 1;
+    auto clonedSliceTree = selectedSliceTree.createCopy();
+    clonedSliceTree.setProperty(sliceNameId, clonedName, nullptr);
+    dataTree.addChild(clonedSliceTree, insertionIndex, undoManager);
+    dataTree.setProperty(selectedSliceId, insertionIndex, undoManager);
+
+    return true;
+}
+
 void StateHandler::removeSelectedSlice()
 {
     ensureDataTree();
@@ -638,19 +663,26 @@ bool StateHandler::normalizeSelectedSlice(juce::UndoManager* undoManager)
     return true;
 }
 
-bool StateHandler::mergeSelectedSliceWithSliceAbove(juce::UndoManager* undoManager)
+bool StateHandler::mergeSelectedSliceWithSliceAbove(juce::UndoManager* undoManager, juce::String* errorMessage)
 {
     ensureDataTree();
 
+    const auto fail = [errorMessage](const juce::String& message)
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = message;
+        return false;
+    };
+
     const auto selectedIndex = getSelectedSliceIndex();
     if (selectedIndex <= 0)
-        return false;
+        return fail("No slice is selected for merging.");
 
     const auto aboveIndex = selectedIndex - 1;
     auto aboveSliceTree = getSliceTree(aboveIndex);
     auto selectedSliceTree = getSelectedSliceTree();
     if (! aboveSliceTree.isValid() || ! selectedSliceTree.isValid())
-        return false;
+        return fail("The selected slices could not be read.");
 
     juce::AudioBuffer<float> aboveAudio;
     juce::AudioBuffer<float> selectedAudio;
@@ -660,7 +692,7 @@ bool StateHandler::mergeSelectedSliceWithSliceAbove(juce::UndoManager* undoManag
     if (! loadSliceRangeAudio(aboveSliceTree, aboveAudio, aboveSampleRate)
         || ! loadSliceRangeAudio(selectedSliceTree, selectedAudio, selectedSampleRate))
     {
-        return false;
+        return fail("One of the slices could not be loaded for merging.");
     }
 
     const auto aboveChannels = aboveAudio.getNumChannels();
@@ -668,7 +700,7 @@ bool StateHandler::mergeSelectedSliceWithSliceAbove(juce::UndoManager* undoManag
     const auto targetChannelCount = juce::jmax(aboveChannels, selectedChannels);
     const auto targetSampleRate = juce::jmax(aboveSampleRate, selectedSampleRate);
     if (targetChannelCount <= 0 || targetSampleRate <= 0.0)
-        return false;
+        return fail("The selected slices do not contain usable audio data.");
 
     juce::AudioBuffer<float> aboveResampled;
     juce::AudioBuffer<float> selectedResampled;
@@ -678,17 +710,24 @@ bool StateHandler::mergeSelectedSliceWithSliceAbove(juce::UndoManager* undoManag
         || ! AudioUtil::renderAudioBufferToChannelCount(aboveResampled, targetChannelCount, aboveRendered)
         || ! AudioUtil::resampleAudioBuffer(selectedAudio, selectedSampleRate, targetSampleRate, selectedResampled)
         || ! AudioUtil::renderAudioBufferToChannelCount(selectedResampled, targetChannelCount, selectedRendered))
-        return false;
+        return fail("The selected slices could not be resampled for merging.");
 
     const auto mergedSamples = aboveRendered.getNumSamples() + selectedRendered.getNumSamples();
     if (mergedSamples <= 0)
-        return false;
+        return fail("The merged slice would be empty.");
 
     const auto estimatedAudioBytes = static_cast<juce::int64>(targetChannelCount)
                                      * static_cast<juce::int64>(mergedSamples)
                                      * static_cast<juce::int64>(sizeof(float));
     if (estimatedAudioBytes > AudioFileLoader::maxLoadedAudioDataBytes)
-        return false;
+    {
+        const auto estimatedAudioMb = static_cast<double>(estimatedAudioBytes) / (1024.0 * 1024.0);
+        return fail("The merged slice would require about "
+                    + juce::String(estimatedAudioMb, 1)
+                    + " MB of audio data, which exceeds the "
+                    + juce::String(AudioFileLoader::maxLoadedAudioDataBytes / (1024 * 1024))
+                    + " MB limit.");
+    }
 
     juce::AudioBuffer<float> mergedAudio;
     mergedAudio.setSize(targetChannelCount, mergedSamples, false, false, true);

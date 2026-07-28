@@ -3,13 +3,16 @@
 #include "StyleSheet.h"
 
 SliceActionsDialogComponent::SliceActionsDialogComponent(const double bpmDefault,
+                                                        const juce::String& currentSliceName,
                                                         const bool canCropToRange,
                                                         const bool canMergeWithSliceAbove,
-                                                        ActionCallback onActionSelected)
+                                                        ActionCallback onActionSelected,
+                                                        SliceNameCommitCallback onSliceNameCommitted)
     : sliceCountInput("Slice count:", 1.0, 64.0, 1.0, 1.0, true),
       bpmInput("BPM:", StateHandler::bpmValue.min, StateHandler::bpmValue.max, bpmDefault, 0.01, true),
       sixteenthNotesInput("Sixteenth notes per slice:", 1.0, 64.0, 16.0, 1.0, true),
-      onActionSelected(std::move(onActionSelected))
+      onActionSelected(std::move(onActionSelected)),
+      onSliceNameCommitted(std::move(onSliceNameCommitted))
 {
     setSize(dialogWidth, dialogHeight);
 
@@ -20,6 +23,7 @@ SliceActionsDialogComponent::SliceActionsDialogComponent(const double bpmDefault
     sixteenthNotesInput.setLabelColour(juce::Colour(StyleSheet::buttonTextColour));
     sixteenthNotesInput.setValueColour(juce::Colour(StyleSheet::darkInputsValueColour));
 
+    configureOptionButton(cloneButton, "Clone", cloneSlice);
     configureOptionButton(cropButton, "Crop to range", cropToRange);
     configureOptionButton(splitButton, "Divide evenly", splitSlice);
     configureOptionButton(mergeButton, "Merge with slice above", mergeWithSliceAbove);
@@ -29,6 +33,15 @@ SliceActionsDialogComponent::SliceActionsDialogComponent(const double bpmDefault
     cropButton.setEnabled(canCropToRange);
     mergeButton.setEnabled(canMergeWithSliceAbove);
 
+    sliceNameInput.setInputRestrictions(Slice::maxNameLength, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 _-");
+    sliceNameInput.setText(currentSliceName, juce::dontSendNotification);
+    sliceNameInput.onFocusLost = [this]
+    {
+        if (this->onSliceNameCommitted)
+            this->onSliceNameCommitted(sliceNameInput.getText());
+    };
+    addAndMakeVisible(sliceNameInput);
+    addAndMakeVisible(cloneButton);
     addAndMakeVisible(cropButton);
     addAndMakeVisible(splitButton);
     addAndMakeVisible(mergeButton);
@@ -43,6 +56,10 @@ void SliceActionsDialogComponent::resized()
 {
     auto area = getLocalBounds().reduced(outerMargin);
 
+    sliceNameInput.setBounds(area.removeFromTop(optionButtonHeight));
+    area.removeFromTop(rowGap);
+    cloneButton.setBounds(area.removeFromTop(optionButtonHeight));
+    area.removeFromTop(rowGap);
     cropButton.setBounds(area.removeFromTop(optionButtonHeight));
     area.removeFromTop(rowGap);
     mergeButton.setBounds(area.removeFromTop(optionButtonHeight));

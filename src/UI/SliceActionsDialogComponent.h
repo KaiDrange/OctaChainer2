@@ -8,19 +8,23 @@ class SliceActionsDialogComponent final : public juce::Component
 public:
     enum ResultId
     {
-        cropToRange = 1,
-        splitSlice = 2,
-        mergeWithSliceAbove = 3,
-        normalizeSlice = 4,
-        divideByBpm = 5
+        cloneSlice = 1,
+        cropToRange = 2,
+        splitSlice = 3,
+        mergeWithSliceAbove = 4,
+        normalizeSlice = 5,
+        divideByBpm = 6
     };
 
     using ActionCallback = std::function<void(ResultId)>;
+    using SliceNameCommitCallback = std::function<void(const juce::String&)>;
 
     SliceActionsDialogComponent(double bpmDefault,
+                                const juce::String& currentSliceName,
                                 bool canCropToRange,
                                 bool canMergeWithSliceAbove,
-                                ActionCallback onActionSelected = {});
+                                ActionCallback onActionSelected = {},
+                                SliceNameCommitCallback onSliceNameCommitted = {});
 
     void resized() override;
 
@@ -29,7 +33,7 @@ private:
     void closeDialog(int result = 0) const;
 
     static constexpr int dialogWidth = 520;
-    static constexpr int dialogHeight = 230;
+    static constexpr int dialogHeight = 280;
     static constexpr int outerMargin = 16;
     static constexpr int rowGap = 12;
     static constexpr int optionButtonHeight = 28;
@@ -38,6 +42,8 @@ private:
     static constexpr int inputColumnGap = 12;
     static constexpr int footerButtonWidth = 96;
 
+    juce::TextEditor sliceNameInput;
+    juce::TextButton cloneButton;
     juce::TextButton cropButton;
     juce::TextButton splitButton;
     juce::TextButton mergeButton;
@@ -47,6 +53,7 @@ private:
     NumberInputComponent bpmInput;
     NumberInputComponent sixteenthNotesInput;
     ActionCallback onActionSelected;
+    SliceNameCommitCallback onSliceNameCommitted;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SliceActionsDialogComponent)
 };

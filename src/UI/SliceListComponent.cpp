@@ -497,10 +497,14 @@ void SliceListComponent::showActionsDialog()
     const auto canCropToRange = sliceTree.isValid()
                                 && totalSamples > 0
                                 && ! (currentStart <= 0 && currentEnd >= totalSamples);
+    const auto currentSliceName = sliceTree.isValid()
+        ? sliceTree.getProperty(StateHandler::sliceNameId).toString()
+        : juce::String();
 
     const juce::Component::SafePointer safeThis(this);
     auto actionsDialog = std::make_unique<SliceActionsDialogComponent>(
         stateHandler.getStateValue<double>(StateHandler::bpmId, StateHandler::bpmValue.defaultValue),
+        currentSliceName,
         canCropToRange,
         selectedRow > 0,
         [safeThis](const SliceActionsDialogComponent::ResultId result)
@@ -508,12 +512,31 @@ void SliceListComponent::showActionsDialog()
             if (safeThis == nullptr)
                 return;
 
-            if (result == SliceActionsDialogComponent::cropToRange)
+            if (result == SliceActionsDialogComponent::cloneSlice)
+                safeThis->stateHandler.cloneSelectedSlice();
+            else if (result == SliceActionsDialogComponent::cropToRange)
                 safeThis->stateHandler.cropSelectedSliceToRange();
             else if (result == SliceActionsDialogComponent::normalizeSlice)
                 safeThis->stateHandler.normalizeSelectedSlice();
             else if (result == SliceActionsDialogComponent::mergeWithSliceAbove)
-                safeThis->stateHandler.mergeSelectedSliceWithSliceAbove();
+            {
+                juce::String errorMessage;
+                if (! safeThis->stateHandler.mergeSelectedSliceWithSliceAbove(nullptr, &errorMessage))
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                                                           "Could not merge slices",
+                                                           errorMessage.isNotEmpty() ? errorMessage : "The slices could not be merged.");
+                }
+            }
+        },
+        [safeThis, selectedRow](const juce::String& newSliceName)
+        {
+            if (safeThis == nullptr)
+                return;
+
+            auto selectedSliceTree = safeThis->stateHandler.getSliceTree(selectedRow);
+            if (selectedSliceTree.isValid())
+                selectedSliceTree.setProperty(StateHandler::sliceNameId, newSliceName, nullptr);
         });
 
     juce::DialogWindow::LaunchOptions options;
