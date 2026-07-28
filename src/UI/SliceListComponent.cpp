@@ -507,7 +507,7 @@ void SliceListComponent::showActionsDialog()
         currentSliceName,
         canCropToRange,
         selectedRow > 0,
-        [safeThis](const SliceActionsDialogComponent::ResultId result)
+        [safeThis](const SliceActionsDialogComponent::ResultId result, const SliceActionsDialogComponent& dialog)
         {
             if (safeThis == nullptr)
                 return;
@@ -516,6 +516,29 @@ void SliceListComponent::showActionsDialog()
                 safeThis->stateHandler.cloneSelectedSlice();
             else if (result == SliceActionsDialogComponent::cropToRange)
                 safeThis->stateHandler.cropSelectedSliceToRange();
+            else if (result == SliceActionsDialogComponent::splitSlice)
+            {
+                juce::String errorMessage;
+                if (! safeThis->stateHandler.divideSelectedSliceEvenly(dialog.getSliceCount(), nullptr, &errorMessage))
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                                                           "Could not divide slice",
+                                                           errorMessage.isNotEmpty() ? errorMessage : "The slice could not be divided.");
+                }
+            }
+            else if (result == SliceActionsDialogComponent::divideByBpm)
+            {
+                juce::String errorMessage;
+                if (! safeThis->stateHandler.divideSelectedSliceByBpm(dialog.getDivideByBpmValue(),
+                                                                       dialog.getSixteenthNotesPerSlice(),
+                                                                       nullptr,
+                                                                       &errorMessage))
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                                                           "Could not divide slice by BPM",
+                                                           errorMessage.isNotEmpty() ? errorMessage : "The slice could not be divided.");
+                }
+            }
             else if (result == SliceActionsDialogComponent::normalizeSlice)
                 safeThis->stateHandler.normalizeSelectedSlice();
             else if (result == SliceActionsDialogComponent::mergeWithSliceAbove)

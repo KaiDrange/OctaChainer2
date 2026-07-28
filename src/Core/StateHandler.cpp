@@ -620,6 +620,280 @@ bool StateHandler::cropSelectedSliceToRange(juce::UndoManager* undoManager)
     return true;
 }
 
+bool StateHandler::divideSelectedSliceEvenly(const int sliceCount, juce::UndoManager* undoManager, juce::String* errorMessage)
+{
+    ensureDataTree();
+
+    const auto fail = [errorMessage](const juce::String& message)
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = message;
+        return false;
+    };
+
+    if (sliceCount < 2 || sliceCount > 64)
+        return fail("The slice count must be between 2 and 64.");
+
+    const auto selectedIndex = getSelectedSliceIndex();
+    if (selectedIndex < 0)
+        return fail("No slice is selected for dividing.");
+
+    const auto selectedSliceTree = getSelectedSliceTree();
+    if (! selectedSliceTree.isValid())
+        return fail("The selected slice could not be read.");
+
+    const auto totalSamples = static_cast<juce::int64>(selectedSliceTree.getProperty(sliceNumSamplesId, 0));
+    if (totalSamples <= 0)
+        return fail("The selected slice does not contain usable audio data.");
+
+    const auto rangeStart = juce::jlimit<juce::int64>(0, totalSamples,
+                                                      selectedSliceTree.getProperty(sliceStartSampleId, 0));
+    auto rangeEnd = juce::jlimit(rangeStart, totalSamples,
+                                 static_cast<juce::int64>(selectedSliceTree.getProperty(sliceEndSampleId, totalSamples)));
+    if (rangeEnd <= rangeStart)
+        rangeEnd = juce::jmin<juce::int64>(totalSamples, rangeStart + 1);
+
+    const auto rangeLength = rangeEnd - rangeStart;
+    if (rangeLength < sliceCount)
+        return fail("The selected range is too short to divide into that many slices.");
+
+    juce::AudioBuffer<float> selectedRangeAudio;
+    double sampleRate = 0.0;
+    if (! loadSelectedSliceRangeAudio(selectedRangeAudio, sampleRate))
+        return fail("The selected slice could not be loaded.");
+
+    const auto numChannels = selectedRangeAudio.getNumChannels();
+    const auto numSamples = selectedRangeAudio.getNumSamples();
+    if (numChannels <= 0 || numSamples <= 0)
+        return fail("The selected slice does not contain usable audio data.");
+
+    const auto baseLength = rangeLength / sliceCount;
+    const auto remainder = rangeLength % sliceCount;
+    const auto sourcePath = selectedSliceTree.getProperty(sliceSourcePathId).toString();
+    const auto bitDepth = static_cast<unsigned int>(static_cast<int>(selectedSliceTree.getProperty(sliceBitrateId, 0)));
+    const auto loopStartInSelectedRange = juce::jlimit<juce::int64>(0,
+                                                                    rangeLength,
+                                                                    static_cast<juce::int64>(selectedSliceTree.getProperty(sliceLoopStartSampleId, 0)) - rangeStart);
+    auto nameBase = selectedSliceTree.getProperty(sliceNameId).toString().trim();
+    if (nameBase.isEmpty())
+        nameBase = "Slice";
+
+    std::vector<juce::ValueTree> newSliceTrees;
+    newSliceTrees.reserve(static_cast<std::size_t>(sliceCount));
+
+    juce::int64 pieceStart = 0;
+    for (int i = 0; i < sliceCount; ++i)
+    {
+        const auto pieceLength = baseLength + (i < remainder ? 1 : 0);
+        if (pieceLength <= 0)
+            return fail("The selected range could not be divided evenly.");
+
+        Slice splitSlice;
+        splitSlice.setName(nameBase + " " + juce::String(i + 1));
+        splitSlice.sourcePath = sourcePath;
+        splitSlice.channels = numChannels;
+        splitSlice.samplerate = sampleRate;
+        splitSlice.bitDepth = bitDepth;
+        splitSlice.lengthInSamples = pieceLength;
+        splitSlice.start = 0;
+        splitSlice.end = pieceLength;
+        splitSlice.loopStart = juce::jlimit<juce::int64>(0, pieceLength, loopStartInSelectedRange - pieceStart);
+
+        auto* destinationAudio = splitSlice.getAudioData();
+        destinationAudio->setSize(numChannels, static_cast<int>(pieceLength), false, false, false);
+        destinationAudio->clear();
+
+        for (int channel = 0; channel < numChannels; ++channel)
+            destinationAudio->copyFrom(channel,
+                                       0,
+                                       selectedRangeAudio,
+                                       channel,
+                                       static_cast<int>(pieceStart),
+                                       static_cast<int>(pieceLength));
+
+        juce::ValueTree splitSliceTree(sliceId);
+        splitSliceTree.setProperty(sliceNameId, splitSlice.getName(), nullptr);
+        splitSliceTree.setProperty(sliceSourcePathId, splitSlice.sourcePath, nullptr);
+        splitSliceTree.setProperty(sliceChannelsId, splitSlice.channels, nullptr);
+        splitSliceTree.setProperty(sliceSamplerateId, splitSlice.samplerate, nullptr);
+        splitSliceTree.setProperty(sliceBitrateId, static_cast<int>(splitSlice.bitDepth), nullptr);
+        splitSliceTree.setProperty(sliceNumSamplesId, splitSlice.lengthInSamples, nullptr);
+        splitSliceTree.setProperty(sliceStartSampleId, splitSlice.start, nullptr);
+        splitSliceTree.setProperty(sliceEndSampleId, splitSlice.end, nullptr);
+        splitSliceTree.setProperty(sliceLoopStartSampleId, splitSlice.loopStart, nullptr);
+        splitSliceTree.setProperty(sliceAudioDataId, juce::var(createAudioDataBlock(splitSlice)), nullptr);
+        newSliceTrees.push_back(splitSliceTree);
+
+        pieceStart += pieceLength;
+    }
+
+    dataTree.removeChild(selectedIndex, undoManager);
+
+    for (int i = 0; i < static_cast<int>(newSliceTrees.size()); ++i)
+        dataTree.addChild(newSliceTrees[static_cast<std::size_t>(i)], selectedIndex + i, undoManager);
+
+    dataTree.setProperty(selectedSliceId, selectedIndex, undoManager);
+
+    return true;
+}
+
+bool StateHandler::divideSelectedSliceByBpm(const double bpm, const double sixteenthNotesPerSlice,
+                                            juce::UndoManager* undoManager, juce::String* errorMessage)
+{
+    ensureDataTree();
+
+    const auto fail = [errorMessage](const juce::String& message)
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = message;
+        return false;
+    };
+
+    if (bpm < 30.0 || bpm > 300.0)
+        return fail("The BPM must be between 30 and 300.");
+
+    if (sixteenthNotesPerSlice <= 0.0)
+        return fail("The sixteenth note count must be greater than 0.");
+
+    const auto selectedIndex = getSelectedSliceIndex();
+    if (selectedIndex < 0)
+        return fail("No slice is selected for dividing.");
+
+    const auto selectedSliceTree = getSelectedSliceTree();
+    if (! selectedSliceTree.isValid())
+        return fail("The selected slice could not be read.");
+
+    const auto totalSamples = static_cast<juce::int64>(selectedSliceTree.getProperty(sliceNumSamplesId, 0));
+    if (totalSamples <= 0)
+        return fail("The selected slice does not contain usable audio data.");
+
+    const auto rangeStart = juce::jlimit<juce::int64>(0, totalSamples,
+                                                      selectedSliceTree.getProperty(sliceStartSampleId, 0));
+    auto rangeEnd = juce::jlimit(rangeStart, totalSamples,
+                                 static_cast<juce::int64>(selectedSliceTree.getProperty(sliceEndSampleId, totalSamples)));
+    if (rangeEnd <= rangeStart)
+        rangeEnd = juce::jmin<juce::int64>(totalSamples, rangeStart + 1);
+
+    const auto rangeLength = rangeEnd - rangeStart;
+    if (rangeLength <= 0)
+        return fail("The selected slice does not contain a usable range.");
+
+    juce::AudioBuffer<float> selectedRangeAudio;
+    double sampleRate = 0.0;
+    if (! loadSelectedSliceRangeAudio(selectedRangeAudio, sampleRate))
+        return fail("The selected slice could not be loaded.");
+
+    const auto numChannels = selectedRangeAudio.getNumChannels();
+    const auto numSamples = selectedRangeAudio.getNumSamples();
+    if (numChannels <= 0 || numSamples <= 0)
+        return fail("The selected slice does not contain usable audio data.");
+
+    const auto targetSamplesExact = sampleRate * (60.0 / bpm) * (sixteenthNotesPerSlice / 4.0);
+    const auto targetSamples = juce::roundToInt(targetSamplesExact);
+    if (targetSamples <= 0)
+        return fail("The BPM and slice length would produce an invalid slice size.");
+
+    const auto fullSliceCount = static_cast<int>(rangeLength / targetSamples);
+    const auto tailLength = static_cast<int>(rangeLength % targetSamples);
+    const auto sliceTotalCount = fullSliceCount + (tailLength > 0 ? 1 : 0);
+    if (sliceTotalCount <= 0)
+        return fail("The selected range could not be divided.");
+
+    const auto sourcePath = selectedSliceTree.getProperty(sliceSourcePathId).toString();
+    const auto bitDepth = static_cast<unsigned int>(static_cast<int>(selectedSliceTree.getProperty(sliceBitrateId, 0)));
+    const auto loopStartInSelectedRange = juce::jlimit<juce::int64>(0,
+                                                                    rangeLength,
+                                                                    static_cast<juce::int64>(selectedSliceTree.getProperty(sliceLoopStartSampleId, 0)) - rangeStart);
+    auto nameBase = selectedSliceTree.getProperty(sliceNameId).toString().trim();
+    if (nameBase.isEmpty())
+        nameBase = "Slice";
+
+    std::vector<juce::ValueTree> newSliceTrees;
+    newSliceTrees.reserve(static_cast<std::size_t>(sliceTotalCount));
+
+    juce::int64 pieceStart = 0;
+    for (int i = 0; i < fullSliceCount; ++i)
+    {
+        Slice splitSlice;
+        splitSlice.setName(nameBase + " " + juce::String(i + 1));
+        splitSlice.sourcePath = sourcePath;
+        splitSlice.channels = numChannels;
+        splitSlice.samplerate = sampleRate;
+        splitSlice.bitDepth = bitDepth;
+        splitSlice.lengthInSamples = targetSamples;
+        splitSlice.start = 0;
+        splitSlice.end = targetSamples;
+        splitSlice.loopStart = juce::jlimit<juce::int64>(0, splitSlice.lengthInSamples, loopStartInSelectedRange - pieceStart);
+
+        auto* destinationAudio = splitSlice.getAudioData();
+        destinationAudio->setSize(numChannels, targetSamples, false, false, false);
+        destinationAudio->clear();
+
+        for (int channel = 0; channel < numChannels; ++channel)
+            destinationAudio->copyFrom(channel, 0, selectedRangeAudio, channel, static_cast<int>(pieceStart), targetSamples);
+
+        juce::ValueTree splitSliceTree(sliceId);
+        splitSliceTree.setProperty(sliceNameId, splitSlice.getName(), nullptr);
+        splitSliceTree.setProperty(sliceSourcePathId, splitSlice.sourcePath, nullptr);
+        splitSliceTree.setProperty(sliceChannelsId, splitSlice.channels, nullptr);
+        splitSliceTree.setProperty(sliceSamplerateId, splitSlice.samplerate, nullptr);
+        splitSliceTree.setProperty(sliceBitrateId, static_cast<int>(splitSlice.bitDepth), nullptr);
+        splitSliceTree.setProperty(sliceNumSamplesId, splitSlice.lengthInSamples, nullptr);
+        splitSliceTree.setProperty(sliceStartSampleId, splitSlice.start, nullptr);
+        splitSliceTree.setProperty(sliceEndSampleId, splitSlice.end, nullptr);
+        splitSliceTree.setProperty(sliceLoopStartSampleId, splitSlice.loopStart, nullptr);
+        splitSliceTree.setProperty(sliceAudioDataId, juce::var(createAudioDataBlock(splitSlice)), nullptr);
+        newSliceTrees.push_back(splitSliceTree);
+
+        pieceStart += targetSamples;
+    }
+
+    if (tailLength > 0)
+    {
+        const auto tailStart = pieceStart;
+
+        Slice tailSlice;
+        tailSlice.setName(nameBase + " (tail)");
+        tailSlice.sourcePath = sourcePath;
+        tailSlice.channels = numChannels;
+        tailSlice.samplerate = sampleRate;
+        tailSlice.bitDepth = bitDepth;
+        tailSlice.lengthInSamples = tailLength;
+        tailSlice.start = 0;
+        tailSlice.end = tailLength;
+        tailSlice.loopStart = juce::jlimit<juce::int64>(0, tailSlice.lengthInSamples, loopStartInSelectedRange - tailStart);
+
+        auto* destinationAudio = tailSlice.getAudioData();
+        destinationAudio->setSize(numChannels, tailLength, false, false, false);
+        destinationAudio->clear();
+
+        for (int channel = 0; channel < numChannels; ++channel)
+            destinationAudio->copyFrom(channel, 0, selectedRangeAudio, channel, static_cast<int>(tailStart), tailLength);
+
+        juce::ValueTree tailSliceTree(sliceId);
+        tailSliceTree.setProperty(sliceNameId, tailSlice.getName(), nullptr);
+        tailSliceTree.setProperty(sliceSourcePathId, tailSlice.sourcePath, nullptr);
+        tailSliceTree.setProperty(sliceChannelsId, tailSlice.channels, nullptr);
+        tailSliceTree.setProperty(sliceSamplerateId, tailSlice.samplerate, nullptr);
+        tailSliceTree.setProperty(sliceBitrateId, static_cast<int>(tailSlice.bitDepth), nullptr);
+        tailSliceTree.setProperty(sliceNumSamplesId, tailSlice.lengthInSamples, nullptr);
+        tailSliceTree.setProperty(sliceStartSampleId, tailSlice.start, nullptr);
+        tailSliceTree.setProperty(sliceEndSampleId, tailSlice.end, nullptr);
+        tailSliceTree.setProperty(sliceLoopStartSampleId, tailSlice.loopStart, nullptr);
+        tailSliceTree.setProperty(sliceAudioDataId, juce::var(createAudioDataBlock(tailSlice)), nullptr);
+        newSliceTrees.push_back(tailSliceTree);
+    }
+
+    dataTree.removeChild(selectedIndex, undoManager);
+
+    for (int i = 0; i < static_cast<int>(newSliceTrees.size()); ++i)
+        dataTree.addChild(newSliceTrees[static_cast<std::size_t>(i)], selectedIndex + i, undoManager);
+
+    dataTree.setProperty(selectedSliceId, selectedIndex, undoManager);
+
+    return true;
+}
+
 bool StateHandler::normalizeSelectedSlice(juce::UndoManager* undoManager)
 {
     ensureDataTree();

@@ -8,8 +8,8 @@ SliceActionsDialogComponent::SliceActionsDialogComponent(const double bpmDefault
                                                         const bool canMergeWithSliceAbove,
                                                         ActionCallback onActionSelected,
                                                         SliceNameCommitCallback onSliceNameCommitted)
-    : sliceCountInput("Slice count:", 1.0, 64.0, 1.0, 1.0, true),
-      bpmInput("BPM:", StateHandler::bpmValue.min, StateHandler::bpmValue.max, bpmDefault, 0.01, true),
+    : sliceCountInput("Slice count:", 2.0, 64.0, 2.0, 1.0, true),
+      bpmInput("BPM:", 30.0, 300.0, bpmDefault, 0.01, true),
       sixteenthNotesInput("Sixteenth notes per slice:", 1.0, 64.0, 16.0, 1.0, true),
       onActionSelected(std::move(onActionSelected)),
       onSliceNameCommitted(std::move(onSliceNameCommitted))
@@ -95,10 +95,25 @@ void SliceActionsDialogComponent::configureOptionButton(juce::TextButton& button
     button.onClick = [this, resultId]
     {
         if (onActionSelected)
-            onActionSelected(static_cast<ResultId>(resultId));
+            onActionSelected(static_cast<ResultId>(resultId), *this);
 
         closeDialog(resultId);
     };
+}
+
+int SliceActionsDialogComponent::getSliceCount() const
+{
+    return juce::jlimit(2, 64, static_cast<int>(sliceCountInput.getValue()));
+}
+
+double SliceActionsDialogComponent::getDivideByBpmValue() const
+{
+    return juce::jlimit(30.0, 300.0, static_cast<double>(bpmInput.getValue()));
+}
+
+double SliceActionsDialogComponent::getSixteenthNotesPerSlice() const
+{
+    return juce::jlimit(1.0, 64.0, static_cast<double>(sixteenthNotesInput.getValue()));
 }
 
 void SliceActionsDialogComponent::closeDialog(const int result) const

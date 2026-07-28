@@ -16,6 +16,9 @@ public:
         virtual void waveformSliceRangeChanged(int startSample, int endSample) = 0;
     };
 
+    static constexpr double minimumSliceRangeSeconds = 0.05;
+
+
     WaveformComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                       const juce::String& title);
     ~WaveformComponent() override;
@@ -71,6 +74,7 @@ private:
     int getSliceRangeHandleAtPoint(juce::Point<int> position) const;
     void sendWaveformSliceRangeChanged(int startSample, int endSample);
     void sendWaveformSegmentClicked(int segmentIndex, int sliceIndex);
+    static int getMinimumSliceRangeSamples(const double sampleRate);
 
     PlayHeadOverlayComponent playHeadOverlay;
     juce::AudioBuffer<float> waveformSourceBuffer;

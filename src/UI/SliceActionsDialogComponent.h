@@ -16,7 +16,7 @@ public:
         divideByBpm = 6
     };
 
-    using ActionCallback = std::function<void(ResultId)>;
+    using ActionCallback = std::function<void(ResultId, const SliceActionsDialogComponent&)>;
     using SliceNameCommitCallback = std::function<void(const juce::String&)>;
 
     SliceActionsDialogComponent(double bpmDefault,
@@ -27,6 +27,9 @@ public:
                                 SliceNameCommitCallback onSliceNameCommitted = {});
 
     void resized() override;
+    [[nodiscard]] int getSliceCount() const;
+    [[nodiscard]] double getDivideByBpmValue() const;
+    [[nodiscard]] double getSixteenthNotesPerSlice() const;
 
 private:
     void configureOptionButton(juce::TextButton& button, const juce::String& text, int resultId) const;

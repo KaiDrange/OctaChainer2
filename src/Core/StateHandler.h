@@ -98,6 +98,8 @@ public:
     void removeSelectedSlice();
     void removeAllSlices();
     bool cropSelectedSliceToRange(juce::UndoManager* undoManager = nullptr);
+    bool divideSelectedSliceEvenly(int sliceCount, juce::UndoManager* undoManager = nullptr, juce::String* errorMessage = nullptr);
+    bool divideSelectedSliceByBpm(double bpm, double sixteenthNotesPerSlice, juce::UndoManager* undoManager = nullptr, juce::String* errorMessage = nullptr);
     bool normalizeSelectedSlice(juce::UndoManager* undoManager = nullptr);
     bool mergeSelectedSliceWithSliceAbove(juce::UndoManager* undoManager = nullptr, juce::String* errorMessage = nullptr);
 

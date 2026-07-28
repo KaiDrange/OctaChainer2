@@ -94,12 +94,11 @@ void WaveformComponent::setSliceRange(const int startSample, const int endSample
 
     auto newStart = juce::jlimit(0, totalSamples, startSample);
     auto newEnd = juce::jlimit(0, totalSamples, endSample);
+    const auto minimumRangeSamples = juce::jmin(getMinimumSliceRangeSamples(waveformSampleRate), totalSamples);
+    const auto maxStart = juce::jmax(0, totalSamples - minimumRangeSamples);
 
-    if (newEnd <= newStart)
-    {
-        newStart = juce::jlimit(0, totalSamples - 1, newStart);
-        newEnd = juce::jmin(totalSamples, newStart + 1);
-    }
+    newStart = juce::jlimit(0, maxStart, newStart);
+    newEnd = juce::jlimit(newStart + minimumRangeSamples, totalSamples, newEnd);
 
     const bool changed = ! sliceRangeEnabled
                          || sliceStartSample != newStart
@@ -372,7 +371,7 @@ void WaveformComponent::drawSliceRangeMarkers(juce::Graphics& g, const juce::Rec
         g.setColour(markerColour);
         g.drawVerticalLine(x, static_cast<float>(topY), static_cast<float>(bottomY));
 
-        const auto handleRect = juce::Rectangle<int>(x - handleWidth / 2,
+        const auto handleRect = juce::Rectangle<int>(isStartMarker ? x : x - handleWidth + 1,
                                                      isStartMarker ? topY : bottomY - handleHeight,
                                                      handleWidth,
                                                      handleHeight);
@@ -463,9 +462,10 @@ void WaveformComponent::updateSliceRangeFromMouse(const juce::Point<int>& positi
         return;
 
     const auto newSample = xToSample(position.x, waveformArea);
+    const auto minimumRangeSamples = juce::jmin(getMinimumSliceRangeSamples(waveformSampleRate), totalSamples);
     if (activeSliceRangeHandle == SliceRangeHandle::start)
     {
-        const auto maxStart = juce::jmax(0, sliceEndSample - 1);
+        const auto maxStart = juce::jmax(0, sliceEndSample - minimumRangeSamples);
         const auto clampedStart = juce::jlimit(0, maxStart, newSample);
         if (clampedStart == sliceStartSample)
             return;
@@ -475,7 +475,7 @@ void WaveformComponent::updateSliceRangeFromMouse(const juce::Point<int>& positi
     }
     else if (activeSliceRangeHandle == SliceRangeHandle::end)
     {
-        const auto minEnd = juce::jmin(totalSamples, sliceStartSample + 1);
+        const auto minEnd = juce::jmin(totalSamples, sliceStartSample + minimumRangeSamples);
         const auto clampedEnd = juce::jlimit(minEnd, totalSamples, newSample);
         if (clampedEnd == sliceEndSample)
             return;
@@ -614,6 +614,11 @@ void WaveformComponent::sendWaveformSegmentClicked(const int segmentIndex, const
     {
         listener.waveformSegmentClicked(segmentIndex, sliceIndex);
     });
+}
+
+int WaveformComponent::getMinimumSliceRangeSamples(const double sampleRate)
+{
+    return juce::jmax(1, juce::roundToInt(sampleRate * minimumSliceRangeSeconds));
 }
 
 WaveformComponent::PlayHeadOverlayComponent::PlayHeadOverlayComponent()
