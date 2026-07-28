@@ -27,6 +27,8 @@ public:
     void showAudioSettings();
     void showDefaultSettings();
     void showAboutDialog();
+    static void showOnlineManual();
+    static void showOurMusic();
     void saveAudioSettings() const;
     void saveDefaultSettings() const;
     void saveCurrentSettingsAsDefaults() const;

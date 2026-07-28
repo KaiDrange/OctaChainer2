@@ -1,11 +1,14 @@
 #include "MainMenuBarModel.h"
 
 MainMenuBarModel::MainMenuBarModel(Action onQuit, Action onProjectSave, Action onProjectLoad, Action onOtImport,
-                                   Action onAudioSettings, Action onDefaultFolders, Action onAbout)
+                                   Action onAudioSettings, Action onDefaultSettings, Action onAbout,
+                                   Action onOnlineManual, Action onOurMusic)
     : onQuit(std::move(onQuit)),
       onAudioSettings(std::move(onAudioSettings)),
-      onDefaultSettings(std::move(onDefaultFolders)),
+      onDefaultSettings(std::move(onDefaultSettings)),
       onAbout(std::move(onAbout)),
+      onOnlineManual(std::move(onOnlineManual)),
+      onOurMusic(std::move(onOurMusic)),
       onProjectSave(std::move(onProjectSave)),
       onProjectLoad(std::move(onProjectLoad)),
       onOtImport(std::move(onOtImport))
@@ -38,6 +41,9 @@ juce::PopupMenu MainMenuBarModel::getMenuForIndex(int topLevelMenuIndex, const j
     else if (menuName == "Help")
     {
         menu.addItem(30, "About OctaChainer");
+        menu.addSeparator();
+        menu.addItem(31, "Online manual");
+        menu.addItem(32, "Our music as Tic Tic");
     }
 
     return menu;
@@ -47,32 +53,22 @@ void MainMenuBarModel::menuItemSelected(const int menuItemID, int topLevelMenuIn
 {
     juce::ignoreUnused(topLevelMenuIndex);
 
-    if (menuItemID == 1 && onQuit) // Quit
-    {
+    if (menuItemID == 1 && onQuit)
         onQuit();
-    }
-    else if (menuItemID == 2 && onProjectSave) // Save project
-    {
+    else if (menuItemID == 2 && onProjectSave)
         onProjectSave();
-    }
-    else if (menuItemID == 3 && onProjectLoad) // Load project
-    {
+    else if (menuItemID == 3 && onProjectLoad)
         onProjectLoad();
-    }
     else if (menuItemID == 4 && onOtImport)
-    {
         onOtImport();
-    }
     else if (menuItemID == 20 && onAudioSettings)
-    {
         onAudioSettings();
-    }
     else if (menuItemID == 21 && onDefaultSettings)
-    {
         onDefaultSettings();
-    }
     else if (menuItemID == 30 && onAbout)
-    {
         onAbout();
-    }
+    else if (menuItemID == 31 && onOnlineManual)
+        onOnlineManual();
+    else if (menuItemID == 32 && onOurMusic)
+        onOurMusic();
 }

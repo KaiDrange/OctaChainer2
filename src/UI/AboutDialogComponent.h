@@ -12,6 +12,8 @@ public:
     static constexpr int buttonHeight = 28;
     static inline const juce::String sourceCodeUrl{"https://github.com/KaiDrange/OctaChainer2"};
     static inline const juce::String releasesUrl{"https://github.com/KaiDrange/OctaChainer2/releases"};
+    static inline const juce::String onlineManualUrl{"https://ticticelectro.com/OctaChainer"};
+    static inline const juce::String ourMusicUrl{"https://ticticelectro.com/our-music/"};
     static inline const juce::String juceUrl{"https://juce.com/"};
 
 

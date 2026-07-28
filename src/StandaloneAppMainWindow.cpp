@@ -9,12 +9,15 @@ StandaloneAppMainWindow::StandaloneAppMainWindow(const juce::String& name)
                      juce::DocumentWindow::allButtons),
       menuBarModel(
           [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); },
-          [this] { saveProject(); },
-          [this] { loadProject(); },
-          [this] { importOtFile(); },
-          [this] { showAudioSettings(); },
-          [this] { showDefaultSettings(); },
-          [this] { showAboutDialog(); }
+      [this] { saveProject(); },
+      [this] { loadProject(); },
+      [this] { importOtFile(); },
+      [this] { showAudioSettings(); },
+      [this] { showDefaultSettings(); },
+      [this] { showAboutDialog(); },
+      [] { showOnlineManual(); },
+      [] { showOurMusic(); }
+
       )
 {
     setLookAndFeel(&style);
@@ -226,9 +229,19 @@ void StandaloneAppMainWindow::showAboutDialog()
     options.launchAsync();
 }
 
+void StandaloneAppMainWindow::showOnlineManual()
+{
+    const auto url = juce::URL(AboutDialogComponent::onlineManualUrl).launchInDefaultBrowser();
+}
+
+void StandaloneAppMainWindow::showOurMusic()
+{
+    const auto url = juce::URL(AboutDialogComponent::ourMusicUrl).launchInDefaultBrowser();
+}
+
 void StandaloneAppMainWindow::saveAudioSettings() const
 {
-    const std::unique_ptr<juce::XmlElement> xml(audioDeviceManager.createStateXml());
+    const std::unique_ptr xml(audioDeviceManager.createStateXml());
 
     if (xml != nullptr)
     {
