@@ -276,7 +276,7 @@ bool AudioUtil::writeWavFile(const juce::File& file, const juce::AudioBuffer<flo
 
         for (std::size_t i = 0; i < validCueOffsets.size(); ++i)
         {
-            writeU32LE(writePos, i + 1);
+            writeU32LE(writePos, static_cast<std::uint32_t>(i + 1));
             const auto cueOffset = static_cast<std::uint32_t>(validCueOffsets[i]);
             writeU32LE(writePos, cueOffset);
             writeFourCC(writePos, dataChunkId);
