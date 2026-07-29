@@ -179,7 +179,7 @@ bool OtReader::readImportSettingsImpl(const juce::File& otFile, ImportSettings& 
     const auto estimatedAudioBytes = static_cast<juce::int64>(juce::jmax(0, numChannels))
                                      * juce::jmax<juce::int64>(0, lengthInSamples)
                                      * static_cast<juce::int64>(sizeof(float));
-    const auto importAllowanceBytes = static_cast<juce::int64>(juce::jmax<std::size_t>(1, parsed.slices.size()))
+    const auto importAllowanceBytes = static_cast<juce::int64>(std::max<std::size_t>(1, parsed.slices.size()))
                                       * AudioFileLoader::maxLoadedAudioDataBytes;
     if (estimatedAudioBytes > importAllowanceBytes)
     {
@@ -318,7 +318,7 @@ void OtReader::importOtFile(const juce::File& otFile, StateHandler& stateHandler
                                            "Import",
                                            "Cancel",
                                            associatedComponent,
-                                           juce::ModalCallbackFunction::create([self, settingsPtr, stateHandlerPtr, safeComponent](int result) mutable
+                                           juce::ModalCallbackFunction::create([self, settingsPtr, stateHandlerPtr, safeComponent](const int result) mutable
                                            {
                                                if (result != 1 || safeComponent == nullptr || stateHandlerPtr == nullptr)
                                                    return;

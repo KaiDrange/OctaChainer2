@@ -188,7 +188,7 @@ if (OCTA_PLUGIN_FORMATS)
     elseif(APPLE)
         octa_add_release_copy(
                 OctaChainer2_VST3_VST3
-                "${CMAKE_CURRENT_BINARY_DIR}/OctaChainer2_VST3_artefacts/$<CONFIG>/OctaChainer2.vst3"
+                "${CMAKE_CURRENT_BINARY_DIR}/OctaChainer2_VST3_artefacts/$<CONFIG>/VST3/OctaChainer2.vst3"
                 "${OCTA_RELEASE_COPY_DIR}"
         )
     endif ()
