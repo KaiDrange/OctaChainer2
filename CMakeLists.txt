@@ -61,12 +61,39 @@ set(OCTA_COMMON_PUBLIC_LIBS
 
 set(OCTA_PLUGIN_FORMATS VST3)
 
+if (WIN32)
+    set(OCTA_RELEASE_COPY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/WinRelease")
+elseif(APPLE)
+    set(OCTA_RELEASE_COPY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/MacRelease")
+endif ()
+
+function(octa_add_release_copy target source destination)
+    if (NOT OCTA_RELEASE_COPY_DIR)
+        return()
+    endif ()
+
+    set(copy_script "${CMAKE_CURRENT_BINARY_DIR}/${target}_$<CONFIG>_release_copy.cmake")
+
+    set(legacy_cleanup "")
+    if (ARGC GREATER 3)
+        set(legacy_cleanup "${ARGV3}")
+    endif ()
+
+    file(GENERATE OUTPUT "${copy_script}" CONTENT "set(copy_config \"$<CONFIG>\")\nset(copy_source \"${source}\")\nset(copy_destination \"${destination}\")\nset(copy_legacy_cleanup \"${legacy_cleanup}\")\ninclude(\"${CMAKE_CURRENT_SOURCE_DIR}/cmake/copy_release_artifacts.cmake\")\n")
+
+    add_custom_command(TARGET "${target}" POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -P "${copy_script}"
+            VERBATIM)
+endfunction()
+
 juce_add_gui_app(OctaChainer2_App
         PRODUCT_NAME "OctaChainer 2"
         COMPANY_NAME "Tic Tech"
         BUNDLE_ID "com.octa.octachainer2.app"
         ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/assets/app_icon.png"
 )
+
+set_target_properties(OctaChainer2_App PROPERTIES OUTPUT_NAME "OctaChainer2")
 
 juce_generate_juce_header(OctaChainer2_App)
 
@@ -76,6 +103,8 @@ target_sources(OctaChainer2_App
         src/StandaloneApp.h
         src/StandaloneAppMainWindow.cpp
         src/StandaloneAppMainWindow.h
+        src/HeadlessBatchRunner.cpp
+        src/HeadlessBatchRunner.h
         ${OCTA_SHARED_SOURCES}
 )
 
@@ -93,8 +122,24 @@ target_link_libraries(OctaChainer2_App
         ${OCTA_COMMON_PUBLIC_LIBS}
 )
 
+if (WIN32)
+    octa_add_release_copy(
+            OctaChainer2_App
+            "${CMAKE_CURRENT_BINARY_DIR}/OctaChainer2_App_artefacts/$<CONFIG>/OctaChainer2.exe"
+            "${OCTA_RELEASE_COPY_DIR}"
+            "${OCTA_RELEASE_COPY_DIR}/OctaChainer 2.exe"
+    )
+elseif(APPLE)
+    octa_add_release_copy(
+            OctaChainer2_App
+            "${CMAKE_CURRENT_BINARY_DIR}/OctaChainer2_App_artefacts/$<CONFIG>/OctaChainer2.app"
+            "${OCTA_RELEASE_COPY_DIR}"
+            "${OCTA_RELEASE_COPY_DIR}/OctaChainer 2.app"
+    )
+endif ()
+
 if (OCTA_PLUGIN_FORMATS)
-    juce_add_plugin(OctaChainer2
+    juce_add_plugin(OctaChainer2_VST3
             COMPANY_NAME "Tic Tech"
             BUNDLE_ID "com.octa.octachainer2"
             IS_SYNTH FALSE
@@ -109,9 +154,9 @@ if (OCTA_PLUGIN_FORMATS)
             PRODUCT_NAME "OctaChainer2"
     )
 
-    juce_generate_juce_header(OctaChainer2)
+    juce_generate_juce_header(OctaChainer2_VST3)
 
-    target_sources(OctaChainer2
+    target_sources(OctaChainer2_VST3
             PRIVATE
             src/PluginEditor.cpp
             src/PluginEditor.h
@@ -120,21 +165,35 @@ if (OCTA_PLUGIN_FORMATS)
             ${OCTA_SHARED_SOURCES}
     )
 
-    target_compile_definitions(OctaChainer2
+    target_compile_definitions(OctaChainer2_VST3
             PRIVATE
             ${OCTA_COMMON_COMPILE_DEFINITIONS}
             JUCE_VST3_CAN_REPLACE_VST2=0
     )
 
-    target_link_libraries(OctaChainer2
+    target_link_libraries(OctaChainer2_VST3
             PRIVATE
             juce::juce_audio_utils
             juce::juce_dsp
             PUBLIC
             ${OCTA_COMMON_PUBLIC_LIBS}
     )
+
+    if (WIN32)
+        octa_add_release_copy(
+                OctaChainer2_VST3_VST3
+                "${CMAKE_CURRENT_BINARY_DIR}/OctaChainer2_VST3_artefacts/$<CONFIG>/VST3/OctaChainer2.vst3/Contents/x86_64-win/OctaChainer2.vst3"
+                "${OCTA_RELEASE_COPY_DIR}"
+        )
+    elseif(APPLE)
+        octa_add_release_copy(
+                OctaChainer2_VST3_VST3
+                "${CMAKE_CURRENT_BINARY_DIR}/OctaChainer2_VST3_artefacts/$<CONFIG>/OctaChainer2.vst3"
+                "${OCTA_RELEASE_COPY_DIR}"
+        )
+    endif ()
 endif ()
 
-if (TARGET AudioPluginHost AND TARGET OctaChainer2_VST3)
-    add_dependencies(AudioPluginHost OctaChainer2_VST3)
+if (TARGET AudioPluginHost AND TARGET OctaChainer2_VST3_VST3)
+    add_dependencies(AudioPluginHost OctaChainer2_VST3_VST3)
 endif ()

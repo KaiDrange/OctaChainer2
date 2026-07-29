@@ -1,5 +1,5 @@
 #include "HeadlessBatchRunner.h"
-#include "ChainExporter.h"
+#include "Core/ChainExporter.h"
 
 juce::String HeadlessBatchRunner::buildHelpText()
 {

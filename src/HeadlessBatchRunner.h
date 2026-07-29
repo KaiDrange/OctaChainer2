@@ -1,8 +1,8 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "AudioFileLoader.h"
-#include "StateHandler.h"
+#include "Core/AudioFileLoader.h"
+#include "Core/StateHandler.h"
 
 class HeadlessBatchRunner
 {

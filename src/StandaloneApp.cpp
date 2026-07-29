@@ -1,5 +1,5 @@
 #include "StandaloneApp.h"
-#include "Core/HeadlessBatchRunner.h"
+#include "HeadlessBatchRunner.h"
 #include "UI/MainComponent.h"
 
 #include <iostream>
