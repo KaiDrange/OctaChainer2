@@ -26,7 +26,7 @@ public:
     void actionListenerCallback(const juce::String& message) override;
 
     AudioPanelComponent(const Dimension& height, const Dimension& width,
-        StateHandler& stateHandlerToUse, const juce::String& title = "");
+        StateHandler& stateHandlerToUse, const juce::String& panelTitle = "");
     void resized() override;
 
     TransportButtonComponent btnPlaySlice{"Slice"};

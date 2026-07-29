@@ -6,7 +6,7 @@
 class SectionComponent : public juce::Component
 {
 public:
-    explicit SectionComponent(juce::String title = "");
+    explicit SectionComponent(juce::String sectionTitle = "");
 
     void setTitle(juce::String newTitle);
     void setTooltip(const juce::String& tooltip);

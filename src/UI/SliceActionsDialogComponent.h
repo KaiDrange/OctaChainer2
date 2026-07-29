@@ -23,8 +23,8 @@ public:
                                 const juce::String& currentSliceName,
                                 bool canCropToRange,
                                 bool canMergeWithSliceAbove,
-                                ActionCallback onActionSelected = {},
-                                SliceNameCommitCallback onSliceNameCommitted = {});
+                                ActionCallback actionSelected = {},
+                                SliceNameCommitCallback sliceNameCommitted = {});
 
     void resized() override;
     [[nodiscard]] int getSliceCount() const;

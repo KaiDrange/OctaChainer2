@@ -1,9 +1,9 @@
 #include "PanelComponent.h"
 
-PanelComponent::PanelComponent(const Dimension& height, const Dimension& width, juce::String title)
+PanelComponent::PanelComponent(const Dimension& height, const Dimension& width, juce::String panelTitle)
     : panelWidth(width),
       panelHeight(height),
-      title(std::move(title))
+      title(std::move(panelTitle))
 {
 }
 

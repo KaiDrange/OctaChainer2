@@ -1,8 +1,8 @@
 #include "WaveformComponent.h"
 
 WaveformComponent::WaveformComponent(const Dimension& height, const Dimension& width,
-                                     const juce::String& title)
-    : PanelComponent(height, width, title)
+                                     const juce::String& panelTitle)
+    : PanelComponent(height, width, panelTitle)
 {
     addAndMakeVisible(playHeadOverlay);
     playHeadOverlay.setVisible(false);
@@ -630,7 +630,7 @@ WaveformComponent::PlayHeadOverlayComponent::PlayHeadOverlayComponent()
 void WaveformComponent::PlayHeadOverlayComponent::setPlayHeadPositionFactor(double newPlayHeadPositionFactor)
 {
     const auto clampedFactor = juce::jlimit(0.0, 1.0, newPlayHeadPositionFactor);
-    if (clampedFactor == playHeadPositionFactor)
+    if (juce::approximatelyEqual(clampedFactor, playHeadPositionFactor))
         return;
 
     playHeadPositionFactor = clampedFactor;
@@ -642,7 +642,8 @@ void WaveformComponent::PlayHeadOverlayComponent::setSliceRange(const double new
 {
     const auto clampedStart = juce::jlimit(0.0, 1.0, newSliceStartFactor);
     const auto clampedEnd = juce::jlimit(clampedStart, 1.0, newSliceEndFactor);
-    if (clampedStart == sliceStartFactor && clampedEnd == sliceEndFactor)
+    if (juce::approximatelyEqual(clampedStart, sliceStartFactor)
+        && juce::approximatelyEqual(clampedEnd, sliceEndFactor))
         return;
 
     sliceStartFactor = clampedStart;

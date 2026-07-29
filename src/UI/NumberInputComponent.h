@@ -4,8 +4,8 @@
 
 class NumberInputComponent  : public juce::Component {
 public:
-    NumberInputComponent(const juce::String& labelText, double minValue, double maxValue,
-                         double defaultValue, double stepSize, bool labelAboveInput);
+    NumberInputComponent(const juce::String& labelText, double minimumValue, double maximumValue,
+                         double defaultNumber, double stepAmount, bool labelOnTop);
     ~NumberInputComponent() override;
 
     juce::var getValue() const;

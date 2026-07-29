@@ -1,7 +1,7 @@
 #include "SectionComponent.h"
 
-SectionComponent::SectionComponent(juce::String title)
-    : title(std::move(title))
+SectionComponent::SectionComponent(juce::String sectionTitle)
+    : title(std::move(sectionTitle))
 {
     addAndMakeVisible(titleTooltip);
 }

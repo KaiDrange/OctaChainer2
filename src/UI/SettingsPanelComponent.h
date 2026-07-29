@@ -19,7 +19,7 @@ public:
 
     SettingsPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                            StateHandler& stateHandlerToUse,
-                           const juce::String& title = "");
+                           const juce::String& panelTitle = "");
     ~SettingsPanelComponent() override;
     void resized() override;
 

@@ -2,12 +2,12 @@
 #include "StyleSheet.h"
 
 NumberInputComponent::NumberInputComponent(const juce::String& labelText,
-                                           const double minValue,
-                                           const double maxValue,
-                                           const double defaultValue,
-                                           const double stepSize,
-                                           const bool labelAboveInput) {
-    this->labelAboveInput = labelAboveInput;
+                                           const double minimumValue,
+                                           const double maximumValue,
+                                           const double defaultNumber,
+                                           const double stepAmount,
+                                           const bool labelOnTop) {
+    this->labelAboveInput = labelOnTop;
     label.setText(labelText, juce::dontSendNotification);
     label.setFont(StyleSheet::getControlFont());
     input.setInputFilter(new juce::TextEditor::LengthAndCharacterRestriction(16, "-0123456789."), true);
@@ -18,11 +18,11 @@ NumberInputComponent::NumberInputComponent(const juce::String& labelText,
     addAndMakeVisible(label);
     addAndMakeVisible(input);
 
-    this->minValue = minValue;
-    this->maxValue = maxValue;
-    this->defaultValue = defaultValue;
-    this->stepSize = stepSize;
-    setValue(defaultValue);
+    this->minValue = minimumValue;
+    this->maxValue = maximumValue;
+    this->defaultValue = defaultNumber;
+    this->stepSize = stepAmount;
+    setValue(defaultNumber);
 
     decrementButton.setButtonText("-");
     incrementButton.setButtonText("+");
@@ -109,7 +109,7 @@ void NumberInputComponent::setValue(const juce::var& value) {
 void NumberInputComponent::setValueInternal(const double number, const bool notifyListeners)
 {
     const auto normalised = roundToStepPrecision(juce::jlimit(minValue, maxValue, snapToStep(number)));
-    const auto clampedValue = normalised == static_cast<double>(juce::roundToInt(normalised))
+    const auto clampedValue = juce::approximatelyEqual(normalised, static_cast<double>(juce::roundToInt(normalised)))
         ? juce::var(juce::roundToInt(normalised))
         : juce::var(normalised);
 

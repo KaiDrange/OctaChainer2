@@ -2,17 +2,22 @@
 #include "AudioUtil.h"
 #include "AudioFileLoader.h"
 
-StateHandler::StateChange makeStateChange(const StateHandler::StateChange::Flag flags, const juce::Identifier& property = {})
+static StateHandler::StateChange makeStateChange(const StateHandler::StateChange::Flag flags, const juce::Identifier& property)
 {
     return { static_cast<uint32_t>(flags), property };
 }
 
-StateHandler::StateChange makeStateChangeFromTreeEvent(const juce::ValueTree& settingsTree,
-                                                       const juce::ValueTree& dataTree,
-                                                       const juce::Identifier& sliceId,
-                                                       const juce::Identifier& selectedSliceId,
-                                                       const juce::ValueTree& changedTree,
-                                                       const juce::Identifier& property)
+static StateHandler::StateChange makeStateChange(const StateHandler::StateChange::Flag flags)
+{
+    return makeStateChange(flags, {});
+}
+
+static StateHandler::StateChange makeStateChangeFromTreeEvent(const juce::ValueTree& settingsTree,
+                                                              const juce::ValueTree& dataTree,
+                                                              const juce::Identifier& sliceId,
+                                                              const juce::Identifier& selectedSliceId,
+                                                              const juce::ValueTree& changedTree,
+                                                              const juce::Identifier& property)
 {
     if (changedTree == settingsTree)
         return makeStateChange(StateHandler::StateChange::settings, property);
@@ -44,11 +49,11 @@ StateHandler::StateChange makeStateChangeFromTreeEvent(const juce::ValueTree& se
     return makeStateChange(StateHandler::StateChange::fullReload, property);
 }
 
-StateHandler::StateChange makeStateChangeFromChildEvent(const juce::ValueTree& parent,
-                                                        const juce::ValueTree& child,
-                                                        const juce::Identifier& sliceId,
-                                                        const juce::Identifier& settingsId,
-                                                        const juce::Identifier& dataId)
+static StateHandler::StateChange makeStateChangeFromChildEvent(const juce::ValueTree& parent,
+                                                               const juce::ValueTree& child,
+                                                               const juce::Identifier& sliceId,
+                                                               const juce::Identifier& settingsId,
+                                                               const juce::Identifier& dataId)
 {
     if (parent.hasType(dataId) && child.hasType(sliceId))
         return makeStateChange(StateHandler::StateChange::sliceList);
@@ -1030,8 +1035,8 @@ bool StateHandler::mergeSelectedSliceWithSliceAbove(juce::UndoManager* undoManag
         mergedSlice.sourcePath = "Merged";
     mergedSlice.channels = targetChannelCount;
     mergedSlice.samplerate = targetSampleRate;
-    mergedSlice.bitDepth = juce::jmax(static_cast<int>(aboveSliceTree.getProperty(sliceBitrateId, 0)),
-                                      static_cast<int>(selectedSliceTree.getProperty(sliceBitrateId, 0)));
+    mergedSlice.bitDepth = static_cast<unsigned int>(juce::jmax(static_cast<int>(aboveSliceTree.getProperty(sliceBitrateId, 0)),
+                                                                 static_cast<int>(selectedSliceTree.getProperty(sliceBitrateId, 0))));
     mergedSlice.lengthInSamples = mergedSamples;
     mergedSlice.start = 0;
     mergedSlice.end = mergedSlice.lengthInSamples;

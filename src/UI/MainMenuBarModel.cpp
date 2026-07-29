@@ -1,17 +1,17 @@
 #include "MainMenuBarModel.h"
 
-MainMenuBarModel::MainMenuBarModel(Action onQuit, Action onProjectSave, Action onProjectLoad, Action onOtImport,
-                                   Action onAudioSettings, Action onDefaultSettings, Action onAbout,
-                                   Action onOnlineManual, Action onOurMusic)
-    : onQuit(std::move(onQuit)),
-      onAudioSettings(std::move(onAudioSettings)),
-      onDefaultSettings(std::move(onDefaultSettings)),
-      onAbout(std::move(onAbout)),
-      onOnlineManual(std::move(onOnlineManual)),
-      onOurMusic(std::move(onOurMusic)),
-      onProjectSave(std::move(onProjectSave)),
-      onProjectLoad(std::move(onProjectLoad)),
-      onOtImport(std::move(onOtImport))
+MainMenuBarModel::MainMenuBarModel(Action onQuitAction, Action onProjectSaveAction, Action onProjectLoadAction, Action onOtImportAction,
+                                   Action onAudioSettingsAction, Action onDefaultSettingsAction, Action onAboutAction,
+                                   Action onOnlineManualAction, Action onOurMusicAction)
+    : onQuit(std::move(onQuitAction)),
+      onAudioSettings(std::move(onAudioSettingsAction)),
+      onDefaultSettings(std::move(onDefaultSettingsAction)),
+      onAbout(std::move(onAboutAction)),
+      onOnlineManual(std::move(onOnlineManualAction)),
+      onOurMusic(std::move(onOurMusicAction)),
+      onProjectSave(std::move(onProjectSaveAction)),
+      onProjectLoad(std::move(onProjectLoadAction)),
+      onOtImport(std::move(onOtImportAction))
 {
 }
 

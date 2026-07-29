@@ -3,8 +3,8 @@
 
 SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                                        StateHandler& stateHandlerToUse,
-                                       const juce::String& title)
-    : PanelComponent(height, width, title),
+                                       const juce::String& panelTitle)
+    : PanelComponent(height, width, panelTitle),
       stateHandler(stateHandlerToUse)
 {
     backgroundColour = StyleSheet::getSliceListBackgroundColour();
@@ -40,7 +40,7 @@ SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, 
 
     chainMaxLength.input.setTooltip("Maximum number of slices per chain");
     chainMaxLength.addListener(this);
-    SliceListComponent::stateChanged({ StateHandler::StateChange::fullReload });
+    SliceListComponent::stateChanged(StateHandler::StateChange{ StateHandler::StateChange::fullReload, {} });
 }
 
 SliceListComponent::~SliceListComponent()

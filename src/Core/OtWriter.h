@@ -7,13 +7,13 @@
 class OtWriter
 {
 public:
-    OtWriter(juce::File outputFile,
-             int sampleRate,
-             OtFileFormat::Loop_t loopSetting,
-             OtFileFormat::Stretch_t stretchSetting,
-             OtFileFormat::TrigQuant_t trigQuantSetting,
-             double gain,
-             double bpm);
+    OtWriter(juce::File outputFileToWrite,
+             int sampleRateToUse,
+             OtFileFormat::Loop_t loopSettingToUse,
+             OtFileFormat::Stretch_t stretchSettingToUse,
+             OtFileFormat::TrigQuant_t trigQuantSettingToUse,
+             double gainToUse,
+             double bpmToUse);
 
     bool write(std::uint32_t totalSamples) const;
     void addSlice(std::uint32_t start, std::uint32_t end);

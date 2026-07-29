@@ -20,7 +20,7 @@ public:
 
 
     WaveformComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
-                      const juce::String& title);
+                      const juce::String& panelTitle);
     ~WaveformComponent() override;
 
     void setAudioData(const juce::AudioBuffer<float>& audioData, double sampleRate);

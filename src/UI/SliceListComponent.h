@@ -18,7 +18,7 @@ class SliceListComponent : public PanelComponent,
 public:
     SliceListComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                         StateHandler& stateHandlerToUse,
-                        const juce::String& title = "");
+                        const juce::String& panelTitle = "");
     ~SliceListComponent() override;
     void resized() override;
     void stateChanged(const StateHandler::StateChange& change) override;

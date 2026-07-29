@@ -346,7 +346,7 @@ juce::int64 Chain::estimateRenderedSampleCount(const juce::int64 sourceSampleCou
     if (sourceSampleCount <= 0 || sourceSampleRate <= 0.0 || targetSampleRate <= 0.0)
         return 0;
 
-    if (sourceSampleRate == targetSampleRate)
+    if (juce::approximatelyEqual(sourceSampleRate, targetSampleRate))
         return sourceSampleCount;
 
     return juce::jmax<juce::int64>(1, std::llround(static_cast<double>(sourceSampleCount)

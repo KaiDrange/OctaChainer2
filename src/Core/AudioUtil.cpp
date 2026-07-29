@@ -23,7 +23,7 @@ bool AudioUtil::resampleAudioBuffer(const juce::AudioBuffer<float>& source, cons
     if (source.getNumChannels() <= 0 || source.getNumSamples() <= 0 || sourceSampleRate <= 0.0 || targetSampleRate <= 0.0)
         return false;
 
-    if (sourceSampleRate == targetSampleRate)
+    if (juce::approximatelyEqual(sourceSampleRate, targetSampleRate))
     {
         destination.makeCopyOf(source);
         return true;
@@ -286,7 +286,7 @@ bool AudioUtil::writeWavFile(const juce::File& file, const juce::AudioBuffer<flo
         }
     }
 
-    return file.replaceWithData(buffer.data(), static_cast<int>(buffer.size()));
+    return file.replaceWithData(buffer.data(), static_cast<std::size_t>(buffer.size()));
 }
 
 bool AudioUtil::readWaveCueOffsets(const juce::File& file, std::vector<juce::int64>& cueOffsets)
@@ -413,7 +413,7 @@ std::shared_ptr<AudioClip> AudioUtil::renderPlaybackClip(AudioClip clip, const d
     const int sourceSampleCount = source.getNumSamples();
 
     const int outputChannelCount = juce::jmin(sourceChannelCount, targetChannelCount);
-    const bool needsResample = clip.getSampleRate() != targetSamplerate;
+    const bool needsResample = ! juce::approximatelyEqual(clip.getSampleRate(), targetSamplerate);
     const bool needsDownmixToMono = outputChannelCount < sourceChannelCount;
 
     if (!needsResample && !needsDownmixToMono)

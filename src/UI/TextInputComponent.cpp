@@ -2,28 +2,30 @@
 #include "StyleSheet.h"
 
 TextInputComponent::TextInputComponent(const juce::String& labelText,
-                                           const int minLength,
-                                           const int maxLength,
-                                           const juce::String& legalChars,
-                                           const bool labelAboveInput) {
-    this->labelAboveInput = labelAboveInput;
+                                           const int minimumLength,
+                                           const int maximumLength,
+                                           const juce::String& allowedChars,
+                                           const bool labelOnTop) {
+    this->labelAboveInput = labelOnTop;
     label.setText(labelText, juce::dontSendNotification);
     label.setFont(StyleSheet::getControlFont());
 
-    if (legalChars.isEmpty())
+    if (allowedChars.isEmpty())
         this->legalChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-#";
+    else
+        this->legalChars = allowedChars;
     
-    input.setInputFilter(new juce::TextEditor::LengthAndCharacterRestriction(maxLength, this->legalChars), true);
+    input.setInputFilter(new juce::TextEditor::LengthAndCharacterRestriction(maximumLength, this->legalChars), true);
     input.setFont(StyleSheet::getControlFont());
     input.setIndents(StyleSheet::controlTextInsetX, StyleSheet::controlTextInsetY);
     addAndMakeVisible(label);
     addAndMakeVisible(input);
 
-    this->maxLength = maxLength;
-    this->minLength = minLength;
+    this->maxLength = maximumLength;
+    this->minLength = minimumLength;
     
     input.onTextChange = [=] {
-        if (const auto newText = getValue(); newText.length() >= minLength && newText.length() <= maxLength) {
+        if (const auto newText = getValue(); newText.length() >= minimumLength && newText.length() <= maximumLength) {
             input.setText(newText);
         }
     };

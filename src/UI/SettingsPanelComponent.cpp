@@ -3,8 +3,8 @@
 
 SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& height, const PanelComponent::Dimension& width,
                                                StateHandler& stateHandlerToUse,
-                                               const juce::String& title)
-    : PanelComponent(height, width, title),
+                                               const juce::String& panelTitle)
+    : PanelComponent(height, width, panelTitle),
       stateHandler(stateHandlerToUse)
 {
     stateHandler.addListener(this);
@@ -89,7 +89,7 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     gainInput.addListener(this);
     bpmInput.addListener(this);
 
-    SettingsPanelComponent::stateChanged({ StateHandler::StateChange::fullReload });
+    SettingsPanelComponent::stateChanged(StateHandler::StateChange{ StateHandler::StateChange::fullReload, {} });
 }
 
 SettingsPanelComponent::~SettingsPanelComponent()

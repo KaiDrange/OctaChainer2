@@ -1,6 +1,41 @@
 #include "HeadlessBatchRunner.h"
 #include "Core/ChainExporter.h"
 
+static bool parseSampleRate(const juce::String& text, double& sampleRate)
+{
+    const auto normalized = text.trim().toLowerCase();
+
+    if (normalized == "44.1k" || normalized == "44100")
+    {
+        sampleRate = 44100.0;
+        return true;
+    }
+
+    if (normalized == "48k" || normalized == "48000")
+    {
+        sampleRate = 48000.0;
+        return true;
+    }
+
+    if (normalized == "96k" || normalized == "96000")
+    {
+        sampleRate = 96000.0;
+        return true;
+    }
+
+    return false;
+}
+
+static bool isSupportedBitDepth(const int bitDepth)
+{
+    return bitDepth == 16 || bitDepth == 24;
+}
+
+static bool isSupportedChannelCount(const int channels)
+{
+    return channels == 1 || channels == 2;
+}
+
 juce::String HeadlessBatchRunner::buildHelpText()
 {
     return
@@ -55,41 +90,6 @@ bool HeadlessBatchRunner::isSupportedFadeMs(const int fadeMs)
     default:
         return false;
     }
-}
-
-bool parseSampleRate(const juce::String& text, double& sampleRate)
-{
-    const auto normalized = text.trim().toLowerCase();
-
-    if (normalized == "44.1k" || normalized == "44100")
-    {
-        sampleRate = 44100.0;
-        return true;
-    }
-
-    if (normalized == "48k" || normalized == "48000")
-    {
-        sampleRate = 48000.0;
-        return true;
-    }
-
-    if (normalized == "96k" || normalized == "96000")
-    {
-        sampleRate = 96000.0;
-        return true;
-    }
-
-    return false;
-}
-
-bool isSupportedBitDepth(const int bitDepth)
-{
-    return bitDepth == 16 || bitDepth == 24;
-}
-
-bool isSupportedChannelCount(const int channels)
-{
-    return channels == 1 || channels == 2;
 }
 
 std::vector<juce::String> HeadlessBatchRunner::tokenizeCommandLine(const juce::String& commandLine)

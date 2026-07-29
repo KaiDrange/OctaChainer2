@@ -2,8 +2,8 @@
 #include "../Core/AudioPlaybackEngine.h"
 
 AudioPanelComponent::AudioPanelComponent(const Dimension& height, const Dimension& width,
-    StateHandler& stateHandlerToUse, const juce::String& title)
-    : PanelComponent(height, width, title), stateHandler(stateHandlerToUse)
+    StateHandler& stateHandlerToUse, const juce::String& panelTitle)
+    : PanelComponent(height, width, panelTitle), stateHandler(stateHandlerToUse)
 {
     addAndMakeVisible(btnPlaySlice);
     btnPlaySlice.getButton().setTooltip("Hotkey: Space");
@@ -40,7 +40,7 @@ AudioPanelComponent::AudioPanelComponent(const Dimension& height, const Dimensio
     };
 
     stateHandler.addListener(this);
-    AudioPanelComponent::stateChanged({ StateHandler::StateChange::fullReload });
+    AudioPanelComponent::stateChanged(StateHandler::StateChange{ StateHandler::StateChange::fullReload, {} });
 }
 
 AudioPanelComponent::~AudioPanelComponent()
@@ -124,7 +124,7 @@ void AudioPanelComponent::stateChanged(const StateHandler::StateChange& change)
         || change.has(StateHandler::StateChange::fullReload))
     {
         const auto volume = juce::Decibels::gainToDecibels(stateHandler.getStateValue<float>(StateHandler::masterVolumeId, 0.5f));
-        if (volume != masterVolumeSlider.getValue())
+        if (! juce::approximatelyEqual(static_cast<double>(volume), masterVolumeSlider.getValue()))
             masterVolumeSlider.setValue(volume, juce::dontSendNotification);
     }
 }

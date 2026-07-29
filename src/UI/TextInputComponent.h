@@ -4,7 +4,7 @@
 
 class TextInputComponent : public juce::Component {
 public:
-    TextInputComponent(const juce::String& labelText, int minLength, int maxLength, const juce::String& legalChars, bool labelAboveInput);
+    TextInputComponent(const juce::String& labelText, int minimumLength, int maximumLength, const juce::String& allowedChars, bool labelOnTop);
     ~TextInputComponent() override;
 
     juce::String getValue() const;

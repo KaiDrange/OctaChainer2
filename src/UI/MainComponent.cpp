@@ -285,14 +285,14 @@ void MainComponent::saveChainToFile()
         safeThis->cancelChainRender();
         safeThis->clearPlaybackChain();
 
-        std::thread([safeThis, file, stateXml = std::move(stateXml), targetSampleRate, bitDepth]() mutable
+        std::thread([safeThis, file, exportStateXml = std::move(stateXml), targetSampleRate, bitDepth]() mutable
         {
             juce::String errorMessage;
             bool success = false;
 
             if (safeThis != nullptr)
             {
-                const auto baseState = stateXml != nullptr ? juce::ValueTree::fromXml(*stateXml) : juce::ValueTree{};
+                const auto baseState = exportStateXml != nullptr ? juce::ValueTree::fromXml(*exportStateXml) : juce::ValueTree{};
                 const auto settingsTree = baseState.getChildWithName(StateHandler::settingsId);
                 const auto dataTree = baseState.getChildWithName(StateHandler::dataId);
                 const auto numSlices = dataTree.isValid() ? dataTree.getNumChildren() : 0;
@@ -304,7 +304,7 @@ void MainComponent::saveChainToFile()
                 success = true;
                 for (int chainIndex = 0; chainIndex < chainCount; ++chainIndex)
                 {
-                    auto exportState = stateXml != nullptr ? juce::ValueTree::fromXml(*stateXml) : juce::ValueTree{};
+                    auto exportState = exportStateXml != nullptr ? juce::ValueTree::fromXml(*exportStateXml) : juce::ValueTree{};
                     auto exportDataTree = exportState.getChildWithName(StateHandler::dataId);
                     if (exportDataTree.isValid())
                     {
@@ -329,13 +329,13 @@ void MainComponent::saveChainToFile()
                 }
             }
 
-            juce::MessageManager::callAsync([safeThis, success, errorMessage = std::move(errorMessage)]() mutable
+            juce::MessageManager::callAsync([safeThis, success, asyncErrorMessage = std::move(errorMessage)]() mutable
             {
                 if (! success && safeThis != nullptr)
                 {
                     juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
                                                            "Could not save chain",
-                                                           errorMessage.isNotEmpty() ? errorMessage : "The chain could not be rendered.");
+                                                           asyncErrorMessage.isNotEmpty() ? asyncErrorMessage : "The chain could not be rendered.");
                 }
 
                 if (safeThis != nullptr)
@@ -385,24 +385,24 @@ void MainComponent::saveMegabreakToFile()
         safeThis->cancelChainRender();
         safeThis->clearPlaybackChain();
 
-        std::thread([safeThis, file, stateXml = std::move(stateXml), targetSampleRate, bitDepth, partCount]() mutable
+        std::thread([safeThis, file, exportStateXml = std::move(stateXml), targetSampleRate, bitDepth, partCount]() mutable
         {
             juce::String errorMessage;
             bool success = false;
 
             if (safeThis != nullptr)
             {
-                const auto baseState = stateXml != nullptr ? juce::ValueTree::fromXml(*stateXml) : juce::ValueTree{};
+                const auto baseState = exportStateXml != nullptr ? juce::ValueTree::fromXml(*exportStateXml) : juce::ValueTree{};
                 success = MegabreakExporter::exportToFiles(file, baseState, targetSampleRate, bitDepth, partCount, &errorMessage);
             }
 
-            juce::MessageManager::callAsync([safeThis, success, errorMessage = std::move(errorMessage)]() mutable
+            juce::MessageManager::callAsync([safeThis, success, asyncErrorMessage = std::move(errorMessage)]() mutable
             {
                 if (! success && safeThis != nullptr)
                 {
                     juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
                                                            "Could not save megabreak",
-                                                           errorMessage.isNotEmpty() ? errorMessage : "The megabreak could not be rendered.");
+                                                           asyncErrorMessage.isNotEmpty() ? asyncErrorMessage : "The megabreak could not be rendered.");
                 }
 
                 if (safeThis != nullptr)
@@ -561,22 +561,22 @@ void MainComponent::chainRenderThreadLoop()
         const juce::Component::SafePointer<MainComponent> safeThis(this);
         if (completed)
         {
-            juce::MessageManager::callAsync([safeThis, requestId, renderedChain, renderError = std::move(renderError)]() mutable
+            juce::MessageManager::callAsync([safeThis, requestId, renderedChain, asyncRenderError = std::move(renderError)]() mutable
             {
                 if (safeThis == nullptr)
                     return;
 
-                safeThis->finishChainRender(requestId, renderedChain, renderError);
+                safeThis->finishChainRender(requestId, renderedChain, asyncRenderError);
             });
         }
         else if (! shouldAbort())
         {
-            juce::MessageManager::callAsync([safeThis, requestId, renderError = std::move(renderError)]() mutable
+            juce::MessageManager::callAsync([safeThis, requestId, asyncRenderError = std::move(renderError)]() mutable
             {
                 if (safeThis == nullptr)
                     return;
 
-                safeThis->finishChainRender(requestId, nullptr, renderError);
+                safeThis->finishChainRender(requestId, nullptr, asyncRenderError);
             });
         }
     }

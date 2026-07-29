@@ -16,8 +16,8 @@ public:
     DefaultSettingsDialogComponent(const juce::String& defaultAudioFolder,
                                   const juce::String& defaultExportFolder,
                                   const juce::String& defaultProjectFolder,
-                                  ApplyFn onApply,
-                                  SaveDefaultsFn onSaveCurrentSettingsAsDefaultsFn);
+                                  ApplyFn applyFn,
+                                  SaveDefaultsFn saveDefaultsFn);
 
     void resized() override;
 

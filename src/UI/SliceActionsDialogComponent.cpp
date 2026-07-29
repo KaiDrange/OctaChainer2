@@ -6,13 +6,13 @@ SliceActionsDialogComponent::SliceActionsDialogComponent(const double bpmDefault
                                                         const juce::String& currentSliceName,
                                                         const bool canCropToRange,
                                                         const bool canMergeWithSliceAbove,
-                                                        ActionCallback onActionSelected,
-                                                        SliceNameCommitCallback onSliceNameCommitted)
+                                                        ActionCallback actionSelected,
+                                                        SliceNameCommitCallback sliceNameCommitted)
     : sliceCountInput("Slice count:", 2.0, 64.0, 2.0, 1.0, true),
       bpmInput("BPM:", 30.0, 300.0, bpmDefault, 0.01, true),
       sixteenthNotesInput("Sixteenth notes per slice:", 1.0, 64.0, 16.0, 1.0, true),
-      onActionSelected(std::move(onActionSelected)),
-      onSliceNameCommitted(std::move(onSliceNameCommitted))
+      onActionSelected(std::move(actionSelected)),
+      onSliceNameCommitted(std::move(sliceNameCommitted))
 {
     setSize(dialogWidth, dialogHeight);
 

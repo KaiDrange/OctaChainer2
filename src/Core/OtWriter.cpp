@@ -1,19 +1,19 @@
 #include "OtWriter.h"
 
-OtWriter::OtWriter(juce::File outputFile,
-                   const int sampleRate,
-                   const OtFileFormat::Loop_t loopSetting,
-                   const OtFileFormat::Stretch_t stretchSetting,
-                   const OtFileFormat::TrigQuant_t trigQuantSetting,
-                   const double gain,
-                   const double bpm)
-    : outputFile(std::move(outputFile)),
-      sampleRate(sampleRate),
-      bpm(bpm),
-      gain(gain),
-      loopSetting(loopSetting),
-      stretchSetting(stretchSetting),
-      trigQuantSetting(trigQuantSetting)
+OtWriter::OtWriter(juce::File outputFileToWrite,
+                   const int sampleRateToUse,
+                   const OtFileFormat::Loop_t loopSettingToUse,
+                   const OtFileFormat::Stretch_t stretchSettingToUse,
+                   const OtFileFormat::TrigQuant_t trigQuantSettingToUse,
+                   const double gainToUse,
+                   const double bpmToUse)
+    : outputFile(std::move(outputFileToWrite)),
+      sampleRate(sampleRateToUse),
+      bpm(bpmToUse),
+      gain(gainToUse),
+      loopSetting(loopSettingToUse),
+      stretchSetting(stretchSettingToUse),
+      trigQuantSetting(trigQuantSettingToUse)
 {
 }
 

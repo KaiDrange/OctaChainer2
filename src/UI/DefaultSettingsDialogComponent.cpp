@@ -4,10 +4,10 @@
 DefaultSettingsDialogComponent::DefaultSettingsDialogComponent(const juce::String& defaultAudioFolder,
                                                              const juce::String& defaultExportFolder,
                                                              const juce::String& defaultProjectFolder,
-                                                             ApplyFn onApply,
-                                                             SaveDefaultsFn onSaveCurrentSettingsAsDefaultsFn)
-    : onApply(std::move(onApply)),
-      onSaveCurrentSettingsAsDefaults(std::move(onSaveCurrentSettingsAsDefaultsFn))
+                                                             ApplyFn applyFn,
+                                                             SaveDefaultsFn saveDefaultsFn)
+    : onApply(std::move(applyFn)),
+      onSaveCurrentSettingsAsDefaults(std::move(saveDefaultsFn))
 {
     setSize(700, 276);
 
