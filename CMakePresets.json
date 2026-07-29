@@ -82,6 +82,7 @@
       "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
         "OCTA_BUILD_AUDIO_PLUGIN_HOST": "ON"
       },
       "condition": {

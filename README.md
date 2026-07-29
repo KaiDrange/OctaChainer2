@@ -12,7 +12,8 @@ OctaChainer 2 is intended to be released both as a standalone application and as
 In CLion, choose the platform-specific CMake configure preset:
 
 - Windows: `Windows Debug` or `Windows Release`
-- macOS: `macOS Debug` or `macOS Release`
+- macOS: `macOS Debug` or `macOS Release`  
+  `macOS Release` builds a universal binary for `arm64` and `x86_64`.
 
 Then choose one of the build presets:
 
