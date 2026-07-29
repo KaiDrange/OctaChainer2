@@ -2,6 +2,7 @@
 build/
 cmake-build-*/
 
+
 # IDE
 .idea/
 .vs/
@@ -9,6 +10,7 @@ cmake-build-*/
 
 # macOS
 .DS_Store
+MacRelease
 
 # Windows
 Thumbs.db
@@ -28,5 +30,3 @@ CMakeUserPresets.json
 # MSVC database files
 *.VC.db
 *.VC.opendb
-
-/OldOctaChainer/

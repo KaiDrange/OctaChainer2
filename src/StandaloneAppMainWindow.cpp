@@ -461,7 +461,7 @@ void StandaloneAppMainWindow::loadProject()
         StateHandler::defaultProjectFolderId,
         juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()));
     fileChooser = std::make_unique<juce::FileChooser>("Select a project file to load", initialFolder, "*.xml");
-    constexpr auto browserFlags = juce::FileBrowserComponent::openMode;
+    constexpr auto browserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
     fileChooser->launchAsync(browserFlags, [this](const juce::FileChooser& chooser)
     {
         const auto xmlFile = chooser.getResult();

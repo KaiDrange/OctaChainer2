@@ -9,8 +9,7 @@ AudioPanelComponent::AudioPanelComponent(const Dimension& height, const Dimensio
     btnPlaySlice.getButton().setTooltip("Hotkey: Space");
     btnPlaySlice.getButton().addShortcut(juce::KeyPress(juce::KeyPress::spaceKey));
     addAndMakeVisible(btnPlayChain);
-    btnPlayChain.getButton().setTooltip("Hotkey: Ctrl/Cmd + Space");
-    btnPlayChain.getButton().addShortcut(juce::KeyPress(juce::KeyPress::spaceKey,juce::ModifierKeys::ctrlModifier, 0));
+    btnPlayChain.getButton().setTooltip("Hotkey: Ctrl + P");
     addAndMakeVisible(masterVolumeLabel);
     addAndMakeVisible(masterVolumeSlider);
 

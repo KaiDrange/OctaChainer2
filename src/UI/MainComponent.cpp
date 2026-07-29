@@ -93,6 +93,18 @@ void MainComponent::resized()
     chainWaveformComponent.setBounds(bottomBand);
 }
 
+bool MainComponent::keyPressed(const juce::KeyPress& key)
+{
+    if (key == juce::KeyPress('p', juce::ModifierKeys::ctrlModifier, 0)
+        && audioPanelComponent.btnPlayChain.getButton().isEnabled())
+    {
+        audioPanelComponent.btnPlayChain.getButton().triggerClick();
+        return true;
+    }
+
+    return false;
+}
+
 bool MainComponent::isOtFilePath(const juce::String& path) const
 {
     return juce::File(path).getFileExtension().equalsIgnoreCase(".ot");

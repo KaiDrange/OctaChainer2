@@ -53,7 +53,7 @@ SettingsPanelComponent::SettingsPanelComponent(const PanelComponent::Dimension& 
     exportEmbedMarkers.setTooltip("Embeds cue markers for slices in the exported wav file(s)");
     chainExportSection.addAndMakeVisible(createButton);
     createButton.addShortcut(KeyPress('S', ModifierKeys::ctrlModifier, 0));
-    createButton.setTooltip("Combines slices into one or more .wav files (Hotkey: Ctrl/Cmd + S)");
+    createButton.setTooltip("Combines slices into one or more .wav files (Hotkey: Ctrl + S)");
 
     megabreakExportSection.addAndMakeVisible(megabreakFadeinBox);
     megabreakExportSection.addAndMakeVisible(megabreakFadeoutBox);

@@ -22,7 +22,7 @@ SliceListComponent::SliceListComponent(const PanelComponent::Dimension& height, 
     chainMaxLength.setLabelColour(StyleSheet::getSliceListTextColour());
 
     btnAdd.addShortcut(juce::KeyPress('O', juce::ModifierKeys::ctrlModifier, 0));
-    btnAdd.setTooltip("Load audio files as slices (Hotkey: Ctrl/Cmd + O)");
+    btnAdd.setTooltip("Load audio files as slices (Hotkey: Ctrl + O)");
     btnAdd.onClick = [this] { showAddFileChooser(); };
 
     btnRemove.addShortcut(juce::KeyPress(juce::KeyPress::deleteKey));
