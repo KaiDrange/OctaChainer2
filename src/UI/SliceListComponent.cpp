@@ -454,7 +454,12 @@ void SliceListComponent::configureTable()
                      StyleSheet::getSliceListDragIndicatorColour().withAlpha(0.22f));
 
     for (const auto& column : columns)
-        header.addColumn(column.name, column.id, column.width, column.minWidth, column.maxWidth);
+        header.addColumn(column.name,
+                         column.id,
+                         column.width,
+                         column.minWidth,
+                         column.maxWidth,
+                         juce::TableHeaderComponent::notResizableOrSortable);
 
     header.setStretchToFitActive(true);
 }
