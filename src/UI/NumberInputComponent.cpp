@@ -22,15 +22,13 @@ NumberInputComponent::NumberInputComponent(const juce::String& labelText,
     this->maxValue = maximumValue;
     this->defaultValue = defaultNumber;
     this->stepSize = stepAmount;
+    stepButton = std::make_unique<SplitStepButton>();
+    stepButton->onStep = [this](const SplitStepButton::Direction direction)
+    {
+        adjustValueByStep(direction == SplitStepButton::Direction::increment ? 1 : -1);
+    };
+    addAndMakeVisible(*stepButton);
     setValue(defaultNumber);
-
-    decrementButton.setButtonText("-");
-    incrementButton.setButtonText("+");
-    addAndMakeVisible(decrementButton);
-    addAndMakeVisible(incrementButton);
-
-    decrementButton.onClick = [this] { adjustValueByStep(-1); };
-    incrementButton.onClick = [this] { adjustValueByStep(1); };
 
     input.onFocusLost = [this] {
         const auto value = getValidatedValue();
@@ -56,19 +54,11 @@ void NumberInputComponent::resized() {
     else
         label.setBounds(area.removeFromLeft(static_cast<int>(area.getWidth()*0.5)));
 
-    const auto buttonWidth = juce::jlimit(14, 18, juce::jmax(0, area.getHeight() - 2));
+    const auto buttonWidth = juce::jlimit(16, 20, juce::jmax(0, area.getHeight()));
     const auto buttonAreaWidth = juce::jmin(area.getWidth(), buttonWidth);
     auto buttonArea = area.removeFromRight(buttonAreaWidth);
     input.setBounds(area);
-
-    const auto buttonGap = juce::jmin(StyleSheet::controlGap, juce::jmax(1, buttonArea.getHeight() / 10));
-    const auto buttonHeight = juce::jmax(1, (buttonArea.getHeight() - buttonGap) / 2);
-    const auto topButtonHeight = buttonHeight;
-    const auto bottomButtonHeight = juce::jmax(1, buttonArea.getHeight() - topButtonHeight - buttonGap);
-
-    incrementButton.setBounds(buttonArea.removeFromTop(topButtonHeight));
-    buttonArea.removeFromTop(buttonGap);
-    decrementButton.setBounds(buttonArea.removeFromTop(bottomButtonHeight));
+    stepButton->setBounds(buttonArea);
 }
 
 juce::var NumberInputComponent::getValue() const
@@ -176,16 +166,18 @@ void NumberInputComponent::updateStepButtonStates()
 {
     if (stepSize <= 0.0)
     {
-        decrementButton.setEnabled(false);
-        incrementButton.setEnabled(false);
+        stepButton->setEnabled(false);
+        stepButton->setIncrementEnabled(false);
+        stepButton->setDecrementEnabled(false);
         return;
     }
 
+    stepButton->setEnabled(true);
     const auto currentValue = getValidatedValue();
     const auto value = currentValue.isVoid() ? defaultValue : static_cast<double>(currentValue);
 
-    decrementButton.setEnabled(value > minValue);
-    incrementButton.setEnabled(value < maxValue);
+    stepButton->setDecrementEnabled(value > minValue);
+    stepButton->setIncrementEnabled(value < maxValue);
 }
 
 void NumberInputComponent::setLabelText(const juce::String& text) {

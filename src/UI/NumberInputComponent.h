@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "SplitStepButton.h"
 
 class NumberInputComponent  : public juce::Component {
 public:
@@ -38,8 +39,7 @@ private:
     void updateStepButtonStates();
     void sendChangeMessage();
     juce::Label label;
-    juce::TextButton decrementButton;
-    juce::TextButton incrementButton;
+    std::unique_ptr<SplitStepButton> stepButton;
     double maxValue;
     double minValue;
     double defaultValue;
