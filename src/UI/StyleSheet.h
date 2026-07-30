@@ -11,19 +11,20 @@ public:
     static constexpr uint32 panelBorderColour = 0x809DA79D;
     static constexpr uint32 dialogBackgroundColour = 0xFF555555;
 
-    static constexpr int panelMargins = 3;
-    static constexpr int panelPadding = 5;
+    static constexpr int panelMargins = 2;
+    static constexpr int panelPadding = 4;
     static constexpr int panelBorderThickness = 2;
     static constexpr int panelBorderCornerSize = 4;
-    static constexpr int panelTitleHeight = 20;
+    static constexpr int panelTitleHeight = 18;
 
-    static constexpr int sectionHeaderHeight = 16;
-    static constexpr int sectionContentPadding = 8;
+    static constexpr int sectionHeaderHeight = 13;
+    static constexpr int sectionContentPadding = 4;
     static constexpr int sectionCornerSize = 4;
     static constexpr int sectionBorderThickness = 1;
 
     static constexpr uint32 textDefaultColour = 0xFF2E322F;
-    static constexpr float fontDefaultSize  = 13.0f;
+    static constexpr float fontDefaultSize  = 12.0f;
+    static constexpr float audioPanelFontSize = 7.0f;
 
     static constexpr uint32 buttonBackgroundColour = 0xFF6D8376;
     static constexpr uint32 buttonBackgroundHoveredColour = 0xFF7D9284;
@@ -68,22 +69,22 @@ public:
     static constexpr uint32 comboBackgroundColour = controlBackgroundColour;
     static constexpr uint32 comboButtonColour = textDefaultColour;
     static constexpr uint32 comboArrowColour = textDefaultColour;
-    static constexpr int comboboxHeight = 27;
-    static constexpr int defaultButtonHeight = 40;
-    static constexpr int buttonMargins = 3;
-    static constexpr int sectionGap = 10;
-    static constexpr int controlGap = 6;
-    static constexpr int inputHeight = 30;
+    static constexpr int comboboxHeight = 23;
+    static constexpr int defaultButtonHeight = 32;
+    static constexpr int buttonMargins = 2;
+    static constexpr int sectionGap = 6;
+    static constexpr int controlGap = 4;
+    static constexpr int inputHeight = 23;
     static constexpr uint32 playHeadColour = 0x80000000;
 
     static juce::Font getTitleFont()
     {
-        return juce::FontOptions(16.0f, juce::Font::bold);
+        return juce::FontOptions(14.0f, juce::Font::bold);
     }
 
     static juce::Font getControlFont()
     {
-        return juce::FontOptions(13.0f);
+        return juce::FontOptions(12.0f);
     }
 
     static juce::Colour getDefaultSectionBackgroundColour()

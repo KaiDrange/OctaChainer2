@@ -38,6 +38,11 @@ const juce::DrawableButton& TransportButtonComponent::getButton() const noexcept
     return button;
 }
 
+juce::Label& TransportButtonComponent::getLabel()
+{
+    return label;
+}
+
 void TransportButtonComponent::resized()
 {
     auto area = getLocalBounds();
@@ -45,7 +50,7 @@ void TransportButtonComponent::resized()
     label.setVisible(showLabel);
     if (showLabel)
     {
-        constexpr int labelHeight = static_cast<int>(StyleSheet::fontDefaultSize);
+        constexpr int labelHeight = static_cast<int>(StyleSheet::audioPanelFontSize + 1);
         label.setBounds(area.removeFromTop(labelHeight));
     }
 

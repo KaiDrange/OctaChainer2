@@ -439,8 +439,8 @@ void SliceListComponent::numberInputChanged(NumberInputComponent* numberInput)
 void SliceListComponent::configureTable()
 {
     table.setMultipleSelectionEnabled(false);
-    table.setRowHeight(25);
-    table.setHeaderHeight(26);
+    table.setRowHeight(23);
+    table.setHeaderHeight(23);
     table.setOutlineThickness(1);
     table.setColour(juce::ListBox::backgroundColourId, backgroundColour.darker(0.03f));
     table.setColour(juce::ListBox::outlineColourId, borderColour);

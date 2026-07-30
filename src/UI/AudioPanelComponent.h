@@ -43,4 +43,6 @@ private:
 
     void sendTransportEvent(TransportButtonComponent::TransportEvent event);
     juce::ListenerList<Listener> listeners;
+    juce::Font labelFont{juce::FontOptions(StyleSheet::audioPanelFontSize)};
+
 };

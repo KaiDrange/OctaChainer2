@@ -26,17 +26,17 @@ public:
     void addListener(Listener* listener);
     void removeListener(Listener* listenerToRemove);
 
-    static constexpr int topSectionHeight = 80;
-    static constexpr int otSectionHeight = 160;
-    static constexpr int chainExportSectionHeight = 162;
-    static constexpr int megabreakExportSectionHeight = 100;
+    static constexpr int topSectionHeight = 67;
+    static constexpr int otSectionHeight = 129;
+    static constexpr int chainExportSectionHeight = 129;
+    static constexpr int megabreakExportSectionHeight = 80;
 
     void stateChanged(const StateHandler::StateChange& change) override;
     void numberInputChanged(NumberInputComponent* numberInput) override;
 
 private:
-    static bool isOtCompatibleExport(const StateHandler& stateHandler, const bool hasSlices);
-    static bool isMegabreakCompatibleExport(const StateHandler& stateHandler, const bool hasSlices);
+    static bool isOtCompatibleExport(const StateHandler& stateHandler, bool hasSlices);
+    static bool isMegabreakCompatibleExport(const StateHandler& stateHandler, bool hasSlices);
     void layoutTopSections();
     void layoutOtAttributesSection();
     void layoutChainExportSection();

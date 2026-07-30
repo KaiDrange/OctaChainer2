@@ -21,22 +21,22 @@ class MainComponent : public juce::Component,
                       WaveformComponent::Listener
 {
 public:
-    static constexpr int defaultWidth = 1536;
-    static constexpr int defaultHeight = 890;
+    static constexpr int defaultWidth = 1280;
+    static constexpr int defaultHeight = 720;
     static constexpr int maxWidth = 2560;
     static constexpr int maxHeight = 1440;
     static constexpr int minWidth = 900;
-    static constexpr int minHeight = 614;
+    static constexpr int minHeight = 505;
 
     static constexpr int sampleListWidthPercentage = 70;
-    static constexpr int sampleListHeightPercentage = 75;
-    static constexpr int sampleListMinHeight = minHeight;
+    static constexpr int sampleListHeightPercentage = 71;
+    static constexpr int sampleListMinHeight = 508;
 
-    static constexpr int audioSectionFixedHeight = 100;
+    static constexpr int audioSectionFixedHeight = 80;
 
     static constexpr int panelMarginPixels = StyleSheet::panelMargins;
-    static constexpr int settingsPanelFixedWidth = 300;
-    static constexpr int settingsPanelFixedHeight = 555;
+    static constexpr int settingsPanelFixedWidth = 280;
+    static constexpr int settingsPanelFixedHeight = 440;
 
     static constexpr int sliceWaveformHeightPercentage = (100 - sampleListHeightPercentage) / 2;
     static constexpr int chainWaveformWidthPercentage = sliceWaveformHeightPercentage;

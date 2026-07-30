@@ -21,6 +21,10 @@ AudioPanelComponent::AudioPanelComponent(const Dimension& height, const Dimensio
     masterVolumeSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     masterVolumeSlider.setRange(-24.0f, 0.0f, 0.1f);
 
+    masterVolumeLabel.setFont(labelFont);
+    btnPlaySlice.getLabel().setFont(labelFont);
+    btnPlayChain.getLabel().setFont(labelFont);
+
     masterVolumeSlider.onValueChange = [this]
     {
         stateHandler.setStateValue(StateHandler::masterVolumeId, juce::Decibels::decibelsToGain(masterVolumeSlider.getValue()));
@@ -61,13 +65,13 @@ void AudioPanelComponent::resized()
     const auto height = innerBounds.getHeight();
     setVisible(height > 40);
 
-    const auto hideLabels = height < 60;
+    const auto hideLabels = height < 50;
     btnPlaySlice.showLabel = !hideLabels;
     btnPlayChain.showLabel = !hideLabels;
     masterVolumeLabel.setVisible(!hideLabels);
 
     const auto area = innerBounds.reduced(StyleSheet::controlGap);
-    constexpr int labelHeight = static_cast<int>(StyleSheet::fontDefaultSize);
+    constexpr int labelHeight = static_cast<int>(StyleSheet::audioPanelFontSize + 1);
 
     auto columns = area;
     const auto columnWidth = columns.getWidth() / 3;

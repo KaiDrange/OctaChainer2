@@ -178,7 +178,7 @@ void SettingsPanelComponent::layoutTopSections()
         auto area = section.getContentBounds();
         for (auto* button : buttons)
         {
-            button->setBounds(area.removeFromTop(22));
+            button->setBounds(area.removeFromTop(20));
             area.removeFromTop(2);
         }
     };

@@ -183,8 +183,8 @@ void StyleSheet::drawButtonBackground(juce::Graphics& g, juce::Button& button, c
 void StyleSheet::drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
                                   const bool shouldDrawButtonAsHighlighted, const bool shouldDrawButtonAsDown)
 {
-    const auto fontSize = juce::jmin(15.0f, static_cast<float>(button.getHeight()) * 0.72f);
-    const auto tickWidth = juce::jmax(14.0f, fontSize * 1.05f);
+    const auto fontSize = juce::jmin(13.0f, static_cast<float>(button.getHeight()) * 0.64f);
+    const auto tickWidth = juce::jmax(12.0f, fontSize * 1.02f);
 
     drawTickBox(g, button,
                 4.0f,
@@ -301,8 +301,8 @@ void StyleSheet::drawTickBox(juce::Graphics& g, juce::Component& component,
 
 void StyleSheet::changeToggleButtonWidthToFitText(juce::ToggleButton& button)
 {
-    const auto fontSize = juce::jmin(15.0f, static_cast<float>(button.getHeight()) * 0.72f);
-    const auto tickWidth = juce::jmax(14.0f, fontSize * 1.05f);
+    const auto fontSize = juce::jmin(13.0f, static_cast<float>(button.getHeight()) * 0.64f);
+    const auto tickWidth = juce::jmax(12.0f, fontSize * 1.02f);
     const juce::Font font { juce::FontOptions { fontSize } };
 
     button.setSize(juce::GlyphArrangement::getStringWidthInt(font, button.getButtonText())

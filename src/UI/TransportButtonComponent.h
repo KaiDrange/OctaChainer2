@@ -16,6 +16,7 @@ public:
 
     juce::DrawableButton& getButton() noexcept;
     const juce::DrawableButton& getButton() const noexcept;
+    juce::Label& getLabel();
     bool showLabel = true;
 
     void resized() override;

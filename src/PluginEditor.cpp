@@ -10,7 +10,7 @@ OctaChainer2AudioProcessorEditor::OctaChainer2AudioProcessorEditor(OctaChainer2A
     setResizable(true, true);
     setResizeLimits(MainComponent::minWidth, MainComponent::minHeight, MainComponent::maxWidth,
                     MainComponent::maxHeight);
-    setSize(MainComponent::defaultWidth, MainComponent::defaultHeight);
+    setSize(MainComponent::minWidth, MainComponent::minHeight);
     mainComponent->setBounds(getLocalBounds());
 }
 
