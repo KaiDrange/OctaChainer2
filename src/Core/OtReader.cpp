@@ -285,49 +285,99 @@ bool OtReader::loadImportSettings(const juce::File& otFile, ImportSettings& sett
     return true;
 }
 
-bool OtReader::performImport(const ImportSettings& settings, StateHandler& stateHandler, juce::Component* associatedComponent)
+bool OtReader::performImport(const ImportSettings& settings, StateHandler& stateHandler, juce::Component* associatedComponent,
+                             std::function<void()> beginLoading,
+                             std::function<void()> finishLoading)
 {
     juce::String errorMessage;
+    if (beginLoading)
+        beginLoading();
+
     if (! performImportImpl(settings, stateHandler, &errorMessage))
     {
+        if (finishLoading)
+            finishLoading();
+
         showErrorAsync("Could not import OT file",
                        errorMessage.isNotEmpty() ? errorMessage : "The OT file could not be imported.",
                        associatedComponent);
         return false;
     }
 
+    if (finishLoading)
+        finishLoading();
+
     return true;
 }
 
-void OtReader::importOtFile(const juce::File& otFile, StateHandler& stateHandler, juce::Component* associatedComponent)
+void OtReader::importOtFile(const juce::File& otFile, StateHandler& stateHandler, juce::Component* associatedComponent,
+                            std::function<void()> beginLoading,
+                            std::function<void()> finishLoading)
 {
-    ImportSettings settings;
-    if (! loadImportSettings(otFile, settings, associatedComponent))
-        return;
-
     const auto self = shared_from_this();
     const juce::Component::SafePointer<juce::Component> safeComponent(associatedComponent);
-    auto settingsPtr = std::make_shared<ImportSettings>(std::move(settings));
     auto* stateHandlerPtr = &stateHandler;
+    auto startAsyncImport = [self, otFile, stateHandlerPtr, safeComponent,
+                             beginLoading = std::move(beginLoading),
+                             finishLoading = std::move(finishLoading)]() mutable
+    {
+        if (safeComponent == nullptr || stateHandlerPtr == nullptr)
+            return;
+
+        if (beginLoading)
+            beginLoading();
+
+        juce::Timer::callAfterDelay(100, [self, otFile, stateHandlerPtr, safeComponent,
+                                        finishLoading = std::move(finishLoading)]() mutable
+        {
+            if (safeComponent == nullptr || stateHandlerPtr == nullptr)
+            {
+                if (finishLoading)
+                    finishLoading();
+                return;
+            }
+
+            ImportSettings settings;
+            if (! self->loadImportSettings(otFile, settings, safeComponent.getComponent()))
+            {
+                if (finishLoading)
+                    finishLoading();
+                return;
+            }
+
+            juce::String errorMessage;
+            if (! self->performImportImpl(settings, *stateHandlerPtr, &errorMessage))
+            {
+                if (finishLoading)
+                    finishLoading();
+
+                showErrorAsync("Could not import OT file",
+                               errorMessage.isNotEmpty() ? errorMessage : "The OT file could not be imported.",
+                               safeComponent.getComponent());
+                return;
+            }
+
+            if (finishLoading)
+                finishLoading();
+        });
+    };
 
     if (stateHandler.getNumSlices() > 0)
     {
-        juce::AlertWindow::showOkCancelBox(juce::AlertWindow::WarningIcon,
-                                           "Import OT file",
-                                           "The existing slices will be cleared. Are you sure?",
-                                           "Import",
-                                           "Cancel",
-                                           associatedComponent,
-                                           juce::ModalCallbackFunction::create([self, settingsPtr, stateHandlerPtr, safeComponent](const int result) mutable
-                                           {
-                                               if (result != 1 || safeComponent == nullptr || stateHandlerPtr == nullptr)
-                                                   return;
-
-                                               self->performImport(*settingsPtr, *stateHandlerPtr, safeComponent.getComponent());
-                                           }));
+        juce::AlertWindow::showAsync(juce::MessageBoxOptions()
+                                         .withIconType(juce::MessageBoxIconType::WarningIcon)
+                                         .withTitle("Import OT file")
+                                         .withMessage("The existing slices will be cleared. Are you sure?")
+                                         .withButton("Import")
+                                         .withButton("Cancel")
+                                         .withAssociatedComponent(associatedComponent),
+                                     [startAsyncImport = std::move(startAsyncImport)](const int result) mutable
+                                     {
+                                         if (result == 1)
+                                             startAsyncImport();
+                                     });
         return;
     }
 
-    if (safeComponent != nullptr && stateHandlerPtr != nullptr)
-        self->performImport(*settingsPtr, *stateHandlerPtr, safeComponent.getComponent());
+    startAsyncImport();
 }

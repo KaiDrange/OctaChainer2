@@ -10,6 +10,7 @@ public:
                               double targetSampleRate,
                               int bitDepth,
                               int partCount,
+                              std::function<void(int completedParts, int totalParts)> progressCallback = {},
                               juce::String* errorMessage = nullptr);
 
 private:

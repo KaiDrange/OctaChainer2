@@ -77,6 +77,7 @@ bool MegabreakExporter::exportToFiles(const juce::File& baseFile,
                                       const double targetSampleRate,
                                       const int bitDepth,
                                       const int partCount,
+                                      std::function<void(int completedParts, int totalParts)> progressCallback,
                                       juce::String* errorMessage)
 {
     if (errorMessage != nullptr)
@@ -91,6 +92,9 @@ bool MegabreakExporter::exportToFiles(const juce::File& baseFile,
 
     for (int partIndex = 0; partIndex < partCount; ++partIndex)
     {
+        if (progressCallback)
+            progressCallback(partIndex + 1, partCount);
+
         auto exportState = baseState.createCopy();
         if (! prepareExportState(exportState, partIndex, partCount))
         {

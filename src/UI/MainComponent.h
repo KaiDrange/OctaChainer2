@@ -1,11 +1,13 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <functional>
 #include "../Core/AudioPlaybackEngine.h"
 #include "../Core/Chain.h"
 #include "../Core/OtReader.h"
 #include "../Core/StateHandler.h"
 #include "AudioPanelComponent.h"
+#include "OverlayComponent.h"
 #include "SliceListComponent.h"
 #include "SettingsPanelComponent.h"
 #include "StyleSheet.h"
@@ -70,6 +72,9 @@ public:
     void waveformSegmentClicked(int segmentIndex, int sliceIndex) override;
     void waveformSliceRangeChanged(int startSample, int endSample) override;
     void importOtFile(const juce::File& otFile);
+    void importOtFile(const juce::File& otFile, std::function<void()> beginLoading, std::function<void()> finishLoading);
+    void beginLoadingOperation(juce::String singularLabel, juce::String pluralLabel);
+    void finishLoadingOperation();
     std::shared_ptr<const AudioClip> getChainAudioClip() const { return chain.getAudioClip(); }
 
 private:
@@ -84,10 +89,14 @@ private:
     void finishChainRender(std::uint64_t requestId, const std::shared_ptr<Chain>& renderedChain, const juce::String& renderError = {});
     void chainRenderThreadLoop();
     void stopChainRenderThread();
+    void beginExportOperation(int totalSteps, juce::String singularLabel, juce::String pluralLabel);
+    void setExportProgress(int completedSteps, int totalSteps);
+    void finishExportOperation();
     bool isSelectedSliceInCurrentChain() const;
     bool isChainRenderRelevantSetting(const StateHandler::StateChange& change) const;
-    bool isOtFilePath(const juce::String& path) const;
+    static bool isOtFilePath(const juce::String& path);
     static void showChainRenderError(const juce::String& message);
+    void setUiLocked(bool locked);
 
     StyleSheet style;
     StateHandler& stateHandler;
@@ -108,6 +117,8 @@ private:
     double chainRenderPendingSampleRate = 0.0;
     std::uint64_t chainRenderPendingRequestId = 0;
     std::atomic<std::uint64_t> chainRenderLatestRequestId{0};
+    OverlayComponent overlay;
+    std::atomic<bool> exportOperationActive{false};
     std::unique_ptr<juce::FileChooser> chainExportChooser;
     juce::TooltipWindow tooltipWindow;
 

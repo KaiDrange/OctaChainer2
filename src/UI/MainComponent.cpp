@@ -29,6 +29,7 @@ MainComponent::MainComponent(StateHandler& stateHandlerToUse, AudioPlaybackEngin
     addAndMakeVisible(sliceWaveformComponent);
     addAndMakeVisible(chainWaveformComponent);
     addAndMakeVisible(audioPanelComponent);
+    addChildComponent(overlay);
 
     stateHandler.addListener(this);
     audioPlaybackEngine.addActionListener(&audioPanelComponent);
@@ -91,10 +92,14 @@ void MainComponent::resized()
 
     sliceWaveformComponent.setBounds(bottomBand.removeFromTop(sliceHeight));
     chainWaveformComponent.setBounds(bottomBand);
+    overlay.setBounds(getLocalBounds());
 }
 
 bool MainComponent::keyPressed(const juce::KeyPress& key)
 {
+    if (exportOperationActive.load(std::memory_order_acquire))
+        return true;
+
     if (key == juce::KeyPress('p', juce::ModifierKeys::ctrlModifier, 0)
         && audioPanelComponent.btnPlayChain.getButton().isEnabled())
     {
@@ -105,7 +110,7 @@ bool MainComponent::keyPressed(const juce::KeyPress& key)
     return false;
 }
 
-bool MainComponent::isOtFilePath(const juce::String& path) const
+bool MainComponent::isOtFilePath(const juce::String& path)
 {
     return juce::File(path).getFileExtension().equalsIgnoreCase(".ot");
 }
@@ -135,8 +140,25 @@ void MainComponent::filesDropped(const juce::StringArray& files, int, int)
 
 void MainComponent::importOtFile(const juce::File& otFile)
 {
+    const auto beginLoading = [this]
+    {
+        beginLoadingOperation("file", "files");
+    };
+
+    const auto finishLoading = [this]
+    {
+        finishLoadingOperation();
+    };
+
+    importOtFile(otFile, beginLoading, finishLoading);
+}
+
+void MainComponent::importOtFile(const juce::File& otFile, std::function<void()> beginLoading, std::function<void()> finishLoading)
+{
     if (otReader != nullptr)
-        otReader->importOtFile(otFile, stateHandler, this);
+    {
+        otReader->importOtFile(otFile, stateHandler, this, beginLoading, finishLoading);
+    }
 }
 
 void MainComponent::stateChanged(const StateHandler::StateChange& change)
@@ -272,6 +294,17 @@ void MainComponent::saveChainToFile()
         file = file.withFileExtension(".wav");
 
         auto stateXml = std::unique_ptr<juce::XmlElement>(safeThis->stateHandler.createXml());
+        const auto baseState = stateXml != nullptr ? juce::ValueTree::fromXml(*stateXml) : juce::ValueTree{};
+        const auto settingsTree = baseState.getChildWithName(StateHandler::settingsId);
+        const auto dataTree = baseState.getChildWithName(StateHandler::dataId);
+        const auto numSlices = dataTree.isValid() ? dataTree.getNumChildren() : 0;
+        const auto maxSlicesPerChain = juce::jmax(1, static_cast<int>(settingsTree.getProperty(
+            StateHandler::chainMaxLengthId,
+            static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue))));
+        const auto chainCount = juce::jmax(1, (numSlices + maxSlicesPerChain - 1) / maxSlicesPerChain);
+
+        safeThis->beginExportOperation(chainCount, "chain", "chains");
+
         const auto targetSampleRate = static_cast<double>(safeThis->stateHandler.getStateValue<int>(
             StateHandler::samplerateId,
             44100));
@@ -285,25 +318,22 @@ void MainComponent::saveChainToFile()
         safeThis->cancelChainRender();
         safeThis->clearPlaybackChain();
 
-        std::thread([safeThis, file, exportStateXml = std::move(stateXml), targetSampleRate, bitDepth]() mutable
+        std::thread([safeThis, file, exportStateXml = std::move(stateXml), targetSampleRate, bitDepth, chainCount, maxSlicesPerChain]() mutable
         {
             juce::String errorMessage;
             bool success = false;
 
             if (safeThis != nullptr)
             {
-                const auto baseState = exportStateXml != nullptr ? juce::ValueTree::fromXml(*exportStateXml) : juce::ValueTree{};
-                const auto settingsTree = baseState.getChildWithName(StateHandler::settingsId);
-                const auto dataTree = baseState.getChildWithName(StateHandler::dataId);
-                const auto numSlices = dataTree.isValid() ? dataTree.getNumChildren() : 0;
-                const auto maxSlicesPerChain = juce::jmax(1, static_cast<int>(settingsTree.getProperty(
-                    StateHandler::chainMaxLengthId,
-                    static_cast<int>(StateHandler::chainMaxLengthValue.defaultValue))));
-                const auto chainCount = juce::jmax(1, (numSlices + maxSlicesPerChain - 1) / maxSlicesPerChain);
-
                 success = true;
                 for (int chainIndex = 0; chainIndex < chainCount; ++chainIndex)
                 {
+                    juce::MessageManager::callAsync([safeThis, chainIndex, chainCount]()
+                    {
+                        if (safeThis != nullptr)
+                            safeThis->setExportProgress(chainIndex + 1, chainCount);
+                    });
+
                     auto exportState = exportStateXml != nullptr ? juce::ValueTree::fromXml(*exportStateXml) : juce::ValueTree{};
                     auto exportDataTree = exportState.getChildWithName(StateHandler::dataId);
                     if (exportDataTree.isValid())
@@ -333,9 +363,14 @@ void MainComponent::saveChainToFile()
             {
                 if (! success && safeThis != nullptr)
                 {
+                    safeThis->finishExportOperation();
                     juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
                                                            "Could not save chain",
                                                            asyncErrorMessage.isNotEmpty() ? asyncErrorMessage : "The chain could not be rendered.");
+                }
+                else if (safeThis != nullptr)
+                {
+                    safeThis->finishExportOperation();
                 }
 
                 if (safeThis != nullptr)
@@ -369,13 +404,15 @@ void MainComponent::saveMegabreakToFile()
         file = file.withFileExtension(".wav");
 
         auto stateXml = std::unique_ptr<juce::XmlElement>(safeThis->stateHandler.createXml());
+        const auto partCount = juce::jmax(1, safeThis->stateHandler.getStateValue<int>(
+            StateHandler::megabreakFileCountId,
+            1));
+        safeThis->beginExportOperation(partCount, "part", "parts");
+
         const auto targetSampleRate = static_cast<double>(safeThis->stateHandler.getStateValue<int>(
             StateHandler::samplerateId,
             44100));
         const auto bitDepth = safeThis->stateHandler.getStateValue<int>(StateHandler::bitDepthId, 16);
-        const auto partCount = juce::jmax(1, safeThis->stateHandler.getStateValue<int>(
-            StateHandler::megabreakFileCountId,
-            1));
         const auto playbackClip = safeThis->audioPlaybackEngine.getCurrentClip();
         const auto chainClip = safeThis->chain.getAudioClip();
 
@@ -393,17 +430,34 @@ void MainComponent::saveMegabreakToFile()
             if (safeThis != nullptr)
             {
                 const auto baseState = exportStateXml != nullptr ? juce::ValueTree::fromXml(*exportStateXml) : juce::ValueTree{};
-                success = MegabreakExporter::exportToFiles(file, baseState, targetSampleRate, bitDepth, partCount, &errorMessage);
+                success = MegabreakExporter::exportToFiles(
+                    file,
+                    baseState,
+                    targetSampleRate,
+                    bitDepth,
+                    partCount,
+                    [safeThis](const int currentStep, const int totalSteps)
+                    {
+                        juce::MessageManager::callAsync([safeThis, currentStep, totalSteps]()
+                        {
+                            if (safeThis != nullptr)
+                                safeThis->setExportProgress(currentStep, totalSteps);
+                        });
+                    },
+                    &errorMessage);
             }
 
             juce::MessageManager::callAsync([safeThis, success, asyncErrorMessage = std::move(errorMessage)]() mutable
             {
                 if (! success && safeThis != nullptr)
                 {
+                    safeThis->finishExportOperation();
                     juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
                                                            "Could not save megabreak",
                                                            asyncErrorMessage.isNotEmpty() ? asyncErrorMessage : "The megabreak could not be rendered.");
                 }
+                else if (safeThis != nullptr)
+                    safeThis->finishExportOperation();
 
                 if (safeThis != nullptr)
                     safeThis->requestChainRender(false);
@@ -621,4 +675,48 @@ void MainComponent::timerCallback()
 
     sliceWaveformComponent.setPlayHeadPositionFactor(sliceIsPlaying ? playHeadPositionFactor : 0.0);
     chainWaveformComponent.setPlayHeadPositionFactor(chainIsPlaying ? playHeadPositionFactor : 0.0);
+
+    if (overlay.isVisible())
+        overlay.repaint();
+}
+
+void MainComponent::beginExportOperation(const int totalSteps, juce::String singularLabel, juce::String pluralLabel)
+{
+    exportOperationActive.store(true, std::memory_order_release);
+
+    setUiLocked(true);
+    overlay.beginOperation("Exporting", juce::jmax(1, totalSteps), std::move(singularLabel), std::move(pluralLabel));
+    overlay.setActive(true);
+}
+
+void MainComponent::setExportProgress(const int completedSteps, const int totalSteps)
+{
+    overlay.setProgress(completedSteps, totalSteps);
+}
+
+void MainComponent::finishExportOperation()
+{
+    exportOperationActive.store(false, std::memory_order_release);
+    overlay.setActive(false);
+    setUiLocked(false);
+}
+
+void MainComponent::beginLoadingOperation(juce::String singularLabel, juce::String pluralLabel)
+{
+    overlay.beginOperation("Loading", 1, std::move(singularLabel), std::move(pluralLabel));
+    overlay.setActive(true);
+}
+
+void MainComponent::finishLoadingOperation()
+{
+    overlay.setActive(false);
+}
+
+void MainComponent::setUiLocked(const bool locked)
+{
+    sampleListComponent.setEnabled(! locked);
+    settingsPanelComponent.setEnabled(! locked);
+    sliceWaveformComponent.setEnabled(! locked);
+    chainWaveformComponent.setEnabled(! locked);
+    audioPanelComponent.setEnabled(! locked);
 }

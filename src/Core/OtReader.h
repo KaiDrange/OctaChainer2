@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <functional>
 #include "AudioFileLoader.h"
 #include "OtFileFormat.h"
 #include "StateHandler.h"
@@ -27,9 +28,13 @@ public:
 
     OtReader();
 
-    void importOtFile(const juce::File& otFile, StateHandler& stateHandler, juce::Component* associatedComponent);
+    void importOtFile(const juce::File& otFile, StateHandler& stateHandler, juce::Component* associatedComponent,
+                     std::function<void()> beginLoading = {},
+                     std::function<void()> finishLoading = {});
     bool loadImportSettings(const juce::File& otFile, ImportSettings& settings, juce::Component* associatedComponent);
-    bool performImport(const ImportSettings& settings, StateHandler& stateHandler, juce::Component* associatedComponent);
+    bool performImport(const ImportSettings& settings, StateHandler& stateHandler, juce::Component* associatedComponent,
+                       std::function<void()> beginLoading = {},
+                       std::function<void()> finishLoading = {});
 
 private:
     struct ParsedOtFile

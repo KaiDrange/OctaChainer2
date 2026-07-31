@@ -462,17 +462,33 @@ void StandaloneAppMainWindow::loadProject()
         juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName()));
     fileChooser = std::make_unique<juce::FileChooser>("Select a project file to load", initialFolder, "*.xml");
     constexpr auto browserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
-    fileChooser->launchAsync(browserFlags, [this](const juce::FileChooser& chooser)
+    const juce::Component::SafePointer<StandaloneAppMainWindow> safeThis(this);
+    fileChooser->launchAsync(browserFlags, [safeThis](const juce::FileChooser& chooser)
     {
+        if (safeThis == nullptr)
+            return;
+
         const auto xmlFile = chooser.getResult();
         if (xmlFile.existsAsFile())
         {
-            if (const auto xml = juce::XmlDocument::parse(xmlFile))
+            if (safeThis->mainComponent != nullptr)
+                safeThis->mainComponent->beginLoadingOperation("project", "projects");
+
+            juce::Timer::callAfterDelay(100, [safeThis, xmlFile]()
             {
-                const juce::ValueTree newTree = juce::ValueTree::fromXml(*xml);
-                stateHandler.setState(newTree);
-                loadDefaultSettings();
-            }
+                if (safeThis == nullptr)
+                    return;
+
+                if (const auto xml = juce::XmlDocument::parse(xmlFile))
+                {
+                    const juce::ValueTree newTree = juce::ValueTree::fromXml(*xml);
+                    safeThis->stateHandler.setState(newTree);
+                    safeThis->loadDefaultSettings();
+                }
+
+                if (safeThis->mainComponent != nullptr)
+                    safeThis->mainComponent->finishLoadingOperation();
+            });
         }
     });
 }
@@ -496,6 +512,20 @@ void StandaloneAppMainWindow::importOtFile()
             return;
 
         if (safeThis->mainComponent != nullptr)
-            safeThis->mainComponent->importOtFile(otFile);
+        {
+            const auto beginLoading = [safeThis]
+            {
+                if (safeThis != nullptr && safeThis->mainComponent != nullptr)
+                    safeThis->mainComponent->beginLoadingOperation("file", "files");
+            };
+
+            const auto finishLoading = [safeThis]
+            {
+                if (safeThis != nullptr && safeThis->mainComponent != nullptr)
+                    safeThis->mainComponent->finishLoadingOperation();
+            };
+
+            safeThis->mainComponent->importOtFile(otFile, beginLoading, finishLoading);
+        }
     });
 }
