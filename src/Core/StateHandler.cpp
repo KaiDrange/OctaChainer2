@@ -64,6 +64,17 @@ static StateHandler::StateChange makeStateChangeFromChildEvent(const juce::Value
     return makeStateChange(StateHandler::StateChange::fullReload);
 }
 
+static void stripAppPreferenceProperties(const juce::ValueTree& state)
+{
+    auto settingsTree = state.getChildWithName(StateHandler::settingsId);
+    if (! settingsTree.isValid())
+        return;
+
+    settingsTree.removeProperty(StateHandler::defaultAudioFolderId, nullptr);
+    settingsTree.removeProperty(StateHandler::defaultExportFolderId, nullptr);
+    settingsTree.removeProperty(StateHandler::defaultProjectFolderId, nullptr);
+}
+
 StateHandler::StateHandler()
     : valueTree(stateTypeId)
 {
@@ -156,8 +167,11 @@ void StateHandler::setState(const juce::ValueTree& newState)
     if (newState.getType() != stateTypeId)
         return;
 
+    auto sanitizedState = newState.createCopy();
+    stripAppPreferenceProperties(sanitizedState);
+
     removeTreeListeners();
-    valueTree = newState;
+    valueTree = sanitizedState;
     ensureSettingsTree();
     ensureDataTree();
     addTreeListeners();
@@ -166,7 +180,9 @@ void StateHandler::setState(const juce::ValueTree& newState)
 
 juce::XmlElement* StateHandler::createXml() const
 {
-    return valueTree.createXml().release();
+    auto serializableState = valueTree.createCopy();
+    stripAppPreferenceProperties(serializableState);
+    return serializableState.createXml().release();
 }
 
 bool StateHandler::restoreFromXml(const juce::XmlElement& xml)
