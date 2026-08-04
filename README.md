@@ -32,6 +32,8 @@ To launch the host in CLion, create a `CMake Application` run/debug configuratio
 
 If JUCE fetch fails in your environment, set `OCTA_JUCE_SOURCE_DIR` to a local JUCE checkout and reconfigure. The checkout must contain `extras/AudioPluginHost`.
 
+For macOS signing and notarization, use the release instructions in [docs/macos-release-signing.md](docs/macos-release-signing.md).
+
 ## Direct CMake commands
 
 ```powershell

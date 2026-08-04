@@ -86,6 +86,20 @@ function(octa_add_release_copy target source destination)
             VERBATIM)
 endfunction()
 
+function(octa_add_release_notary_step target bundle action)
+    if (NOT OCTA_RELEASE_COPY_DIR)
+        return()
+    endif ()
+
+    set(notarize_script "${CMAKE_CURRENT_BINARY_DIR}/${target}_$<CONFIG>_release_notary_step.cmake")
+
+    file(GENERATE OUTPUT "${notarize_script}" CONTENT "set(notarize_config \"$<CONFIG>\")\nset(notarize_bundle \"${bundle}\")\nset(notarize_action \"${action}\")\nset(notarize_record_path \"${CMAKE_CURRENT_BINARY_DIR}/${target}_$<CONFIG>_notary.txt\")\ninclude(\"${CMAKE_CURRENT_SOURCE_DIR}/cmake/notarize_release_artifacts.cmake\")\n")
+
+    add_custom_target("${target}"
+            COMMAND "${CMAKE_COMMAND}" -P "${notarize_script}"
+            VERBATIM)
+endfunction()
+
 juce_add_gui_app(OctaChainer2_App
         PRODUCT_NAME "OctaChainer 2"
         COMPANY_NAME "Tic Tech"
@@ -196,4 +210,40 @@ endif ()
 
 if (TARGET AudioPluginHost AND TARGET OctaChainer2_VST3_VST3)
     add_dependencies(AudioPluginHost OctaChainer2_VST3_VST3)
+endif ()
+
+if (TARGET AudioPluginHostData AND TARGET OctaChainer2_VST3_VST3)
+    add_dependencies(AudioPluginHostData OctaChainer2_VST3_VST3)
+endif ()
+
+if (APPLE)
+    octa_add_release_notary_step(
+            OctaChainer2_NotarizeApp
+            "${OCTA_RELEASE_COPY_DIR}/OctaChainer2.app"
+            submit
+    )
+    add_dependencies(OctaChainer2_NotarizeApp OctaChainer2_App)
+
+    octa_add_release_notary_step(
+            OctaChainer2_StapleApp
+            "${OCTA_RELEASE_COPY_DIR}/OctaChainer2.app"
+            staple
+    )
+    add_dependencies(OctaChainer2_StapleApp OctaChainer2_App)
+
+    if (OCTA_PLUGIN_FORMATS)
+        octa_add_release_notary_step(
+            OctaChainer2_NotarizePlugin
+            "${OCTA_RELEASE_COPY_DIR}/OctaChainer2.vst3"
+            submit
+        )
+        add_dependencies(OctaChainer2_NotarizePlugin OctaChainer2_VST3_VST3)
+
+        octa_add_release_notary_step(
+                OctaChainer2_StaplePlugin
+                "${OCTA_RELEASE_COPY_DIR}/OctaChainer2.vst3"
+                staple
+        )
+        add_dependencies(OctaChainer2_StaplePlugin OctaChainer2_VST3_VST3)
+    endif ()
 endif ()
